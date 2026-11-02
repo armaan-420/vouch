@@ -86,3 +86,7 @@
 .nomination-actions .skip{margin:3px auto 0;padding:8px;font-size:11px}
 .nomination-step #product-results{max-height:240px}
 @media(max-width:700px){.nomination-step .nominate{padding:20px 18px}.nomination-step .nomination-heading h2{font-size:31px}.nomination-step{padding-top:18px}.nomination-step .progress{margin-bottom:16px}}
+
+/* A quiet save confirmation inside the selection field. */
+.selection-box{position:relative;padding-right:38px}
+.nomination-saved-check{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#546c37;font-size:20px;font-weight:700;line-height:1;pointer-events:none}

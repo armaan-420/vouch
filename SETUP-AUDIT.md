@@ -68,3 +68,7 @@ Unauthenticated organizer configuration/export requests return 401. A forged org
 ## Dynamic score update — November 1, 2026
 
 Founder-approved score model: see [SCORING.md](SCORING.md). All experiment, community and overall results use the shared voteScore function. Existing votes recalculate at read time; no vote migration is needed. The public boards and prototype information explain the model. Earlier deployment verification above is historical.
+
+## November 2, 2026 — account preview, not deployed
+
+The local account/profile implementation adds participant email authentication, reviewed ownership claims, private collections, selective public opinions, and public product contributors. It preserves the existing organizer sign-in and experiment record format. The earlier identity limitation describes the historical anonymous-only release; current anonymous experiment scores still count browsers. The account preview uses isolated optimistic JSON records in D1 rather than normalized indexed tables. Real email delivery is not configured or verified. See [ACCOUNT_PREVIEW.md](ACCOUNT_PREVIEW.md) and [AUTH_SETUP.md](AUTH_SETUP.md). No release checkpoint has been advanced.

@@ -2,6 +2,10 @@
 
 A product-testing website with separate experiments and an optional overall leaderboard. The original public sunscreen experiment lets participants vote Pass, Vouch for brand, Vouch for item, or Haven’t tried; explore a community leaderboard; search for and nominate a missing product.
 
+## Account and product-profile preview
+
+A first account implementation is available for local review; it has not been deployed. Participants can preview their edit, sign in by email code, review which browser contributions belong to them, save a private collection, and explicitly publish selected opinions. Item vouches, passes, and brand trust remain separate. Existing experiment responses and scoring remain preserved. See [ACCOUNT_PREVIEW.md](ACCOUNT_PREVIEW.md) for flow, data ownership, checks, and limitations, and [AUTH_SETUP.md](AUTH_SETUP.md) for real-email configuration. The loopback development preview uses a clearly labeled local test inbox and sends no email.
+
 ## Experiment URLs
 
 The main / page shows only Coming Soon. Each experiment uses its Link ID as its path: /sunscreen, /golf, or /sunscreen-test-b. Create a golf experiment with Link ID golf in the organizer to make /golf available. Unknown experiment paths return 404. Organizer links and copied links use these paths; older /?experiment=… links redirect to the matching path. Experiment navigation and the overall board stay under that experiment’s URL. Reserved app paths cannot be used as experiment IDs.

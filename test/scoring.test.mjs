@@ -26,3 +26,12 @@ test('additional support never lowers scores, additional passes never raise them
     if(yes===no)assert.equal(score,5);
   }
 });
+test('brand trust carries half the evidence of an item vouch, including the perfect-score threshold',()=>{
+  assert.equal(voteScore({a:'brand'}),'7.5');
+  assert.equal(voteScore({a:'brand',b:'brand'}),voteScore({a:'yes'}));
+  assert.equal(voteScore({a:'brand',b:'no'}),'3.8');
+  assert.equal(voteScore({a:'yes',b:'brand',c:'no',d:'skip'}),'5.8');
+  assert.equal(voteScore(Object.fromEntries(Array.from({length:199},(_,i)=>[i,'brand']))),'9.9');
+  assert.equal(voteScore(Object.fromEntries(Array.from({length:200},(_,i)=>[i,'brand']))),'10.0');
+  assert.equal(voteScore({a:'unknown',b:'skip'}),null);
+});

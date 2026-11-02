@@ -39,3 +39,22 @@ test('multiple nominations save atomically, deduplicate per product, persist, an
   await a('/api/nominations',{nominations:[]});assert.deepEqual((await a('/api/me')).data.nominations,[]);
   assert.equal((await a('/api/me')).data.nomination,null);
 });
+test('brand verdicts persist, replace item votes, and can be removed on base and community products',async t=>{
+  const f=await fixture(t),a=browser(f),b=browser(f),admin=browser(f);
+  const answer=value=>a('/api/events',{type:'answer',productId:'boj',value});
+  assert.equal((await answer('brand')).status,200);
+  let p=(await a('/api/board')).data.products.find(p=>p.id==='boj');
+  assert.equal(p.myVote,'brand');assert.equal(p.score,'7.5');
+  await answer('yes');assert.equal((await a('/api/board')).data.products.find(p=>p.id==='boj').score,'8.3');
+  await answer('brand');await f.restart();
+  p=(await a('/api/board')).data.products.find(p=>p.id==='boj');assert.equal(p.myVote,'brand');assert.equal(p.score,'7.5');
+  await answer('skip');assert.equal((await a('/api/board')).data.products.find(p=>p.id==='boj').score,null);
+  await a('/api/nominations',{name:'Brand test sunscreen'});await b('/api/nominations',{name:'Brand test sunscreen'});
+  const g=(await admin('/api/admin/summary')).data.nominations[0];
+  await admin('/api/admin/review',{name:g.name,keys:g.sourceKeys});
+  const id=(await a('/api/community')).data.products[0].id;
+  let r=await a('/api/community/vote',{productId:id,value:'brand'});
+  assert.equal(r.status,200);assert.equal(r.data.products[0].score,'7.5');assert.equal(r.data.products[0].myVote,'brand');
+  r=await a('/api/community/vote',{productId:id,value:'yes'});assert.equal(r.data.products[0].score,'8.3');
+  r=await a('/api/community/vote',{productId:id,value:'skip'});assert.equal(r.data.products[0].score,null);
+});

@@ -1,3 +1,4 @@
+import {getExecutionContext} from './execution-context';
 import { env } from 'cloudflare:workers';
 import {createD1Store} from './d1-store';
 import {createProductSearch} from '../product-search.mjs';
@@ -15,5 +16,7 @@ export async function hostedApi(request:Request){
   const store=createD1Store(env.DB);
   searchPromise??=createProductSearch({storage:store.catalog,initialCatalog});
   const search=await searchPromise;
-  return createExperimentApi({store,search,authorizeAdmin:isOrganizer})(request);
+  const ctx=getExecutionContext();
+  const requestSearch={find:search.find,search:(q:string)=>search.search(q,{waitUntil:ctx?(p:Promise<unknown>)=>ctx.waitUntil(p):undefined})};
+  return createExperimentApi({store,search:requestSearch,authorizeAdmin:isOrganizer})(request);
 }

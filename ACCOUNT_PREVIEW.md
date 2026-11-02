@@ -31,3 +31,7 @@ Real email requires Resend sender-domain verification and server-side runtime co
 - Browser review passed: voting through the summary, incorrect then correct code, review, private profile, public product exclusion, selective publication, and public profile. At 390px the collection had no horizontal overflow.
 - The production build passed. Its local Worker returned account/product pages, reported email auth unavailable with no configured provider, and returned HTTP 503 without a preview code for signup.
 - Diff whitespace checks and frontend syntax checks passed. No production publish or Notion release checkpoint update was performed.
+
+### Email service configuration — November 2
+
+Namecheap DNS records were added with owner confirmation, and Resend verified `auth.v4ch.app` for sending. Receiving remains disabled. The owner created a sending-only API key restricted to that domain. Sites environment revision 3 now holds `RESEND_API_KEY` and `VOUCH_AUTH_SECRET` as secrets plus `VOUCH_EMAIL_FROM` set to `Vouch <signin@auth.v4ch.app>`. The existing organizer allowlist is preserved. These are staged runtime settings: no production deployment or real inbox delivery test was performed. The local preview still uses its labeled test inbox. No credentials are included in source or documentation.

@@ -6,7 +6,7 @@ Vouch already had public hosting through Sites on Cloudflare Workers and a manag
 
 | Area | Current setup |
 | --- | --- |
-| Public website | https://vouch-wharton-sunscreen-edit.armaann.chatgpt.site |
+| Public website | https://v4ch.app |
 | Organizer dashboard | `/admin`, protected by ChatGPT sign-in and the server-side `ADMIN_EMAILS` allowlist |
 | Server | Vinext request routes running on a Cloudflare Worker |
 | Database | Managed Cloudflare D1, bound as `DB` in `.openai/hosting.json` |
@@ -32,10 +32,10 @@ Vouch already had public hosting through Sites on Cloudflare Workers and a manag
 
 1. Sign into `/admin` with the allowed organizer account.
 2. Expand **Create a separate experiment**, name it, choose its products, and create it. Its link ID must be unique. Product selections are fixed after creation so changing a test does not silently reinterpret existing votes.
-3. Copy its participation link and share it with testers. Each link has `?experiment=<id>`.
+3. Copy its participation link and share it with testers. Each link uses its experiment ID as its path, such as `/sunscreen-test-b`. Legacy `?experiment=<id>` links redirect to the matching path.
 4. Select that experiment in the dashboard to inspect its funnel, review nominations, or download its full results.
 5. Close the experiment when collection is finished. Closing preserves its results and can be reversed.
-6. Enable **Include these results in the overall leaderboard** only when the sample belongs in the overall ranking. The overall view is `/?overall=1`.
+6. Enable **Include these results in the overall leaderboard** only when the sample belongs in the overall ranking. The overall view is `/sunscreen?overall=1`.
 
 ## Operations and remaining work before a larger public launch
 
@@ -44,7 +44,7 @@ Vouch already had public hosting through Sites on Cloudflare Workers and a manag
 - **Identity:** votes identify browsers, not verified people. Cookie deletion, multiple browsers and scripted traffic can create additional participants. Verified accounts, stronger abuse controls and moderation would be a separate launch step.
 - **Catalog coverage:** automatic product lookup covers the connected sunscreen brand catalogs. Other categories use custom SKU entry; automatic search is not a general web-wide product database.
 - **Monitoring:** platform runtime logs and the health endpoint are available. External uptime alerts and an error-reporting service are not configured.
-- **Domain:** the current HTTPS Sites address works. A custom domain is optional and has not been purchased or connected.
+- **Domain:** `v4ch.app` is connected and serving over HTTPS. The home page is a Coming Soon placeholder; `/sunscreen` serves the original experiment, and each new experiment has its own path. The original Sites address continues to work.
 - **Environment:** local preview data lives in `.wrangler/state` (D1) or ignored `.data` files (Node preview). These are separate from hosted D1 and never uploaded as participant data. A separate hosted staging site is not configured.
 
 ## Verification
@@ -52,3 +52,15 @@ Vouch already had public hosting through Sites on Cloudflare Workers and a manag
 The test suite covers persistence, repeated votes, concurrent hosted-runtime writes, completion rules, nomination thresholds and edits, catalog fallback, experiment isolation, full export content, closing collection, stable custom SKUs, input validation and overall leaderboard deduplication. Browser checks cover creating an experiment, voting, rendering scores, viewing completion metrics and opting a local test into the overall leaderboard.
 
 The original live website, board, community endpoint and product lookup returned successful responses during the audit; the anonymous organizer summary returned 401. Dependency updates and final hosted deployment checks are recorded in the task handoff.
+
+## Dependency audit
+
+The audit identified affected Next.js, Zod, sharp and transitive production packages. Updated Next.js and its matching ESLint configuration to 16.4.3, Zod to 4.6.7, and the Miniflare sharp override to 0.35.5; refreshed compatible transitive dependencies. Adjusted the preview connector's record schemas for Zod 4.
+
+`npm audit --omit=dev` reports **zero findings** after these updates. The full audit still reports **31 toolchain findings (25 moderate, 6 high)** in the retained Sites/Vinext development stack, including Vite, Wrangler/Miniflare, image tooling and lint/schema tooling. A broader toolchain upgrade is outstanding; the npm-suggested forced fixes include breaking downgrades and were not applied. Development servers bind only to loopback. This website does not expose Next/Vinext image generation or image optimization routes; product photos use ordinary image elements.
+
+## Final live verification
+
+The live deployment is Sites version 2, source `e767ea109322086e101a1ae185cb587cb703025d`. Confirmed HTTPS responses on `v4ch.app`, D1 health, experiment pages and the overall API. Signed into the live organizer dashboard, created `system-verification-20261101`, submitted one vote, confirmed its score from another anonymous request, checked its completion metric, and downloaded and inspected its full JSON export. Then closed that experiment and confirmed the server rejects further votes with HTTP 409. It remains clearly labeled **System verification — excluded**, closed and excluded from the overall leaderboard. Original sunscreen scores remain unrated; the overall leaderboard still contains no included experiments.
+
+Unauthenticated organizer configuration/export requests return 401. A forged organizer email header also returns 401. Final local validation: 12 automated tests passed, the production build passed, and TypeScript checking passed. The live organizer screenshot is saved beside the project as `vouch-organizer-audit.jpg`.

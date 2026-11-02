@@ -12,7 +12,7 @@ The main / page shows only Coming Soon. Each experiment uses its Link ID as its 
 - Live product lookup searches 12 brand catalogs: Beauty of Joseon, SKIN1004, Round Lab, Mixsoon, Innisfree, Supergoop!, EltaMD, Medicube, Isntree, Haruharu Wonder, KraveBeauty, and Naturium. The last successful fetch found 128 individual sunscreen listings. Catalogs refresh every 15 minutes; cached results are labeled when a refresh fails. Coverage is these catalogs, not the entire web.
 - Selecting a result saves its authoritative product ID, title, photo, and source URL. Two distinct anonymous browsers nominating the same selection automatically add it to the board with **Community Nominated**. Products already on the board lead back to voting.
 - Name-only fallback nominations enter the organizer’s lookup inbox. Confirming and combining aliases can qualify them at the same two-participant threshold.
-- Each browser has one active nomination per experiment and can change it. Earlier versions are preserved in history. Votes, nominations, and funnel data use shared durable storage.
+- Each browser can select and save multiple nominations per experiment, keep selections across searches, and remove individual products. Saving replaces the browser’s full selection atomically; duplicate products count once. Removed nominations are preserved in history. Votes, nominations, and funnel data use shared durable storage.
 - The funnel measures unique browsers, starts, answering all selected cards in an experiment, leaderboard views, reaching the nomination section, and nominations. Completing the flow requires all selected cards plus viewing the leaderboard. Nominating is optional. Cookies identify browsers, not verified people; clearing cookies or using another browser can count the same person twice.
 
 ## Hosting and organizer access
@@ -50,4 +50,4 @@ Runtime data, cookies, local environment values, caches, and `.wrangler/` are ig
 
 ## Experiments and operating guide
 
-See [SETUP-AUDIT.md](SETUP-AUDIT.md) for the audited infrastructure, organizer workflow, experiment isolation, overall ranking rules, and remaining work before a larger public launch. Start at `/admin` to create an experiment and copy its participation link. Each new experiment is excluded from the overall leaderboard until you include it. Full data exports are available per experiment. The public overall view is `/?overall=1`.
+See [SETUP-AUDIT.md](SETUP-AUDIT.md) for the audited infrastructure, organizer workflow, experiment isolation, overall ranking rules, and remaining work before a larger public launch. Start at `/admin` to create an experiment and copy its participation link. Each new experiment is excluded from the overall leaderboard until you include it. Full data exports are available per experiment. The public overall view is `/sunscreen?overall=1`.

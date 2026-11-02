@@ -11,3 +11,4 @@
 @media(max-width:700px){.product-search-input{font-size:16px}.selected-result>div,.product-result>span:nth-child(2){min-width:0}}
 
 .product-placeholder{display:flex;align-items:center;justify-content:center;width:100%;min-height:220px;font-size:120px;color:var(--ink);opacity:.35}.rank-row .community-icon{flex-shrink:0}
+.product-result.search-active{outline:2px solid #657044;outline-offset:-2px}.selected-result small{display:block;font-size:11px;line-height:1.5;color:#636d52;margin-top:5px}#nomination-saved{font-size:13px;line-height:1.5;color:#546042}

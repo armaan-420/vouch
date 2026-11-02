@@ -38,7 +38,7 @@ async function boot(){
     document.getElementById('experiment-info').textContent='This experiment contains '+products.length+' products. Responses and nominations stay within this experiment. Only experiments explicitly included by the organizer contribute to the overall leaderboard.';
     if(new URLSearchParams(location.search).has('overall')){await overall();return}
     if(experiment.closed){screen='board';await refreshCommunity();board();app.insertAdjacentHTML('afterbegin','<p class="save-error" role="status">This experiment has closed. Results are available; new responses are paused.</p>');return}
-    await track('visit');const data=await api('/api/me');state.nomination=data.nomination;await refreshCommunity();render();
+    await track('visit');const data=await api('/api/me');state.nominations=data.nominations||[];state.nomination=data.nomination;await refreshCommunity();render();
   }catch(error){app.innerHTML='<section class="board"><h1>Could not open the experiment.</h1><p role="alert">'+esc(error.message)+'</p><button class="primary" id="retry-load">Try again</button></section>';document.getElementById('retry-load').onclick=boot}
 }
 boot();

@@ -13,3 +13,29 @@ test('selected live products retain identity/photo and automatically join after 
 test('changing a nomination replaces the active entry, preserves history, and does not add nominators',async t=>{const f=await fixture(t),a=browser(f),b=browser(f),admin=browser(f);await a('/api/nominations',{name:'First sunscreen'});await a('/api/nominations',{name:'Second sunscreen'});await b('/api/nominations',{name:'Second sunscreen'});const summary=(await admin('/api/admin/summary')).data;assert.equal(summary.nominationSubmitters,2);assert.equal(summary.nominations.length,1);assert.equal(summary.nominations[0].nominators,2);assert.equal((await a('/api/me')).data.nomination.name,'Second sunscreen')});
 
 test('base leaderboard uses shared real votes and replaces repeat verdicts',async t=>{const f=await fixture(t),a=browser(f),b=browser(f);assert.equal((await a('/api/board')).data.products[0].score,null);await a('/api/events',{type:'answer',productId:'boj',value:'yes'});assert.equal((await b('/api/board')).data.products[0].score,'10.0');await b('/api/events',{type:'answer',productId:'boj',value:'no'});assert.equal((await a('/api/board')).data.products[0].score,'5.0');await a('/api/events',{type:'answer',productId:'boj',value:'no'});assert.equal((await a('/api/board')).data.products[0].score,'0.0');await a('/api/events',{type:'answer',productId:'boj',value:'skip'});assert.equal((await a('/api/board')).data.products[0].score,'0.0')});
+
+test('multiple nominations save atomically, deduplicate per product, persist, and support removals',async t=>{
+  const catalog=['first','second'].map(id=>({id,brand:'Example',name:id+' SPF',image:'https://example.com/'+id+'.png',url:'https://example.com/'+id,onBoardId:null}));
+  const productSearch={find:async id=>catalog.find(p=>p.id===id)||null,search:async()=>({products:catalog})};
+  const f=await fixture(t,{productSearch}),a=browser(f),b=browser(f),admin=browser(f);
+  await a('/api/nominations',{name:'Existing name'});
+  assert.equal((await a('/api/me')).data.nominations.length,1);
+  const nominations=[{productId:'first'},{productId:'second'},{name:'Manual SPF'},{productId:'first'}];
+  let saved=await a('/api/nominations',{nominations});assert.equal(saved.data.nominations.length,3);
+  await a('/api/nominations',{nominations});
+  let groups=(await admin('/api/admin/summary')).data.nominations;
+  assert.ok(groups.every(g=>g.nominators===1));
+  assert.equal((await a('/api/nominations',{nominations:[{productId:'first'},{productId:'invalid'}]})).status,400);
+  assert.equal((await a('/api/me')).data.nominations.length,3);
+  await b('/api/nominations',{nominations:[{productId:'first'},{productId:'second'}]});
+  assert.equal((await a('/api/community')).data.products.length,2);
+  await f.restart();assert.equal((await a('/api/me')).data.nominations.length,3);
+  await a('/api/nominations',{nominations:[{productId:'second'}]});
+  assert.equal((await a('/api/me')).data.nominations.length,1);
+  assert.equal((await a('/api/community')).data.products.length,1);
+  const exported=(await admin('/api/admin/export')).data.data;
+  assert.ok(exported.nominationHistory.some(n=>n.name==='Existing name'));
+  assert.ok(exported.nominationHistory.some(n=>n.product?.id==='first'));
+  await a('/api/nominations',{nominations:[]});assert.deepEqual((await a('/api/me')).data.nominations,[]);
+  assert.equal((await a('/api/me')).data.nomination,null);
+});

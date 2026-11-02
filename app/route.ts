@@ -1,2 +1,5 @@
-import html from '../public/index.html?raw';
-export async function GET(){return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'}})}
+import home from '../lib/home-page.html?raw';
+import experiment from '../lib/experiment-page.html?raw';
+import {experimentPage} from '../lib/experiment-pages.mjs';
+import {hostedApi} from '../lib/hosted-api';
+export async function GET(request:Request){return experimentPage(request,{home,experiment,api:hostedApi})}

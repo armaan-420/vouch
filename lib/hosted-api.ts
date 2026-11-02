@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers';
 import {createD1Store} from './d1-store';
 import {createProductSearch} from '../product-search.mjs';
-import {createVouchApi} from './vouch-api.mjs';
+import {createExperimentApi} from './experiment-api.mjs';
 import initialCatalog from '../data/catalog-bootstrap.json';
 let searchPromise:ReturnType<typeof createProductSearch>|undefined;
 export function isOrganizer(request:Request){
@@ -15,5 +15,5 @@ export async function hostedApi(request:Request){
   const store=createD1Store(env.DB);
   searchPromise??=createProductSearch({storage:store.catalog,initialCatalog});
   const search=await searchPromise;
-  return createVouchApi({store,search,authorizeAdmin:isOrganizer})(request);
+  return createExperimentApi({store,search,authorizeAdmin:isOrganizer})(request);
 }

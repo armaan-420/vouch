@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+const origin='http://127.0.0.1:4175';
+function browser(){let jar={};return async(p,payload)=>{const r=await fetch(origin+p,{method:payload?'POST':'GET',headers:{Cookie:Object.entries(jar).map(([k,v])=>`${k}=${v}`).join('; '),...(payload?{'Content-Type':'application/json'}:{})},body:payload?JSON.stringify(payload):undefined,redirect:'manual'});for(const c of r.headers.getSetCookie()){const [k,v]=c.split(';')[0].split('=');jar[k]=v}const text=await r.text();let data;try{data=JSON.parse(text)}catch{data=text}return {status:r.status,data,location:r.headers.get('location')}}}
+const a=browser(),b=browser(),admin=browser();assert.equal((await a('/api/admin/summary')).status,401);assert.equal((await a('/admin.html')).status,404);
+await a('/api/events',{type:'visit'});await b('/api/events',{type:'visit'});
+await Promise.all([a('/api/events',{type:'answer',productId:'boj',value:'yes'}),b('/api/events',{type:'answer',productId:'boj',value:'no'})]);let board=(await a('/api/board')).data;assert.equal(board.products.find(p=>p.id==='boj').score,'5.0');
+const ids=['eltamd','skin1004','supergoop','roundlab','medicube','mixsoon','innisfree'];await Promise.all(ids.map(productId=>a('/api/events',{type:'answer',productId,value:'skip'})));await a('/api/events',{type:'leaderboard'});
+await admin('/signin-with-chatgpt?return_to=/admin');const stats=await admin('/api/admin/summary');assert.equal(stats.status,200);assert.ok(stats.data.completed>=1);assert.equal((await admin('/admin')).status,200);
+const search=await a('/api/products/search?q=Isntree%20Watery');assert.equal(search.status,200);const product=search.data.products[0];assert.ok(product?.image);await a('/api/nominations',{productId:product.id});assert.equal((await b('/api/nominations',{productId:product.id})).data.qualified,true);assert.ok((await a('/api/community')).data.products.some(p=>p.communityNominated&&p.image===product.image));
+console.log('Hosted runtime verified: concurrent voting, all-card completion, private admin, live search, two-person nominations, real photos.');

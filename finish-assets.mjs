@@ -1,3 +1,0 @@
-import fs from 'node:fs/promises';
-const items=[['boj','https://beautyofjoseon.com','relief-sun-rice-probiotics'],['skin1004','https://skin1004.com','hyalu-cica-water-fit-sun-serum-uv'],['roundlab','https://roundlab.com','birch-moisturizing-uv-sunscreen'],['mixsoon','https://mixsoon.us','mixsoon-bean-sunscreen-50ml'],['innisfree','https://us.innisfree.com','daily-uv-defense-sunscreen-spf-50']];
-await Promise.all(items.map(async([id,site,handle])=>{const d=await(await fetch(site+'/products.json?limit=250')).json();const p=d.products.find(p=>p.handle===handle);const r=await fetch(p.images[0].src);await fs.writeFile('dist/assets/'+id+'.png',Buffer.from(await r.arrayBuffer()));console.log(id,p.title)}));

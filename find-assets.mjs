@@ -1,2 +1,0 @@
-const sites=['https://beautyofjoseon.com','https://skin1004.com','https://roundlab.com','https://mixsoon.us','https://us.innisfree.com'];
-await Promise.all(sites.map(async s=>{try{const r=await fetch(s+'/products.json?limit=250');const d=await r.json();console.log(s,JSON.stringify(d.products.filter(p=>/sun|uv defense/i.test(p.title)).map(p=>({title:p.title,handle:p.handle,image:p.images?.[0]?.src}))))}catch(e){console.log(s,e.message)}}));

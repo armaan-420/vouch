@@ -76,3 +76,29 @@ test('SKU identity stays stable across experiments, invalid photo links are reje
   await admin('/api/admin/experiment-settings',{id:'hair-a',closed:false,includeInOverall:true});
   assert.equal((await admin('/api/overall')).data.products[0].id,sku.id);
 });
+
+test('schedules persist per experiment, validate atomically, and gate collection while keeping results readable',async t=>{
+ const f=await fixture(t),admin=f.browser(),visitor=f.browser();
+ for(const id of ['timed-a','timed-b'])await admin('/api/admin/experiments',experiment(id));
+ const settings={id:'timed-a',closed:false,includeInOverall:false};
+ const startsAt=new Date(Date.now()+3600000).toISOString(),endsAt=new Date(Date.now()+7200000).toISOString();
+ assert.equal((await admin('/api/admin/experiment-settings',{...settings,startsAt,endsAt})).status,200);
+ assert.equal((await visitor('/api/experiment?experiment=timed-a')).data.experiment.startsAt,startsAt);
+ assert.equal((await visitor('/api/experiment?experiment=timed-b')).data.experiment.startsAt,null);
+ for(const pair of [{startsAt,endsAt:null},{startsAt:null,endsAt},{startsAt:endsAt,endsAt:startsAt},{startsAt:'invalid',endsAt},{startsAt:123,endsAt}])assert.equal((await admin('/api/admin/experiment-settings',{...settings,...pair})).status,400);
+ assert.equal((await visitor('/api/experiment?experiment=timed-a')).data.experiment.endsAt,endsAt);
+ assert.equal((await visitor('/api/events?experiment=timed-a',{type:'start'})).status,409);
+ assert.equal((await visitor('/api/nominations?experiment=timed-a',{name:'Example sunscreen'})).status,409);
+ assert.equal((await visitor('/api/board?experiment=timed-a')).status,200);
+ const past=new Date(Date.now()-7200000).toISOString();
+ await admin('/api/admin/experiment-settings',{...settings,startsAt:past,endsAt:new Date(Date.now()-3600000).toISOString()});
+ assert.equal((await visitor('/api/events?experiment=timed-a',{type:'answer',productId:'boj',value:'yes'})).status,409);
+ assert.equal((await visitor('/api/board?experiment=timed-a')).status,200);
+ await admin('/api/admin/experiment-settings',{...settings,startsAt:past,endsAt});
+ assert.equal((await visitor('/api/events?experiment=timed-a',{type:'answer',productId:'boj',value:'yes'})).status,200);
+ await admin('/api/admin/experiment-settings',{...settings,closed:true});
+ assert.equal((await visitor('/api/events?experiment=timed-a',{type:'start'})).status,409);
+ assert.equal((await visitor('/api/experiment?experiment=timed-a')).data.experiment.endsAt,endsAt);
+ await admin('/api/admin/experiment-settings',{...settings,startsAt:null,endsAt:null});
+ assert.equal((await visitor('/api/events?experiment=timed-a',{type:'start'})).status,200);
+});

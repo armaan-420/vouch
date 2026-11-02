@@ -14,3 +14,5 @@
 .product-result.search-active{outline:2px solid #657044;outline-offset:-2px}.selected-result small{display:block;font-size:11px;line-height:1.5;color:#636d52;margin-top:5px}#nomination-saved{font-size:13px;line-height:1.5;color:#546042}
 
 .score-guide{margin:0 0 24px;color:var(--muted);font-size:12px;line-height:1.6}.score-guide summary{cursor:pointer;text-decoration:underline;text-underline-offset:4px}.score-guide p{margin:12px 0 0;max-width:620px}
+
+.experiment-timer{margin:24px 0;padding:20px 24px;background:#e8edda;border:1px solid #d6ddc6;border-radius:14px;text-align:left}.experiment-timer .timer-label{margin:0;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#546042}.experiment-timer .timer-value{margin:8px 0;font-size:36px;line-height:1.15;font-variant-numeric:tabular-nums;letter-spacing:1px;color:var(--ink)}.experiment-timer .timer-dates{margin:8px 0 0;font-size:11px;line-height:1.7;color:var(--muted)}button:disabled{cursor:default;opacity:.5}@media(max-width:700px){.experiment-timer{padding:18px}.experiment-timer .timer-value{font-size:30px}}

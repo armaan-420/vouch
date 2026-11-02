@@ -28,7 +28,7 @@ function chosenProducts(){return [...document.querySelectorAll('input[name="expe
 function renderCatalogSelection(){
  const selected=document.getElementById('catalog-selected');if(!selected)return;
  selected.innerHTML=chosenProducts().map(input=>'<span class="selection-chip" title="'+safe(input.dataset.label||input.value)+'"><span>'+safe(input.dataset.label||input.value)+'</span><button type="button" data-unselect="'+safe(input.value)+'" aria-label="Remove '+safe(input.dataset.label||input.value)+'">×</button></span>').join('');
- selected.querySelectorAll('[data-unselect]').forEach(button=>button.onclick=()=>{const input=[...document.querySelectorAll('input[name="experiment-product"]')].find(i=>i.value===button.dataset.unselect);if(input)input.checked=false;renderCatalogSelection();highlightCatalog();catalogInput.focus()});
+ selected.querySelectorAll('[data-unselect]').forEach(button=>button.onclick=()=>{const input=[...document.querySelectorAll('input[name="experiment-product"]')].find(i=>i.value===button.dataset.unselect);if(input)input.checked=false;renderCatalogSelection();highlightCatalog();catalogStatus.textContent=chosenProducts().length+' selected. Keep searching to add more.';catalogInput.focus()});
 }
 function highlightCatalog(){
  const chosen=new Set(chosenProducts().map(i=>i.value));

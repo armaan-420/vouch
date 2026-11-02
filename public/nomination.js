@@ -12,7 +12,7 @@ function mountNomination(){
   function collapse(){results.innerHTML='';input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');active=-1}
   function selection(){
     selected.innerHTML=selectedNominations.map((n,i)=>{const p=n.product,label=p?[p.brand,p.name].filter(Boolean).join(' — '):n.name;return `<span class="selection-chip" title="${esc(label)}"><span>${esc(label)}</span><button type="button" data-remove="${i}" aria-label="Remove ${esc(label)}">×</button></span>`}).join('');
-    selected.querySelectorAll('[data-remove]').forEach(b=>{b.disabled=saving;b.onclick=()=>{selectedNominations.splice(Number(b.dataset.remove),1);changed();selection();highlight();input.focus()}});
+    selected.querySelectorAll('[data-remove]').forEach(b=>{b.disabled=saving;b.onclick=()=>{selectedNominations.splice(Number(b.dataset.remove),1);changed();selection();highlight();status.textContent=selectedNominations.length+' selected. Keep searching to add more.';input.focus()}});
     const canSave=!!selectedNominations.length||!!(state.nominations||[]).length;
     submit.hidden=!canSave;topSubmit.disabled=saving||!canSave;
     submit.textContent=saving?'Saving nominations…':selectedNominations.length?`Save ${selectedNominations.length} nomination${selectedNominations.length===1?'':'s'}`:'Clear saved nominations';

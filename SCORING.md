@@ -25,6 +25,6 @@ No valid verdicts returns null in the API and Unrated in the UI. Haven’t tried
 
 The 0.25 / 0.5 adjustment is a light neutral prior: sparse unanimous votes approach the extremes as supporting evidence grows. Balanced votes stay at 5.0. This is a product scoring choice, not a statistically calibrated confidence estimate or a personalized fit score. Anonymous browsers are not verified people. Small samples can still move sharply. A new pass can lower a score, including a previously earned 10.0.
 
-All scores are computed from retained votes when read; no migration or vote reset is needed. Public vote counts and a /10 suffix remain hidden. The board’s expandable explanation and prototype information describe the model.
+All scores are computed from retained votes when read; no migration or vote reset is needed. Public vote counts and a /10 suffix remain hidden. A visible statement at the top of each rankings page explains that scores reflect the collective pool of community votes: the current experiment on category boards, or included experiments on the overall board. The board’s expandable explanation and prototype information describe the model.
 
 Implementation: lib/vouch-api.mjs, shared voteScore function. Regression coverage: test/scoring.test.mjs plus server and experiment API tests.

@@ -64,3 +64,7 @@ The audit identified affected Next.js, Zod, sharp and transitive production pack
 The live deployment is Sites version 2, source `e767ea109322086e101a1ae185cb587cb703025d`. Confirmed HTTPS responses on `v4ch.app`, D1 health, experiment pages and the overall API. Signed into the live organizer dashboard, created `system-verification-20261101`, submitted one vote, confirmed its score from another anonymous request, checked its completion metric, and downloaded and inspected its full JSON export. Then closed that experiment and confirmed the server rejects further votes with HTTP 409. It remains clearly labeled **System verification — excluded**, closed and excluded from the overall leaderboard. Original sunscreen scores remain unrated; the overall leaderboard still contains no included experiments.
 
 Unauthenticated organizer configuration/export requests return 401. A forged organizer email header also returns 401. Final local validation: 12 automated tests passed, the production build passed, and TypeScript checking passed. The live organizer screenshot is saved beside the project as `vouch-organizer-audit.jpg`.
+
+## Dynamic score update — November 1, 2026
+
+Founder-approved score model: see [SCORING.md](SCORING.md). All experiment, community and overall results use the shared voteScore function. Existing votes recalculate at read time; no vote migration is needed. The public boards and prototype information explain the model. Earlier deployment verification above is historical.

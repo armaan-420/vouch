@@ -12,3 +12,5 @@
 
 .product-placeholder{display:flex;align-items:center;justify-content:center;width:100%;min-height:220px;font-size:120px;color:var(--ink);opacity:.35}.rank-row .community-icon{flex-shrink:0}
 .product-result.search-active{outline:2px solid #657044;outline-offset:-2px}.selected-result small{display:block;font-size:11px;line-height:1.5;color:#636d52;margin-top:5px}#nomination-saved{font-size:13px;line-height:1.5;color:#546042}
+
+.score-guide{margin:0 0 24px;color:var(--muted);font-size:12px;line-height:1.6}.score-guide summary{cursor:pointer;text-decoration:underline;text-underline-offset:4px}.score-guide p{margin:12px 0 0;max-width:620px}

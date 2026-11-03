@@ -1,3 +1,4 @@
+import {bucketPhotoStorage} from './profile-photo.mjs';
 import {getExecutionContext} from './execution-context';
 import { env } from 'cloudflare:workers';
 import {createD1Store} from './d1-store';
@@ -19,5 +20,5 @@ export async function hostedApi(request:Request){
   const search=await searchPromise;
   const ctx=getExecutionContext();
   const requestSearch={find:search.find,search:(q:string)=>search.search(q,{waitUntil:ctx?(p:Promise<unknown>)=>ctx.waitUntil(p):undefined})};
-  return createApplicationApi({store,search:requestSearch,authorizeAdmin:isOrganizer,authOptions:{secret:env.VOUCH_AUTH_SECRET,sendCode:createResendDelivery({apiKey:env.RESEND_API_KEY,from:env.VOUCH_EMAIL_FROM}),previewDelivery:import.meta.env.DEV&&!env.RESEND_API_KEY}})(request);
+  return createApplicationApi({store,search:requestSearch,authorizeAdmin:isOrganizer,photoStorage:bucketPhotoStorage(env.BUCKET),authOptions:{secret:env.VOUCH_AUTH_SECRET,sendCode:createResendDelivery({apiKey:env.RESEND_API_KEY,from:env.VOUCH_EMAIL_FROM}),previewDelivery:import.meta.env.DEV&&!env.RESEND_API_KEY}})(request);
 }

@@ -179,3 +179,28 @@ test('refreshing a review replaces unused snapshots while consumed claims remain
   assert.equal((await f.claim(latest)).status,200);
   const after=await (await f.store.scope('accounts-v1')).read();assert.equal(after.tickets[latest.claimToken].items,undefined);
 });
+
+test('profile bio validates, trims and persists without leaking non-vouches or private history',async t=>{
+  const f=await setup(t);f.answer('sku-one','yes');f.answer('sku-two','no');f.answer('sku-three','brand');
+  const claimed=await f.claim(await f.preview(),'alice',undefined,{visibility:'public'});
+  const handle=claimed.data.profile.handle;
+  assert.equal((await f.call('/api/account/profile',{identity:'alice',body:{bio:'x'.repeat(161)}})).status,400);
+  assert.equal((await f.call('/api/account/profile',{identity:'alice',body:{bio:{text:'bad'}}})).status,400);
+  assert.equal((await f.call('/api/account/profile',{identity:'alice',body:{displayName:'A'}})).status,400);
+  const result=await f.call('/api/account/profile',{identity:'alice',body:{bio:'  <script>sample</script>  ',opinions:products.map(p=>({productId:p.id,visibility:'public'}))}});
+  assert.equal(result.data.profile.bio,'<script>sample</script>');assert.equal(result.data.profile.opinions.length,3);
+  const pub=(await f.call('/api/profiles/'+handle)).data.profile;
+  assert.equal(pub.opinions.length,1);assert.equal(pub.opinions[0].productId,'sku-one');assert.equal(pub.opinions[0].vouchedAt,when);assert.equal(pub.createdAt,result.data.profile.createdAt);
+  assert.equal(pub.history,undefined);assert.equal(pub.milestones,undefined);assert.equal(pub.opinions[0].sourceProductId,undefined);assert.equal(pub.opinions[0].experimentId,undefined);
+  await f.call('/api/account/profile',{identity:'alice',body:{bio:'',opinions:[{productId:'sku-one',visibility:'private'}]}});
+  assert.equal((await f.call('/api/profiles/'+handle)).data.profile.opinions.length,0);
+  await f.call('/api/account/profile',{identity:'alice',body:{visibility:'private'}});
+  assert.equal((await f.call('/api/profiles/'+handle)).status,404);
+});
+
+test('history retains first item-vouch date across subsequent verdict and visibility changes',async t=>{
+ const f=await setup(t);f.answer('sku-one','yes');await f.claim(await f.preview());
+ await f.call('/api/account/profile',{identity:'alice',body:{opinions:[{productId:'sku-one',verdict:'no'}]}});
+ const result=await f.call('/api/account/profile',{identity:'alice',body:{opinions:[{productId:'sku-one',verdict:'yes',visibility:'public'}]}});
+ assert.equal(result.data.profile.opinions[0].vouchedAt,when);
+});

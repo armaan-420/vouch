@@ -2,6 +2,10 @@
 
 A product recommendation network with category experiments, community standings, and personal product collections. The original public sunscreen experiment lets participants vote Pass, Vouch for brand, Vouch for item, or Haven’t tried; explore a community leaderboard; search for and nominate a missing product.
 
+## Product library and tags
+
+The organizer includes eight water bottle SKUs ready for a future Water bottles experiment and a reusable tag system for every identified Vouch product. Global tags and category-specific tags are managed in Product library & tags. Tags are organizer curation, with no automatic performance or popularity claims. See [PRODUCT_TAGS.md](PRODUCT_TAGS.md) for setup, storage, supported products, and limitations.
+
 ## Accounts and product profiles
 
 Participants finish the experiment and see the standings before an optional Save my picks invitation. Signed-out participants who answered every selected card see a small modal after scrolling past the third ranked product (or viewing the last product on a shorter board). It appears once per experiment per tab visit, is dismissible without losing scroll position, and never gates results. Email-code signup happens inside the modal, followed by explicit contribution and visibility review. Participants save a private collection and can publish selected opinions. Item vouches, passes, and brand trust remain separate. Existing experiment responses and scoring remain preserved. See [ACCOUNT_PREVIEW.md](ACCOUNT_PREVIEW.md) for flow, data ownership, checks, and limitations, and [AUTH_SETUP.md](AUTH_SETUP.md) for real-email configuration. The loopback development preview uses a clearly labeled local test inbox and sends no email. Hosted email uses Resend with server-only configuration; an available auth status confirms configuration, not inbox delivery. Suggestions, trusted-contributor recognition and discounts are upcoming features, clearly labeled in the invitation.

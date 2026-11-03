@@ -52,3 +52,35 @@ test('account flow claims private opinions, publishes consenting contributors, s
  const historical=(await observer('/api/admin/export')).data.data;assert.equal(Object.keys(historical.baseVotes.boj).length,3,'expired browser adds a fresh response rather than overwriting a prior participant');
  assert.equal((await observer('/sunscreen')).status,200);assert.equal((await observer('/account')).status,200);assert.equal((await observer('/products/'+encodeURIComponent(productId))).status,200);
 });
+
+test('water bottle answers from signed-in accounts save across all nine products and a fresh browser, without sweeping anonymous history',async t=>{
+ const {WATER_BOTTLES}=await import('../lib/water-bottles.mjs');
+ const {browser,advanceAuth}=await fixture(t),admin=browser(),a=browser(),observer=browser();
+ assert.equal((await admin('/api/admin/experiments',{id:'waterbottle',title:'The Wharton Water Bottle Edit',category:'Water bottles',productIds:WATER_BOTTLES.map(p=>p.id)})).status,201);
+ await signin(a,'bottle-member@example.test');
+ // First signed-in answer creates both a visitor and a private collection.
+ let r=await a('/api/events',{type:'answer',productId:'boj',value:'yes'});assert.equal(r.data.profileSync,'saved');
+ await a('/api/account/profile',{visibility:'public',opinions:[{productId:'boj',visibility:'public'}]});
+ const choices=['yes','yes','brand','no','skip','yes','no','brand','yes'];
+ for(let i=0;i<WATER_BOTTLES.length;i++){r=await a('/api/events?experiment=waterbottle',{type:'answer',productId:WATER_BOTTLES[i].id,value:choices[i]});assert.equal(r.status,200,JSON.stringify(r.data));assert.equal(r.data.profileSync,'saved')}
+ let profile=(await a('/api/account/me')).data.profile;
+ assert.equal(profile.opinions.length,9);const bottles=profile.opinions.filter(o=>o.experimentId==='waterbottle');assert.equal(bottles.length,8);assert.equal(bottles.filter(o=>o.verdict==='yes').length,4);assert.ok(bottles.every(o=>o.visibility==='private'&&o.product.category==='Water bottles'&&o.product.image));
+ assert.equal((await observer('/api/profiles/'+profile.handle)).data.profile.opinions.length,1,'new bottle vouches stay private on a public profile');
+ advanceAuth();const b=browser();await b('/api/events',{type:'answer',productId:'eltamd',value:'no'});await signin(b,'bottle-member@example.test');
+ r=await b('/api/events?experiment=waterbottle',{type:'answer',productId:WATER_BOTTLES[0].id,value:'no'});assert.equal(r.data.profileSync,'saved');
+ profile=(await b('/api/account/me')).data.profile;assert.equal(profile.opinions.find(o=>o.productId===WATER_BOTTLES[0].id).verdict,'no');assert.ok(!profile.opinions.some(o=>o.productId==='eltamd'),'anonymous history requires explicit review');
+ await b('/api/events?experiment=waterbottle',{type:'answer',productId:WATER_BOTTLES[1].id,value:'skip'});profile=(await b('/api/account/me')).data.profile;assert.ok(!profile.opinions.some(o=>o.productId===WATER_BOTTLES[1].id));
+ // A returning account on a browser with no visitor cookie must save its first answer too.
+ advanceAuth();const c=browser();await signin(c,'bottle-member@example.test');r=await c('/api/events?experiment=waterbottle',{type:'answer',productId:WATER_BOTTLES[8].id,value:'brand'});assert.equal(r.status,200);assert.equal(r.data.profileSync,'saved');assert.equal((await c('/api/account/me')).data.profile.opinions.find(o=>o.productId===WATER_BOTTLES[8].id).verdict,'brand');
+});
+
+test('previously missed water bottle picks can be reviewed and recovered without recasting experiment votes',async t=>{
+ const {WATER_BOTTLES}=await import('../lib/water-bottles.mjs');const {browser}=await fixture(t),admin=browser(),a=browser();
+ await admin('/api/admin/experiments',{id:'waterbottle',title:'Water Bottle Edit',category:'Water bottles',productIds:WATER_BOTTLES.map(p=>p.id)});
+ for(const p of WATER_BOTTLES)await a('/api/events?experiment=waterbottle',{type:'answer',productId:p.id,value:'yes'});
+ const before=(await admin('/api/admin/export?experiment=waterbottle')).data.data;
+ await signin(a,'recover-bottles@example.test');const edit=(await a('/api/account/edit?experiment=waterbottle')).data;assert.equal(edit.opinions.length,9);
+ const claimed=await a('/api/account/claim',{claimToken:edit.claimToken,opinions:edit.opinions.map(p=>({productId:p.productId,visibility:'private'}))});assert.equal(claimed.status,200);assert.equal(claimed.data.profile.opinions.length,9);
+ const after=(await admin('/api/admin/export?experiment=waterbottle')).data.data;assert.deepEqual(after,before);
+ assert.equal((await a('/api/account/me')).data.profile.counts.yes,9);
+});

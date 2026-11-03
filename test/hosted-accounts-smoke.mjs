@@ -20,7 +20,12 @@ response=await observer('/api/products/boj');assert.ok(response.data.contributor
 assert.equal((await a('/api/events?experiment='+id,{type:'answer',productId:'boj',value:'no'})).status,200);
 response=await a('/api/account/me');assert.equal(response.data.profile.opinions.find(x=>x.productId==='boj').verdict,'no');
 const exported=await admin('/api/admin/export?experiment='+id);assert.equal(exported.status,200);assert.equal(Object.keys(exported.data.data.baseVotes.boj).length,1);
+const {WATER_BOTTLES}=await import('../lib/water-bottles.mjs');const bottleId='bottles-check-'+stamp;
+assert.equal((await admin('/api/admin/experiments',{id:bottleId,title:'Local water bottle account verification',category:'Water bottles',productIds:WATER_BOTTLES.map(p=>p.id)})).status,201);
+for(const p of WATER_BOTTLES){const result=await a('/api/events?experiment='+bottleId,{type:'answer',productId:p.id,value:'yes'});assert.equal(result.status,200,JSON.stringify(result.data));assert.equal(result.data.profileSync,'saved')}
+response=await a('/api/account/me');const bottles=response.data.profile.opinions.filter(o=>o.experimentId===bottleId);assert.equal(bottles.length,9);assert.ok(bottles.every(o=>o.product.category==='Water bottles'&&o.visibility==='private'&&o.product.image));
+await admin('/api/admin/experiment-settings',{id:bottleId,closed:true,includeInOverall:false});
 await a('/api/auth/logout',{});assert.equal((await a('/api/account/me')).data.authenticated,false);
 assert.equal((await a('/api/account/edit?experiment='+id)).data.opinions.length,0);
 await admin('/api/admin/experiment-settings',{id,closed:true,includeInOverall:false});
-console.log('Local Cloudflare/D1 account flow passed: anonymous votes, email code, private claim, selective publication, targeted opinion sync, historical response preservation and logout isolation.');
+console.log('Local Cloudflare/D1 account flow passed: anonymous votes, email code, private claim, selective publication, targeted opinion sync, all nine water bottle vouches saved to the account, historical response preservation and logout isolation.');

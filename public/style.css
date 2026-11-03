@@ -108,3 +108,5 @@
 .small-link{color:inherit}
 h1[tabindex="-1"]:focus:not(:focus-visible),h2[tabindex="-1"]:focus:not(:focus-visible){outline:none}
 h1[tabindex="-1"]:focus-visible,h2[tabindex="-1"]:focus-visible{outline:3px solid #828e31;outline-offset:4px}
+
+.collection-sync-notice{padding:18px 20px;border:1px solid var(--line);border-radius:12px;margin-top:24px;font-size:13px;line-height:1.7;background:#eef0e3}.collection-sync-notice a{color:inherit;font-weight:600}

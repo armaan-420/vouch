@@ -86,9 +86,10 @@ test('changed review snapshots and expired tickets require review instead of sil
   assert.equal((await f.claim(newer)).status,409);
 });
 
-test('signed-in synchronization requires an explicitly claimed browser and never sweeps unrelated responses',async t=>{
+test('signed-in answers connect a new browser while leaving unrelated anonymous responses unclaimed',async t=>{
   const f=await setup(t);f.answer('sku-one','yes');f.answer('sku-two','no');
-  assert.equal((await f.api.syncAccountOpinions(f.request('/',{identity:'alice'}),'first','sku-one')).synced,0);
+  assert.equal((await f.api.syncAccountOpinions(f.request('/',{identity:'alice'}),'first','sku-one')).synced,1);
+  assert.deepEqual((await f.call('/api/account/me',{identity:'alice'})).data.profile.opinions.map(o=>o.productId),['sku-one']);
   await f.claim(await f.preview(),'alice',[{productId:'sku-one',visibility:'public'}],{visibility:'public'});
   f.answer('sku-three','brand',{at:'2026-11-02T11:00:00.000Z'});
   assert.equal((await f.api.syncAccountOpinions(f.request('/',{identity:'alice'}),'first','sku-three')).synced,1);

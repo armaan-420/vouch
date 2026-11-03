@@ -64,3 +64,7 @@ Experiments present one product per brand (case, accents, spacing and punctuatio
 ## Standings presentation
 
 The top-right action is Create Account when signed out and My Account when signed in. Product images, brands, and names open public contributor pages; participant actions stay left-aligned. Public contributors require both a public profile and a public opinion. Scores remain anonymous experiment aggregates. Numeric score colors: green at 8.0+, black at 6.5–7.9, yellow at 5.0–6.4, red below 5.0; Unrated stays neutral. The expandable score guide is removed from standings; scoring information remains in Prototype info and SCORING.md.
+
+## Current published release
+
+Sites version 18 is live at https://v4ch.app/sunscreen, application source `964eed08e54bb59026daa81ac102e55ddd7f8713`, deployment `appgdep_6ae932bf595881919473372685607cfe`, environment revision 3. Release notes are in [docs/releases/2026-11-02-v18.md](docs/releases/2026-11-02-v18.md) and the canonical [Notion changelog](https://app.notion.com/p/40cd2a3caa8a812d83f4f3d13065be2d). Current production assets match source; account navigation works and email signup is configured without preview delivery. Actual inbox receipt/sign-in is pending owner testing.

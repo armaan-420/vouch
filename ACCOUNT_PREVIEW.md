@@ -1,6 +1,6 @@
 # Vouch accounts and product profiles — implementation and verification
 
-Initial implementation and local review: November 2, 2026. This document describes the current behavior and preserves the earlier verification history below. Production release status, exact source and deployment evidence are recorded in the canonical Notion changelog and repository docs/releases. During release preparation, the previously live version 17 was verified succeeded with environment revision 3; the current complete change set is being packaged for publication.
+Initial implementation and local review: November 2, 2026. This document describes the current behavior and preserves the earlier verification history below. Production release status, exact source and deployment evidence are recorded in the canonical Notion changelog and repository docs/releases. Production release: Sites version 18, source `964eed08e54bb59026daa81ac102e55ddd7f8713`, deployment `appgdep_6ae932bf595881919473372685607cfe`, environment revision 3, succeeded on November 2, 2026. GitHub contains the exact application commit. The canonical Notion changelog and 13 related working/index pages were updated. Actual production inbox delivery/sign-in remains unverified; the owner deferred this check.
 
 ## Participant flow
 

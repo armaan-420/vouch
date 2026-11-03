@@ -1,0 +1,22 @@
+{
+  "project": "Vouch",
+  "notion_changelog_url": "https://app.notion.com/p/40cd2a3caa8a812d83f4f3d13065be2d",
+  "notion_changelog_page_id": "40cd2a3c-aa8a-812d-83f4-f3d13065be2d",
+  "last_documented_commit": "964eed08e54bb59026daa81ac102e55ddd7f8713",
+  "last_documented_sites_version": 18,
+  "sites_project_id": "appgprj_6ae5468eccc88191ad1d6413c672392a",
+  "deployment_id": "appgdep_6ae932bf595881919473372685607cfe",
+  "deployment_status": "succeeded",
+  "publication_date": "2026-11-02",
+  "timezone": "America/New_York",
+  "source_worktree_at_publication": "clean application commit; publication documentation committed separately",
+  "validation": "48 automated tests; local Cloudflare/D1 account smoke; browser desktop/mobile signup and privacy; production build; HTTPS page/assets/auth/admin checks; production account navigation. Actual production inbox/sign-in deferred.",
+  "trigger": "On user request to publish Vouch release notes, log changes, or update Notion after project work; no scheduled watcher.",
+  "environment_revision": 3,
+  "notion_pages_updated": 14,
+  "github_repository_url": "https://github.com/armaan-420/vouch-wharton-sunscreen-edit",
+  "live_url": "https://v4ch.app/sunscreen",
+  "pending_checks": [
+    "Actual production inbox delivery and full email-code sign-in"
+  ]
+}

@@ -4,7 +4,7 @@ Implemented November 2, 2026. The organizer at `/admin` has a Product library & 
 
 ## Water bottle starter catalog
 
-Eight stable SKU identities are seeded additively into the shared `experiment-registry` record on the first API request after deployment. Existing records are preserved. The starter list is in `lib/water-bottles.mjs`, with manufacturer links and a November 2, 2026 verification date:
+Nine stable SKU identities are seeded additively into the shared `experiment-registry` record on the first API request after deployment. Existing records are preserved. The starter list is in `lib/water-bottles.mjs`, with manufacturer links and a November 2, 2026 verification date:
 
 - Owala FreeSip Stainless Steel 24 oz
 - Hydro Flask Wide Mouth with Flex Straw Cap 32 oz
@@ -14,10 +14,13 @@ Eight stable SKU identities are seeded additively into the shared `experiment-re
 - CamelBak Eddy+ Insulated Stainless Steel 25 oz
 - Klean Kanteen Classic with Flip Seal Sport Cap 27 oz
 - S’well Original Bottle 17 oz
+- Takeya Actives Water Bottle with Straw Lid 24 oz
 
-These are a curated starting set, not a popularity ranking or exhaustive catalog. Prices and stock are not tracked. Photos are not seeded; existing placeholder artwork is used. Different capacities and lids have distinct SKU identities. Color variants are grouped. Manufacturer links identify the product family; default color/size selection on retailer pages can change.
+These are a curated starting set, not a popularity ranking or exhaustive catalog. Prices and stock are not tracked. Product photos are served from checked-in assets under `/assets/water-bottles/`. Manufacturer image sources and retrieval dates are retained in `data/water-bottle-images.json`. Existing bottle SKU and experiment records receive missing images additively; existing custom images, votes, IDs, and experiment settings are preserved. Different capacities and lids have distinct SKU identities. Color variants are grouped. Manufacturer links identify the product family; default color/size selection on retailer pages can change.
 
-To launch later: create a separate experiment, enter category **Water bottles**, select the bottle SKUs under Choose products, and set the link ID and schedule. No bottle experiment is automatically created or opened. Current one-product-per-brand selection rules still apply. Water-bottle experiment search uses the bottle library rather than sunscreen feeds. Sunscreen nominations cannot select the bottle SKUs.
+The live experiment is `/waterbottle`, titled The Wharton Water Bottle Edit, with nine distinct brands. It was created through the organizer on November 2, 2026.
+
+To create another bottle experiment: create a separate experiment, enter category **Water bottles**, select the bottle SKUs under Choose products, and set the link ID and schedule. No bottle experiment is automatically created or opened. Current one-product-per-brand selection rules still apply. Water-bottle experiment search uses the bottle library rather than sunscreen feeds. Sunscreen nominations cannot select the bottle SKUs.
 
 ## Taxonomy and storage
 

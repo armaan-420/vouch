@@ -1,0 +1,65 @@
+[
+  {
+    "brand": "owala",
+    "image": "/assets/water-bottles/owala.png",
+    "source": "https://owalalife.com/products/freesip",
+    "imageSource": "https://cdn.shopify.com/s/files/1/0439/2537/3087/files/24ozCoastalMistFreeSip-SC-1080x1080-f521e30_1.png?v=1732127825",
+    "retrievedAt": "2026-11-02"
+  },
+  {
+    "brand": "hydroflask",
+    "image": "/assets/water-bottles/hydroflask.png",
+    "source": "https://www.hydroflask.co.nz/products/32-oz-wide-flex-straw-cap-oat",
+    "imageSource": "https://www.hydroflask.co.nz/cdn/shop/files/W32CFS114_1.png?v=1770004717&width=1000",
+    "retrievedAt": "2026-11-02"
+  },
+  {
+    "brand": "stanley",
+    "image": "/assets/water-bottles/stanley.png",
+    "source": "https://www.stanley1913.com/products/iceflow-bottle-flip-straw-2-0-24-oz",
+    "imageSource": "https://www.stanley1913.com/cdn/shop/files/Web_PNG_Square-TheIceFlowFlipStraw2.0Bottle24oz-DaffodilEmerald-Front.png?v=1781548590&width=1000",
+    "retrievedAt": "2026-11-02"
+  },
+  {
+    "brand": "yeti",
+    "image": "/assets/water-bottles/yeti.png",
+    "source": "https://www.yeti.com/drinkware/hydration/21071508305.html",
+    "imageSource": "https://yeti-webmedia.imgix.net/asset/bbc260c0-9240-42bd-a7ab-8925c98a34fa/W/YETI_Rambler_Flip_Chug_Bottle_26oz_Olive_Camo_Front_RB_1533_B.png?auto=format,compress&w=1000&h=1000",
+    "retrievedAt": "2026-11-02"
+  },
+  {
+    "brand": "nalgene",
+    "image": "/assets/water-bottles/nalgene.jpg",
+    "source": "https://nalgene.com/product/32oz-wide-mouth-bottle/",
+    "imageSource": "https://nalgene.com/wp-content/uploads/2024/01/32oz-WM-Periwinkle-Front-1.jpg",
+    "retrievedAt": "2026-11-02"
+  },
+  {
+    "brand": "camelbak",
+    "image": "/assets/water-bottles/camelbak.png",
+    "source": "https://www.camelbak.com/product/eddy%2B-25oz-water-bottle%2C-insulated-stainless-steel/CB-2809.html",
+    "imageSource": "https://vault.widen.net/content/jhlozojcsx?h=1000&w=1000",
+    "retrievedAt": "2026-11-02"
+  },
+  {
+    "brand": "kleankanteen",
+    "image": "/assets/water-bottles/kleankanteen.jpg",
+    "source": "https://www.kleankanteen.com/products/water-bottle-classic-27-oz",
+    "imageSource": "https://www.kleankanteen.com/cdn/shop/files/K27CFSS-BAL.jpg?v=1775528061&width=1000",
+    "retrievedAt": "2026-11-02"
+  },
+  {
+    "brand": "swell",
+    "image": "/assets/water-bottles/swell.jpg",
+    "source": "https://www.swell.com/products/original-bottle-17oz",
+    "imageSource": "https://www.swell.com/cdn/shop/files/5343847_5343847_SW_17OZ_STONE_TAUPE_ORIGINAL_BOTTLE_SILO_FRONT_148d.jpg?v=1792339093&width=1000",
+    "retrievedAt": "2026-11-02"
+  },
+  {
+    "brand": "takeya",
+    "image": "/assets/water-bottles/takeya.png",
+    "source": "https://takeyausa.com/products/actives-insulated-water-bottle-w-straw?variant=42050670035053",
+    "imageSource": "https://takeyausa.com/cdn/shop/products/51237-Actives-Straw-24-Bluestone-angle.png?v=1686092008&width=1000",
+    "retrievedAt": "2026-11-02"
+  }
+]

@@ -4,7 +4,7 @@ A product recommendation network with category experiments, community standings,
 
 ## Product library and tags
 
-The organizer includes eight water bottle SKUs ready for a future Water bottles experiment and a reusable tag system for every identified Vouch product. Global tags and category-specific tags are managed in Product library & tags. Tags are organizer curation, with no automatic performance or popularity claims. See [PRODUCT_TAGS.md](PRODUCT_TAGS.md) for setup, storage, supported products, and limitations.
+The organizer includes nine water bottle SKUs with product photos, used by the live `/waterbottle` experiment and a reusable tag system for every identified Vouch product. Global tags and category-specific tags are managed in Product library & tags. Tags are organizer curation, with no automatic performance or popularity claims. See [PRODUCT_TAGS.md](PRODUCT_TAGS.md) for setup, storage, supported products, and limitations.
 
 ## Accounts and product profiles
 

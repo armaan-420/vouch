@@ -7,9 +7,9 @@ import {createFileStore} from '../lib/file-store.mjs';
 import {createExperimentApi} from '../lib/experiment-api.mjs';
 import {WATER_BOTTLES} from '../lib/water-bottles.mjs';
 async function fixture(t){const directory=await fs.mkdtemp(path.join(os.tmpdir(),'vouch-tags-'));t.after(()=>fs.rm(directory,{recursive:true,force:true}));const store=await createFileStore(directory);const search={find:async id=>id==='catalog-new'?{id,brand:'New brand',name:'New sunscreen'}:null,search:async()=>({products:[],catalogCount:0})};const api=createExperimentApi({store,search,authorizeAdmin:r=>r.headers.get('x-test-admin')==='yes'});return {store,call:async(p,data,admin=true)=>{const r=await api(new Request('https://example.test'+p,{method:data===undefined?'GET':'POST',headers:{...(admin?{'x-test-admin':'yes'}:{}),...(data===undefined?{}:{'Content-Type':'application/json'})},body:data===undefined?undefined:JSON.stringify(data)}));return {status:r.status,data:await r.json()}}}}
-test('water bottle seed persists once, is selectable, and nomination lookup stays in category',async t=>{const {call,store}=await fixture(t);const list=await call('/api/admin/experiments');assert.equal(list.data.customProducts.length,8);await call('/api/health');assert.equal((await (await store.scope('experiment-registry')).read()).skus[WATER_BOTTLES[0].id].url,WATER_BOTTLES[0].url);assert.equal(list.data.experiments.length,1);
-const created=await call('/api/admin/experiments',{id:'bottles',title:'Water bottle edit',category:'Water bottles',productIds:WATER_BOTTLES.map(p=>p.id)});assert.equal(created.status,201);assert.equal(created.data.experiment.products.length,8);
-const results=await call('/api/products/search?experiment=bottles&q=water%20bottle',undefined,false);assert.equal(results.data.products.length,8);assert.equal((await call('/api/products/search?experiment=bottles&q=sunscreen',undefined,false)).data.products.length,0);
+test('water bottle seed persists once, is selectable, and nomination lookup stays in category',async t=>{const {call,store}=await fixture(t);const list=await call('/api/admin/experiments');assert.equal(list.data.customProducts.length,9);await call('/api/health');assert.equal((await (await store.scope('experiment-registry')).read()).skus[WATER_BOTTLES[0].id].url,WATER_BOTTLES[0].url);assert.equal(list.data.experiments.length,1);
+const created=await call('/api/admin/experiments',{id:'bottles',title:'Water bottle edit',category:'Water bottles',productIds:WATER_BOTTLES.map(p=>p.id)});assert.equal(created.status,201);assert.equal(created.data.experiment.products.length,9);
+const results=await call('/api/products/search?experiment=bottles&q=water%20bottle',undefined,false);assert.equal(results.data.products.length,9);assert.equal((await call('/api/products/search?experiment=bottles&q=sunscreen',undefined,false)).data.products.length,0);
 assert.equal((await call('/api/nominations?experiment=sunscreen',{productId:WATER_BOTTLES[0].id},false)).status,400);
 });
 test('global and category tags persist across experiments and support any catalog SKU',async t=>{const {call}=await fixture(t);const tags=(await call('/api/admin/tags')).data;assert.equal(Object.keys(tags.definitions).length,28);const id=WATER_BOTTLES[0].id;
@@ -31,4 +31,10 @@ test('new sunscreen definitions merge into an existing taxonomy without replacin
  assert.equal(first.seedVersion,2);assert.equal(Object.values(first.definitions).filter(t=>t.category==='Sunscreen').length,14);assert.ok(first.definitions.existing);assert.equal(first.definitions['sunscreen-lightweight'],undefined);
  assert.deepEqual(first.products.boj.tagIds,['value','existing']);
  assert.deepEqual((await call('/api/admin/tags')).data,first);
+});
+
+test('bottle photo backfill preserves experiment settings, identities and custom images',async t=>{
+ const {store,call}=await fixture(t);await call('/api/health');const registry=await store.scope('experiment-registry');
+ await registry.transaction(d=>{d.experiments.waterbottle={id:'waterbottle',category:'Water bottles',title:'Existing edit',closed:true,includeInOverall:false,products:WATER_BOTTLES.map(p=>({...p,image:null}))};d.experiments.waterbottle.products[0].image='https://example.com/custom.png';d.skus[WATER_BOTTLES[1].id].image=null});
+ const e=(await call('/api/experiment?experiment=waterbottle',undefined,false)).data.experiment;assert.equal(e.closed,true);assert.equal(e.title,'Existing edit');assert.equal(e.products.length,9);assert.equal(e.products[0].image,'https://example.com/custom.png');assert.ok(e.products.every(p=>p.image));assert.deepEqual(e.products.map(p=>p.id),WATER_BOTTLES.map(p=>p.id));assert.ok((await registry.read()).skus[WATER_BOTTLES[1].id].image);
 });

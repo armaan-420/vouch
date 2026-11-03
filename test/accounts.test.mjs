@@ -205,3 +205,17 @@ test('history retains first item-vouch date across subsequent verdict and visibi
  const result=await f.call('/api/account/profile',{identity:'alice',body:{opinions:[{productId:'sku-one',verdict:'yes',visibility:'public'}]}});
  assert.equal(result.data.profile.opinions[0].vouchedAt,when);
 });
+
+test('history scores use the canonical item in its own experiment and refresh with current votes',async t=>{
+ const f=await setup(t);f.answer('sku-one','yes');await f.claim(await f.preview(),'alice',[{productId:'sku-one',visibility:'public'}],{visibility:'public'});
+ f.answer('sku-one','no',{visitor:otherBrowser});let profile=(await f.call('/api/account/me',{identity:'alice'})).data.profile;assert.equal(profile.opinions[0].score,'5.0');assert.equal(profile.opinions[0].scoreStatus,'rated');
+ const pub=(await f.call('/api/profiles/'+profile.handle)).data.profile;assert.equal(pub.opinions[0].score,'5.0');assert.equal(pub.opinions[0].experimentId,undefined);assert.ok(!JSON.stringify(pub).includes(browser));
+ f.answer('sku-one','yes',{experiment:'second',at:'2026-11-03T12:00:00.000Z'});await f.api.syncAccountOpinions(f.request('/',{identity:'alice'}),'second','sku-one');profile=(await f.call('/api/account/me',{identity:'alice'})).data.profile;assert.equal(profile.opinions[0].score,'8.3');assert.equal(profile.opinions[0].experimentTitle,'second edit');
+ delete f.states.second.baseVotes['sku-one'];profile=(await f.call('/api/account/me',{identity:'alice'})).data.profile;assert.equal(profile.opinions[0].score,null);assert.equal(profile.opinions[0].scoreStatus,'unrated');
+});
+
+test('history scores resolve community additions by stable SKU instead of a base item ID',async t=>{
+ const f=await setup(t),key='catalog:sku-community',product={id:'sku-community',brand:'Community brand',name:'Community item'},communityId='community-'+key;
+ f.states.first.nominations=[browser,otherBrowser].map(visitorId=>({key,name:'Community item',visitorId,createdAt:when,product}));f.states.first.reviews[key]={canonicalKey:key,canonicalName:'Community item',product};f.states.first.communityVotes[communityId]={[browser]:'yes',[otherBrowser]:'yes'};
+ const preview=await f.preview();assert.ok(preview.opinions.some(o=>o.productId==='sku-community'));const result=await f.claim(preview,'alice',[{productId:'sku-community'}]);assert.equal(result.status,200);assert.equal(result.data.profile.opinions[0].score,'9.0');
+});

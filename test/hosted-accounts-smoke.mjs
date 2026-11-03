@@ -24,6 +24,7 @@ const {WATER_BOTTLES}=await import('../lib/water-bottles.mjs');const bottleId='b
 assert.equal((await admin('/api/admin/experiments',{id:bottleId,title:'Local water bottle account verification',category:'Water bottles',productIds:WATER_BOTTLES.map(p=>p.id)})).status,201);
 for(const p of WATER_BOTTLES){const result=await a('/api/events?experiment='+bottleId,{type:'answer',productId:p.id,value:'yes'});assert.equal(result.status,200,JSON.stringify(result.data));assert.equal(result.data.profileSync,'saved')}
 response=await a('/api/account/me');const bottles=response.data.profile.opinions.filter(o=>o.experimentId===bottleId);assert.equal(bottles.length,9);assert.ok(bottles.every(o=>o.product.category==='Water bottles'&&o.visibility==='private'&&o.product.image));
+const bottleBoard=(await observer('/api/board?experiment='+bottleId)).data.products;for(const opinion of bottles)assert.equal(opinion.score,bottleBoard.find(p=>p.id===opinion.productId).score);
 await admin('/api/admin/experiment-settings',{id:bottleId,closed:true,includeInOverall:false});
 await a('/api/auth/logout',{});assert.equal((await a('/api/account/me')).data.authenticated,false);
 assert.equal((await a('/api/account/edit?experiment='+id)).data.opinions.length,0);

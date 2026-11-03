@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 export const CATALOG_SOURCES = [
+  {id:'lionpose',brand:'Lion Pose',origin:'https://lionpose.com',aliases:{'unghosted-mineral-sunscreen-spf-42':['sunscreen','Ghost-Buster','Ghostbuster']}},
   {id:'boj',brand:'Beauty of Joseon',origin:'https://beautyofjoseon.com'},
   {id:'skin1004',brand:'SKIN1004',origin:'https://skin1004.com'},
   {id:'roundlab',brand:'Round Lab',origin:'https://roundlab.com'},
@@ -35,7 +36,7 @@ export function cleanProduct(p,source){
   if(!p||!p.id||typeof p.title!=='string'||(!isSunscreen(p)&&!source.sunscreenCollection)||isBundle(p)||!/^[-a-z0-9]+$/i.test(p.handle||''))return null;
   const image=p.images?.map(i=>i.src).find(url=>typeof url==='string'&&url.startsWith('https://cdn.shopify.com/'))||null;
   const spf=p.title.match(/\bSPF\s*\d+\+?(?:\s*PA\+{1,4})?/i)?.[0]||'';
-  return {id:`catalog-${source.id}-${p.id}`,brand:source.retailer?(p.vendor||source.brand):source.brand,name:p.title.trim().slice(0,200),image,url:`${source.origin}/products/${p.handle}`,source:source.brand,sourceId:source.id,spf,onBoardId:baseHandles[`${source.id}:${p.handle}`]||null};
+  return {id:`catalog-${source.id}-${p.id}`,brand:source.retailer?(p.vendor||source.brand):source.brand,name:p.title.trim().slice(0,200),image,url:`${source.origin}/products/${p.handle}`,source:source.brand,sourceId:source.id,spf,...(source.aliases?.[p.handle]?{searchAliases:source.aliases[p.handle]}:{}),onBoardId:baseHandles[`${source.id}:${p.handle}`]||null};
 }
 export function cleanBeautyProduct(p){
   const name=String(p.product_name||p.product_name_en||'').trim();
@@ -100,7 +101,7 @@ export async function createProductSearch({directory='.',storage,initialCatalog,
   return {
     refresh,
     async search(query,options){const data=await ready(options);const words=tokens(query);if(words.length===0)return {products:[],updatedAt:data.updatedAt};
-      const matches=data.products.map(p=>{const haystack=tokens(p.brand+' '+p.name).join(' ');const compact=haystack.replaceAll(' ','');if(!words.every(w=>haystack.includes(w)||compact.includes(w)))return null;const brand=tokens(p.brand).join(' ');const exactBrand=words.join(' ')===brand;return {p,rank:(p.onBoardId?5:0)+(/sunscreen|sun cream|sun gel|sun milk|sun serum/i.test(p.name)?6:0)-(/lip balm|makeup|foundation/i.test(p.name)?10:0)-(/mini|deluxe|travel/i.test(p.name)?8:0)+(exactBrand?20:0)+(p.spf?3:0)+(tokens(p.name).join(' ').startsWith(words.join(' '))?10:0)}}).filter(Boolean).sort((a,b)=>b.rank-a.rank||a.p.name.localeCompare(b.p.name));
+      const matches=data.products.map(p=>{const haystack=tokens(p.brand+' '+p.name+' '+(p.searchAliases||[]).join(' ')).join(' ');const compact=haystack.replaceAll(' ','');if(!words.every(w=>haystack.includes(w)||compact.includes(w)))return null;const brand=tokens(p.brand).join(' ');const exactBrand=words.join(' ')===brand;return {p,rank:(p.onBoardId?5:0)+(/sunscreen|sun cream|sun gel|sun milk|sun serum/i.test(p.name)?6:0)-(/lip balm|makeup|foundation/i.test(p.name)?10:0)-(/mini|deluxe|travel/i.test(p.name)?8:0)+(exactBrand?20:0)+(p.spf?3:0)+(tokens(p.name).join(' ').startsWith(words.join(' '))?10:0)}}).filter(Boolean).sort((a,b)=>b.rank-a.rank||a.p.name.localeCompare(b.p.name));
       return {products:matches.slice(0,20).map(m=>m.p),updatedAt:data.updatedAt,sourceCount:data.sources.length,catalogCount:data.products.length,partial:!!data.failedSources?.length,stale:!!data.stale};
     },
     async find(id){const existing=cache.products.find(p=>p.id===id);if(existing)return existing;await ready();return cache.products.find(p=>p.id===id)||null},

@@ -27,3 +27,7 @@ To repeat an explicit import, run `node scripts/import-retailer-catalogs.mjs`. D
 ## Validation
 
 Unit coverage verifies listing URL/image validation, bundle exclusions, safe JSON parsing, configurable-card exclusion, market-aware exact identity, persistence into a previously fresh saved catalog, and retention through subsequent feed refreshes. Publication and live search checks are recorded in the delivery chat; a local file edit alone does not establish live status.
+
+## Lion Pose follow-up — November 2, 2026
+
+Added the standalone UNGHOSTED mineral SPF 42 directly from Lion Pose’s public brand catalog, including its product ID, photo and source link. The brand describes it as formerly Ghost-Buster; both names and sunscreen are searchable aliases. Lion Pose joins the recurring brand catalog refresh; bundles remain excluded. The checked-in catalog now contains 2201 listings.

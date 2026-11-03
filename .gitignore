@@ -57,3 +57,5 @@ yarn-error.log*
 /find-assets.mjs
 /community-update.mjs
 /update-flow.mjs
+
+/node_modules

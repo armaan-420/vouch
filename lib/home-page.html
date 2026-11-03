@@ -1,1 +1,44 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f6f4ea"><title>Vouch — Coming Soon</title><meta name="description" content="Vouch. Coming soon."><link rel="stylesheet" href="/style.css"><style>body{min-height:100svh;display:grid;place-items:center}main{text-align:center;padding:48px 24px}.wordmark{display:block;font-size:54px;margin-bottom:36px}h1{font-family:"Instrument Serif",Georgia,serif;font-size:clamp(64px,12vw,112px);font-weight:400;line-height:1.05;margin:0}</style></head><body><main><div class="wordmark" aria-label="Vouch">vouch<span aria-hidden="true">✳</span></div><h1>Coming Soon</h1></main></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f4ea">
+  <title>Vouch — Coming Soon</title>
+  <meta name="description" content="Good taste deserves good company. A home for the products you swear by, and the people whose taste you trust. Vouch is coming soon.">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body.coming-soon{min-height:100svh;display:flex;flex-direction:column}
+    .coming-header{width:100%;max-width:none;height:auto;min-height:104px;padding:24px clamp(24px,5vw,72px);border:0;gap:24px;flex-shrink:0}
+    .coming-header .wordmark{font-size:44px;line-height:1;letter-spacing:-3px}
+    .coming-header .wordmark span{font-size:34px}
+    .coming-status{display:inline-flex;align-items:center;gap:9px;border:1px solid #d8dccb;border-radius:99px;padding:10px 15px;font-size:10px;font-weight:500;letter-spacing:1.3px;text-transform:uppercase;white-space:nowrap}
+    .coming-status:before{content:"";height:6px;width:6px;border-radius:50%;background:#72823d}
+    main.coming-main{width:100%;max-width:1120px;min-height:0;margin:0 auto;flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:44px 24px 68px}
+    .coming-content{width:100%}
+    .coming-emblem{display:grid;place-items:center;width:78px;height:78px;border-radius:25px;background:#d7ed68;margin:0 auto 35px;transform:rotate(-9deg)}
+    .coming-emblem svg{width:45px;height:45px;transform:rotate(9deg);color:#52612b}
+    .coming-main h1{font-size:clamp(60px,8.6vw,112px);line-height:.98;letter-spacing:-.035em;font-weight:400;margin:0 0 28px}
+    .coming-main h1 span,.coming-main h1 em{display:block}
+    .coming-main h1 em{color:#697837;font-weight:400}
+    .coming-description{font-size:15px;line-height:1.8;color:#6c7165;max-width:410px;margin:0 auto}
+    .coming-footer{max-width:none;width:calc(100% - clamp(48px,10vw,144px));margin:0 auto;padding:24px 0 28px;justify-content:center;border-top:1px solid #dedfd5;text-align:center;flex-shrink:0;font-size:11px;letter-spacing:.2px;line-height:1.6;color:#73776b}
+    @media(max-width:600px){.coming-header{min-height:90px;padding:24px}.coming-header .wordmark{font-size:37px}.coming-header .wordmark span{font-size:29px}.coming-status{font-size:9px;letter-spacing:1px;padding:9px 12px}.coming-main h1{font-size:clamp(44px,11vw,65px);line-height:1.04;margin-bottom:25px}.coming-emblem{width:66px;height:66px;border-radius:22px;margin-bottom:32px}.coming-emblem svg{width:39px;height:39px}main.coming-main{padding:48px 20px 70px}.coming-description{font-size:14px;max-width:295px}.coming-description span{display:block}.desktop-break{display:none}.coming-footer{font-size:10px;padding-bottom:25px}}
+    @media(max-height:650px) and (min-width:601px){main.coming-main{padding-top:16px;padding-bottom:32px}.coming-emblem{width:58px;height:58px;margin-bottom:22px}.coming-emblem svg{width:35px;height:35px}.coming-main h1{font-size:76px;margin-bottom:20px}.coming-header{min-height:84px}.coming-footer{padding:18px 0}}
+  </style>
+</head>
+<body class="coming-soon">
+  <header class="coming-header">
+    <div class="wordmark" aria-label="Vouch">vouch<span aria-hidden="true">✳</span></div>
+    <span class="coming-status">Coming soon</span>
+  </header>
+  <main class="coming-main">
+    <div class="coming-content">
+      <div class="coming-emblem" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><path d="M24 3v42M3 24h42M9.15 9.15l29.7 29.7M9.15 38.85l29.7-29.7" stroke="currentColor" stroke-width="2.8"/></svg></div>
+      <h1><span>Good taste deserves</span><em>good company.</em></h1>
+      <p class="coming-description"><span>A home for the products you swear by.</span><br class="desktop-break"><span> And the people whose taste you trust.</span></p>
+    </div>
+  </main>
+  <footer class="coming-footer">A little less hype. A little more human.</footer>
+</body>
+</html>

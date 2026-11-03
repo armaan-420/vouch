@@ -22,7 +22,7 @@ Verification: 61 automated tests passed, the local Cloudflare/D1 runtime and acc
 
 ## Experiment URLs
 
-The main / page shows only Coming Soon. Each experiment uses its Link ID as its path: /sunscreen, /golf, or /sunscreen-test-b. Create a golf experiment with Link ID golf in the organizer to make /golf available. Unknown experiment paths return 404. Organizer links and copied links use these paths; older /?experiment=… links redirect to the matching path. Experiment navigation and the overall board stay under that experiment’s URL. Reserved app paths cannot be used as experiment IDs.
+The main `/` page is a branded Coming Soon teaser with the Vouch wordmark, a centered editorial headline and a short product introduction; experiment entry remains on the dedicated experiment URLs. Each experiment uses its Link ID as its path: /sunscreen, /golf, or /sunscreen-test-b. Create a golf experiment with Link ID golf in the organizer to make /golf available. Unknown experiment paths return 404. Organizer links and copied links use these paths; older /?experiment=… links redirect to the matching path. Experiment navigation and the overall board stay under that experiment’s URL. Reserved app paths cannot be used as experiment IDs.
 
 ## Behavior
 

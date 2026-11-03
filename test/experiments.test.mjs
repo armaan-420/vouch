@@ -22,7 +22,7 @@ const experiment=(id,productIds=['boj'])=>({id,title:'Experiment '+id,productIds
 test('home is a placeholder; experiment paths are canonical and unknown paths never show sunscreen',async t=>{
  const f=await fixture(t),admin=f.browser();
  const get=p=>fetch(f.origin+p,{redirect:'manual'});
- for(const path of ['/','/index.html']){const r=await get(path);assert.equal(r.status,200);const html=await r.text();assert.match(html,/<h1>Coming Soon<\/h1>/);assert.doesNotMatch(html,/app.js|Sunscreen/)}
+ for(const path of ['/','/index.html']){const r=await get(path);assert.equal(r.status,200);const html=await r.text();assert.match(html,/Good taste deserves/);assert.match(html,/Coming soon/);assert.doesNotMatch(html,/app.js|Sunscreen/)}
  assert.equal((await get('/golf')).status,404);
  const created=await admin('/api/admin/experiments',{id:'golf',title:'Golf bag edit',category:'Golf bags',productIds:[],customProducts:[{id:'sku-golf-bag',brand:'Example',name:'Golf bag'}]});
  assert.equal(created.status,201);assert.equal(created.data.url,'/golf');

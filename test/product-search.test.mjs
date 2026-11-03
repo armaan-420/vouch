@@ -21,3 +21,14 @@ test('Shopify catalogs continue beyond three pages',async t=>{
  const service=await createProductSearch({directory,sources:[source],fetcher:async()=>{calls++;return {ok:true,json:async()=>({products:calls<=3?Array.from({length:250},(_,i)=>product(calls*1000+i,'Sunscreen SPF 50','sun-'+i)):[product(9999,'Last Sunscreen SPF 50','last-sunscreen')]})}}});
  assert.equal((await service.search('last')).products[0].id,'catalog-example-9999');assert.equal(calls,4);
 });
+test('new imported listings persist into a fresh saved catalog and survive feed refreshes',async()=>{
+ const existing={id:'old',brand:'Example',name:'Existing Sunscreen',sourceId:'example',source:'Example Beauty'};
+ const imported={id:'catalog-retailer-1',brand:'New Brand',name:'New Sunscreen SPF50',sourceId:'retailer',source:'Retailer'};
+ let saved={products:[existing],updatedAt:new Date().toISOString(),sources:['Example Beauty'],failedSources:[]},writes=0;
+ const storage={read:async()=>saved,write:async data=>{writes++;saved=structuredClone(data)}};
+ const initialCatalog={products:[imported],sources:['Retailer'],retailerImportedAt:'2026-11-03T00:00:00Z'};
+ const service=await createProductSearch({storage,initialCatalog,sources:[source],fetcher:async()=>({ok:true,json:async()=>({products:[product(1,'Sunscreen SPF50','sun')]})})});
+ assert.equal(writes,1);assert.equal(saved.products.length,2);assert.equal((await service.search('new brand')).products[0].id,imported.id);
+ await service.refresh();assert.ok(saved.products.some(p=>p.id===imported.id));assert.ok(saved.sources.includes('Retailer'));
+ await createProductSearch({storage,initialCatalog,sources:[source]});assert.equal(writes,2,'same import checkpoint does not cause another write');
+});

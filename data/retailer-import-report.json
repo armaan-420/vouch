@@ -1,0 +1,100 @@
+{
+  "startedAt": "2026-11-03T02:17:21.455Z",
+  "before": 829,
+  "sources": [
+    {
+      "source": "Ulta Beauty",
+      "sourceId": "ulta",
+      "pages": 8,
+      "parsed": 423,
+      "added": 423,
+      "duplicates": 0,
+      "errors": []
+    },
+    {
+      "source": "YesStyle",
+      "sourceId": "yesstyle",
+      "pages": 3,
+      "parsed": 217,
+      "added": 217,
+      "duplicates": 0,
+      "errors": [
+        {
+          "route": "/en/beauty-sunscreen/list.html/bcc.15601_bpt.46",
+          "page": 4,
+          "error": "HTTP 429"
+        }
+      ]
+    },
+    {
+      "source": "Care to Beauty",
+      "sourceId": "care",
+      "pages": 31,
+      "parsed": 489,
+      "added": 485,
+      "duplicates": 2,
+      "errors": []
+    },
+    {
+      "source": "Dermstore",
+      "sourceId": "dermstore",
+      "pages": 16,
+      "parsed": 234,
+      "added": 224,
+      "duplicates": 9,
+      "errors": []
+    },
+    {
+      "source": "Soko Glam",
+      "sourceId": "sokoglam",
+      "pages": 1,
+      "parsed": 24,
+      "added": 22,
+      "duplicates": 2,
+      "errors": []
+    }
+  ],
+  "unavailable": [
+    {
+      "source": "Sephora",
+      "reason": "HTTP 403: automated access denied; supplied brand counts are not product records."
+    },
+    {
+      "source": "Olive Young Global",
+      "reason": "HTTP 403: automated access denied."
+    },
+    {
+      "source": "Target",
+      "reason": "No validated structured product listing parser in this import."
+    }
+  ],
+  "limitations": [
+    "Retailer listings are imported snapshots, not inventory or availability guarantees.",
+    "Care to Beauty configurable parent listings are excluded to avoid mixing SPF/tint/formula variants.",
+    "Dermstore products require an explicitly recognized brand; unidentified brands are excluded.",
+    "Deduplication uses source ID and exact normalized brand/title within a catalog market; differently named or regional listings may remain separate.",
+    "Existing product IDs and response data are preserved.",
+    "Care to Beauty pagination reports inconsistent page sizes/totals; coverage is a best-effort snapshot, not a complete inventory."
+  ],
+  "added": 1371,
+  "exactDuplicates": 13,
+  "after": 2200,
+  "completedAt": "2026-11-03T02:18:54.673Z",
+  "qualityExclusions": [
+    {
+      "id": "catalog-care-23066",
+      "name": "Australian Gold Face + Self Tanner Lotion Sunscreen SPF50 88ml (2.98floz)",
+      "reason": "Bundle/multipack or self-tanner discovered in final quality review"
+    },
+    {
+      "id": "catalog-care-29528",
+      "name": "Piz Buin Tan & Protect Intensifying Sun Lotion SPF30 150ml x2",
+      "reason": "Bundle/multipack or self-tanner discovered in final quality review"
+    },
+    {
+      "id": "catalog-dermstore-12905638",
+      "name": "Colorescience Sunforgettable® Total Protection™ Brush-On Shield SPF 50 Multipack (3 count)",
+      "reason": "Bundle/multipack or self-tanner discovered in final quality review"
+    }
+  ]
+}

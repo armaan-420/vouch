@@ -64,14 +64,26 @@ async function settledMap(values,fn){let cursor=0;const results=new Array(values
 /** @param {{directory?:string, storage?:{read:()=>Promise<any>,write:(data:any)=>Promise<void>}, initialCatalog?:any, fetcher?:typeof fetch, sources?:typeof CATALOG_SOURCES, ttl?:number, timeout?:number}} [options] */
 export async function createProductSearch({directory='.',storage,initialCatalog,fetcher=fetch,sources=CATALOG_SOURCES,ttl=15*60*1000,timeout=5000}={}){
   const file=path.join(directory,'sunscreen-catalog.json');const repository=storage||{async read(){const fs=await import('node:fs/promises');return JSON.parse(await fs.readFile(file,'utf8'))},async write(data){const fs=await import('node:fs/promises');await fs.mkdir(directory,{recursive:true});await fs.writeFile(file+'.tmp',JSON.stringify(data),{mode:0o600});await fs.rename(file+'.tmp',file)}};let cache=initialCatalog||{products:[],updatedAt:null,sources:[],failedSources:[]},refreshing,lastFailedAt=0;
-  try{const saved=await repository.read();if(Array.isArray(saved.products))cache={...saved,sources:[...new Set([...(initialCatalog?.sources||[]),...(saved.sources||[])])],products:[...new Map([...(initialCatalog?.products||[]),...saved.products].map(p=>[p.id,p])).values()]}}catch(error){if(error.code!=='ENOENT'&&!(error instanceof SyntaxError))throw error}
+  let needsSeed=false;
+  try{
+    const saved=await repository.read();
+    if(Array.isArray(saved.products)){
+      const products=new Map((initialCatalog?.products||[]).map(p=>[p.id,p]));
+      for(const p of saved.products){const seed=products.get(p.id);products.set(p.id,{...seed,...p,...(seed?.alternateSources?{alternateSources:[...new Map([...(seed.alternateSources||[]),...(p.alternateSources||[])].map(s=>[s.url,s])).values()]}:{})});}
+      cache={...saved,sources:[...new Set([...(initialCatalog?.sources||[]),...(saved.sources||[])])],products:[...products.values()],retailerImportedAt:initialCatalog?.retailerImportedAt||saved.retailerImportedAt};
+      needsSeed=cache.products.length!==saved.products.length||cache.retailerImportedAt!==saved.retailerImportedAt;
+    }
+  }catch(error){if(error.code!=='ENOENT'&&!(error instanceof SyntaxError))throw error;needsSeed=!!initialCatalog?.products?.length;}
+  // Persist new release catalog records into the dedicated catalog row even
+  // when the previous live cache is still fresh. Never touch experiment rows.
+  if(needsSeed)await repository.write(cache);
   async function refresh(){if(refreshing)return refreshing;refreshing=(async()=>{
     const results=await settledMap(sources,source=>fetchSource(source,fetcher,timeout));
     for(let i=0;i<results.length;i++)if(results[i].status==='rejected')console.warn('Catalog source unavailable:',sources[i].brand,results[i].reason?.message);
     const successes=results.filter(r=>r.status==='fulfilled').map(r=>r.value);if(!successes.length){lastFailedAt=Date.now();if(cache.products.length)return {...cache,stale:true};throw Error('Product search is temporarily unavailable. You can still submit a name.')}
     const failedSources=sources.filter((_,i)=>results[i].status==='rejected').map(s=>s.brand);
     const successfulIds=new Set(successes.map(s=>s.source.id));const retained=cache.products.filter(p=>!successfulIds.has(p.sourceId));
-    cache={products:[...new Map([...successes.flatMap(s=>s.items),...retained].map(p=>[p.id,p])).values()],updatedAt:new Date().toISOString(),sources:successes.map(s=>s.source.brand),failedSources};
+    cache={products:[...new Map([...successes.flatMap(s=>s.items),...retained].map(p=>[p.id,p])).values()],updatedAt:new Date().toISOString(),sources:[...new Set([...successes.map(s=>s.source.brand),...retained.map(p=>p.source).filter(Boolean)])],failedSources,...(cache.retailerImportedAt?{retailerImportedAt:cache.retailerImportedAt}:{})};
     await repository.write(cache);return cache;
   })().finally(()=>{refreshing=null});return refreshing}
   async function ready({waitUntil}={}){

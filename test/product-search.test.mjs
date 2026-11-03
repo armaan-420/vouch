@@ -39,3 +39,12 @@ test('new imported listings persist into a fresh saved catalog and survive feed 
  await service.refresh();assert.ok(saved.products.some(p=>p.id===imported.id));assert.ok(saved.sources.includes('Retailer'));
  await createProductSearch({storage,initialCatalog,sources:[source]});assert.equal(writes,2,'same import checkpoint does not cause another write');
 });
+
+test('search and product lookup rebuild their index after a catalog refresh',async t=>{
+ const directory=await temp(t);let generation=0;
+ const service=await createProductSearch({directory,sources:[source],fetcher:async()=>({ok:true,json:async()=>({products:[product(++generation,generation===1?'Old Sunscreen SPF50':'New Sunscreen SPF50','sun')]})})});
+ const old=(await service.search('old')).products[0];assert.ok(old);
+ await service.refresh();assert.equal((await service.search('old')).products.length,0);
+ const next=(await service.search('new')).products[0];assert.ok(next);assert.notEqual(next.id,old.id);
+ assert.equal((await service.find(next.id)).name,next.name);assert.equal(await service.find(old.id),null);
+});

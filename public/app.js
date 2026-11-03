@@ -15,7 +15,7 @@ function watchEnd(){const section=document.getElementById('nominate');if(!sectio
 
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch{}}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function refreshCommunity(){try{await trackingQueue;const [community,boardData]=await Promise.all([api('/api/community'),api('/api/board')]);communityProducts=community.products;baseBoard=Object.fromEntries(boardData.products.map(p=>[p.id,p]));state.votes=Object.fromEntries(boardData.products.filter(p=>p.myVote).map(p=>[p.id,p.myVote]));save();if(screen==='board')board()}catch(error){report(error)}}
+async function refreshCommunity(){try{await trackingQueue;const [community,boardData,me]=await Promise.all([api('/api/community'),api('/api/board'),api('/api/me')]);state.nominations=me.nominations||[];state.nomination=me.nomination;communityProducts=community.products;baseBoard=Object.fromEntries(boardData.products.map(p=>[p.id,p]));state.votes=Object.fromEntries(boardData.products.filter(p=>p.myVote).map(p=>[p.id,p.myVote]));save();if(screen==='board')board()}catch(error){report(error)}}
 function verdictLabel(value){return {yes:'Vouched for the item 👍',brand:'Vouched for the brand',no:'Passed 👎',skip:'Haven’t tried this'}[value]||''}
 function communityCard(p){return `<div class="rank-row community-row">${standingsImage(p,true)}<div class="rank-info"><span class="community-tag">Community Nominated</span>${standingsName(p,true)}${p.myVote?`<span class="your-vote">You ${verdictLabel(p.myVote)}</span>`:''}<div class="community-actions"><button data-community="${esc(p.id)}" data-choice="no">Pass 👎</button><button data-community="${esc(p.id)}" data-choice="brand" aria-pressed="${p.myVote==='brand'}">Vouch for brand</button><button data-community="${esc(p.id)}" data-choice="yes" aria-pressed="${p.myVote==='yes'}">Vouch for item 👍</button><button data-community="${esc(p.id)}" data-choice="skip">I haven’t tried this</button></div></div><span class="score ${scoreColor(p.score)}">${p.score??'Unrated'}</span></div>`}
 function score(p){return baseBoard[p.id]?.score??null}
@@ -73,7 +73,7 @@ async function boot(){
     if(new URLSearchParams(location.search).has('overall')){await overall();return}
     if(new URLSearchParams(location.search).has('board')){screen='board';await refreshCommunity();render();return}
     if(experimentStatus()!=='open'){screen=experimentStatus()==='upcoming'?'home':'board';await refreshCommunity();render();return}
-    await track('visit');const data=await api('/api/me');state.nominations=data.nominations||[];state.nomination=data.nomination;await refreshCommunity();render();
+    await track('visit');await refreshCommunity();render();
   }catch(error){app.innerHTML='<section class="board"><h1>Could not open the experiment.</h1><p role="alert">'+esc(error.message)+'</p><button class="primary" id="retry-load">Try again</button></section>';document.getElementById('retry-load').onclick=boot}
 }
 setInterval(updateTimers,1000);
@@ -91,7 +91,7 @@ function personalEdit(){const opinions=personalOpinions(),counts={yes:0,no:0,bra
 
 function scoreColor(value){if(value===null||value===undefined||value==='')return 'unrated';const n=Number(value);if(!Number.isFinite(n))return 'unrated';return n>=8?'score-green':n>=6.5?'score-black':n>=5?'score-yellow':'score-red'}
 function standingsProductPath(p,isCommunity=false){const id=isCommunity?p.skuId:(p.skuId||p.onBoardId||p.id);return id?'/products/'+encodeURIComponent(id)+'?experiment='+encodeURIComponent(experimentId):null}
-function standingsImage(p,isCommunity=false){const href=standingsProductPath(p,isCommunity),image=p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}">`:'<span class="community-icon" aria-hidden="true">✳</span>';return href?`<a class="rank-image-link" href="${href}" aria-label="See who vouched for ${esc(p.name)}">${image}</a>`:image}
+function standingsImage(p,isCommunity=false){const href=standingsProductPath(p,isCommunity),image=p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" decoding="async">`:'<span class="community-icon" aria-hidden="true">✳</span>';return href?`<a class="rank-image-link" href="${href}" aria-label="See who vouched for ${esc(p.name)}">${image}</a>`:image}
 function standingsName(p,isCommunity=false){const href=standingsProductPath(p,isCommunity),brand=esc(p.brand||''),name=esc(p.name);return `<p class="brand">${href?`<a href="${href}">${brand}</a>`:brand}</p><h3>${href?`<a href="${href}">${name}</a>`:name}</h3>`}
 
 window.VouchPicksPrompt?.bind(()=>({screen,experimentId,authenticated:accountStatusKnown?accountSignedIn:null,completed:products.length>0&&products.every(p=>Object.hasOwn(state.votes,p.id)),opinions:personalOpinions()}));

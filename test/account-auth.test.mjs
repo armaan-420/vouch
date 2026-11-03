@@ -92,3 +92,13 @@ test('switching accounts clears previous browser votes but first signup preserve
  assert.notEqual(switched.data.identity.id,firstVerified.data.identity.id);
  assert.equal(a.jar.vouch_visitor,'');assert.equal(a.jar.vouch_session,'');
 });
+
+test('session reads coalesce activity writes, still check revocation and enforce expiry',async()=>{
+ const f=fixture(),a=browser(f);await signIn(a);
+ const session=()=>Object.values(f.state.sessions)[0];const initial=session().lastAt;
+ f.advance(30000);const request=a.request('/');
+ const [one,two]=await Promise.all([f.auth.getIdentity(request),f.auth.getIdentity(request)]);
+ assert.equal(one.id,two.id);assert.equal(session().lastAt,initial,'recent requests do not rewrite shared auth state');
+ f.advance(30000);assert.ok(await f.auth.getIdentity(a.request('/')));assert.equal(session().lastAt,initial+60000);
+ const stolen=a.request('/');await a.call('/api/auth/logout',{});assert.equal(await f.auth.getIdentity(stolen),null);
+});

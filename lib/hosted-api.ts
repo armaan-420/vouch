@@ -16,7 +16,8 @@ export function isOrganizer(request:Request){
 export async function hostedApi(request:Request){
   if(!env.DB)return Response.json({error:'Database unavailable.'},{status:503});
   const store=createD1Store(env.DB);
-  searchPromise??=createProductSearch({storage:store.catalog,initialCatalog});
+  // Retry initialization after a transient storage failure.
+  searchPromise??=createProductSearch({storage:store.catalog,initialCatalog}).catch(error=>{searchPromise=undefined;throw error});
   const search=await searchPromise;
   const ctx=getExecutionContext();
   const requestSearch={find:search.find,search:(q:string)=>search.search(q,{waitUntil:ctx?(p:Promise<unknown>)=>ctx.waitUntil(p):undefined})};

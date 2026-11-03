@@ -54,3 +54,7 @@ Resend guide: https://resend.com/docs/dashboard/domains/introduction . The DNS p
 Release preparation on November 2 confirmed the prior live version 17 used environment revision 3 and `/api/auth/status` returned available=true and previewDelivery=false. The verified domain, restricted sending key, sender, and authentication secret are configured. This proves the production adapter is enabled, not successful inbox receipt or code verification. A real production delivery/sign-in test remains unverified unless recorded in the release evidence. The setup history above is preserved as history; current deployment evidence is in docs/releases and the canonical Notion changelog.
 
 Production version 18 deployed successfully with environment revision 3. Post-release HTTPS checks confirm email auth available=true, previewDelivery=false, and the production account page has no local test inbox. No email code was sent during these checks; actual inbox receipt/sign-in remains unverified.
+
+## November 3 code optimization
+
+Session validity is checked from storage on each request. Repeated checks within one request share a result; activity timestamps are written at most once per minute (or one quarter of a shorter configured idle lifetime). Idle expiration can therefore occur up to one minute earlier than the last request; absolute lifetime and logout revocation remain enforced.

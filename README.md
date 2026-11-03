@@ -1,6 +1,6 @@
-# Vouch — The Wharton Sunscreen Edit
+# Vouch
 
-A product-testing website with separate experiments and an optional overall leaderboard. The original public sunscreen experiment lets participants vote Pass, Vouch for brand, Vouch for item, or Haven’t tried; explore a community leaderboard; search for and nominate a missing product.
+A product recommendation network with category experiments, community standings, and personal product collections. The original public sunscreen experiment lets participants vote Pass, Vouch for brand, Vouch for item, or Haven’t tried; explore a community leaderboard; search for and nominate a missing product.
 
 ## Accounts and product profiles
 

@@ -14,7 +14,7 @@
   "trigger": "On user request to publish Vouch release notes, log changes, or update Notion after project work; no scheduled watcher.",
   "environment_revision": 3,
   "notion_pages_updated": 14,
-  "github_repository_url": "https://github.com/armaan-420/vouch-wharton-sunscreen-edit",
+  "github_repository_url": "https://github.com/armaan-420/vouch",
   "live_url": "https://v4ch.app/sunscreen",
   "pending_checks": [
     "Actual production inbox delivery and full email-code sign-in"

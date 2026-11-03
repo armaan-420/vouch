@@ -2,9 +2,9 @@
 
 A product-testing website with separate experiments and an optional overall leaderboard. The original public sunscreen experiment lets participants vote Pass, Vouch for brand, Vouch for item, or Haven’t tried; explore a community leaderboard; search for and nominate a missing product.
 
-## Account and product-profile preview
+## Accounts and product profiles
 
-A first account implementation is available for local review; it has not been deployed. Participants can preview their edit, sign in by email code, review which browser contributions belong to them, save a private collection, and explicitly publish selected opinions. Item vouches, passes, and brand trust remain separate. Existing experiment responses and scoring remain preserved. See [ACCOUNT_PREVIEW.md](ACCOUNT_PREVIEW.md) for flow, data ownership, checks, and limitations, and [AUTH_SETUP.md](AUTH_SETUP.md) for real-email configuration. The loopback development preview uses a clearly labeled local test inbox and sends no email.
+Participants finish the experiment and see the standings before an optional Save my picks invitation. Signed-out participants who answered every selected card see a small modal after scrolling past the third ranked product (or viewing the last product on a shorter board). It appears once per experiment per tab visit, is dismissible without losing scroll position, and never gates results. Email-code signup happens inside the modal, followed by explicit contribution and visibility review. Participants save a private collection and can publish selected opinions. Item vouches, passes, and brand trust remain separate. Existing experiment responses and scoring remain preserved. See [ACCOUNT_PREVIEW.md](ACCOUNT_PREVIEW.md) for flow, data ownership, checks, and limitations, and [AUTH_SETUP.md](AUTH_SETUP.md) for real-email configuration. The loopback development preview uses a clearly labeled local test inbox and sends no email. Hosted email uses Resend with server-only configuration; an available auth status confirms configuration, not inbox delivery. Suggestions, trusted-contributor recognition and discounts are upcoming features, clearly labeled in the invitation.
 
 ## Experiment URLs
 
@@ -57,6 +57,10 @@ Runtime data, cookies, local environment values, caches, and `.wrangler/` are ig
 
 See [SETUP-AUDIT.md](SETUP-AUDIT.md) for the audited infrastructure, organizer workflow, experiment isolation, overall ranking rules, and remaining work before a larger public launch. Start at `/admin` to create an experiment and copy its participation link. Each new experiment is excluded from the overall leaderboard until you include it. Full data exports are available per experiment. The public overall view is `/sunscreen?overall=1`.
 
-Each experiment has an optional start/end schedule in the organizer, entered in the organizer’s local time zone and stored in UTC. Set both dates or clear both. A live countdown appears on its landing page and results board, with dates shown in the visitor’s time zone. Response collection opens at the start and closes at the end; manual closure overrides the schedule. Results remain readable. Open pages refresh schedule changes every 30 seconds and on return to the tab. Existing unscheduled experiments keep accepting responses and show “Schedule to be announced.”
+Each experiment has an optional start/end schedule in the organizer, entered in the organizer’s local time zone and stored in UTC. Set both dates or clear both. During an active scheduled experiment, a countdown appears beside the experiment title in the top bar. Response collection opens at the start and closes at the end; manual closure overrides the schedule. Results remain readable. Open pages refresh schedule changes every 30 seconds and on return to the tab. Unscheduled experiments keep accepting responses. Unscheduled, upcoming, ended and manually closed experiments show no countdown.
 
 Experiments present one product per brand (case, accents, spacing and punctuation are ignored when matching brands). The first lineup product is retained. Community additions cannot introduce a second product from a represented brand; existing votes and nominations remain stored.
+
+## Standings presentation
+
+The top-right action is Create Account when signed out and My Account when signed in. Product images, brands, and names open public contributor pages; participant actions stay left-aligned. Public contributors require both a public profile and a public opinion. Scores remain anonymous experiment aggregates. Numeric score colors: green at 8.0+, black at 6.5–7.9, yellow at 5.0–6.4, red below 5.0; Unrated stays neutral. The expandable score guide is removed from standings; scoring information remains in Prototype info and SCORING.md.

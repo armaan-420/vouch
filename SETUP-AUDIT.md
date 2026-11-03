@@ -72,3 +72,7 @@ Founder-approved score model: see [SCORING.md](SCORING.md). All experiment, comm
 ## November 2, 2026 — account preview, not deployed
 
 The local account/profile implementation adds participant email authentication, reviewed ownership claims, private collections, selective public opinions, and public product contributors. It preserves the existing organizer sign-in and experiment record format. The earlier identity limitation describes the historical anonymous-only release; current anonymous experiment scores still count browsers. The account preview uses isolated optimistic JSON records in D1 rather than normalized indexed tables. Real email delivery is not configured or verified. See [ACCOUNT_PREVIEW.md](ACCOUNT_PREVIEW.md) and [AUTH_SETUP.md](AUTH_SETUP.md). No release checkpoint has been advanced.
+
+## Current account and standings release preparation — November 2
+
+The account, product-contributor, and Save my picks functionality is now included in the release source. Reviewable source behavior, storage limitations, and tests are documented in ACCOUNT_PREVIEW.md and AUTH_SETUP.md. The latest standings use account navigation, an active top-bar countdown, linked product identity, and score colors. Signup is voluntary after engagement, with private picks by default. Release status and exact source/version must be taken from the current dated changelog rather than earlier historical deployment notes above.

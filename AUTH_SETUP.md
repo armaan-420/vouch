@@ -1,4 +1,4 @@
-# Vouch participant authentication — preview implementation
+# Vouch participant authentication
 
 This account system is separate from organizer Sign in with ChatGPT. The organizer allowlist and Sites authentication routes remain unchanged. Email verification is required before a participant identity is issued. The same verified email returns to the same opaque account ID; emails do not appear in profile or authentication response payloads.
 
@@ -6,7 +6,7 @@ This account system is separate from organizer Sign in with ChatGPT. The organiz
 
 The explicitly enabled **local test inbox** returns a newly generated six-digit code in the start response only when the request URL is HTTP loopback (`localhost`, `127.0.0.1`, or `[::1]`). It sends no email and is labeled accordingly. It uses a preview-only HMAC secret; no production identity can be minted with that fallback. Keep previews bound to loopback, not a public tunnel. The preview is not proof of email delivery.
 
-Hosted email sign-in remains unavailable (HTTP 503, with answers preserved) until these runtime values are configured:
+Hosted email sign-in requires the following runtime values. Missing configuration returns HTTP 503 while experiment answers remain saved:
 
 - `VOUCH_AUTH_SECRET`: stable, random secret of at least 32 characters. Generate outside source control and configure as a runtime secret. Changing it invalidates pending codes; existing random-token sessions are hashed independently.
 - `RESEND_API_KEY`: transactional email API key, server-only.
@@ -48,3 +48,7 @@ The Sites identity skill supplies platform identity and Sign in with ChatGPT, wi
 6. Send a code to an inbox you control, check delivery in Resend and the inbox, verify the code, sign out, and sign back in to the same collection. Test expired/incorrect codes and delivery failures. The local test-inbox checks do not substitute for this step.
 
 Resend guide: https://resend.com/docs/dashboard/domains/introduction . The DNS provider is Namecheap. On November 2, 2026, the approved TXT record `resend._domainkey.auth` and CNAME records `rsend.auth` / `send.auth` were added. Resend confirmed `auth.v4ch.app` verified with sending enabled and receiving disabled. Existing website and email-forwarding records were preserved. The sender `Vouch <signin@auth.v4ch.app>` and an authentication secret have been staged in Sites runtime settings (environment revision 2); they require deployment to take effect. The owner created the `Vouch signup emails` key with Sending access restricted to `auth.v4ch.app`; its value was transferred into the Sites `RESEND_API_KEY` secret without displaying it in chat or writing it to project files. Environment revision 3 contains the sender, authentication secret, and email-provider key. No production deployment or real-email delivery test has been performed. No credentials are recorded in this document.
+
+## Current release verification
+
+Release preparation on November 2 confirmed the prior live version 17 used environment revision 3 and `/api/auth/status` returned available=true and previewDelivery=false. The verified domain, restricted sending key, sender, and authentication secret are configured. This proves the production adapter is enabled, not successful inbox receipt or code verification. A real production delivery/sign-in test remains unverified unless recorded in the release evidence. The setup history above is preserved as history; current deployment evidence is in docs/releases and the canonical Notion changelog.

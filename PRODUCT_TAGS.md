@@ -27,6 +27,8 @@ Initial global tags: Value, Sturdy, Viral, Beautiful, Durable.
 
 Initial Water bottles tags: Leak-proof, Heat retention, Cold retention, Easy to clean, Lightweight, Cup-holder friendly, Easy to carry, Straw lid, Dishwasher safe.
 
+Initial Sunscreen tags (approved November 2, 2026): Lightweight, Non-greasy, Hydrating, No white cast, Matte finish, Dewy finish, Wears well under makeup, No pilling, No eye sting, Fragrance-free, Mineral, Chemical, Hybrid, Water-resistant. Definitions are seeded additively into existing taxonomy records; prior custom tags and product assignments are preserved. No individual sunscreen is automatically tagged. Formula and water-resistance assignments should use product-label evidence; experience tags describe organizer curation. SPF, tint, and water-resistance duration fields are not part of this tag-only update.
+
 Organizers can create additional global tags or tags for any category. Tags have stable IDs; duplicate labels in the same scope are rejected ignoring case and surrounding whitespace. Assignment validates all IDs and category scope atomically. Up to 30 tags per product. Category comparisons ignore case and repeated whitespace; use the shared category name consistently.
 
 All products are eligible: default sunscreen products, seeded bottles, saved custom products, experiment products, and resolvable catalog listings. Imported catalog listings without a category default to Sunscreen; organizers can set their category when saving tags. Newly added products start untagged. Name-only unconfirmed nominations must become identifiable products before tagging.

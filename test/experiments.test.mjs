@@ -102,3 +102,23 @@ test('schedules persist per experiment, validate atomically, and gate collection
  await admin('/api/admin/experiment-settings',{...settings,startsAt:null,endsAt:null});
  assert.equal((await visitor('/api/events?experiment=timed-a',{type:'start'})).status,200);
 });
+
+test('board counts follow replacement and overall uses the latest verdict per browser',async t=>{
+ const f=await fixture(t),a=f.browser(),b=f.browser(),c=f.browser(),admin=f.browser();
+ for(const id of ['counts-a','counts-b']){
+   await admin('/api/admin/experiments',experiment(id));
+   await admin('/api/admin/experiment-settings',{id,closed:false,includeInOverall:true});
+ }
+ const answer=(browser,id,value)=>browser('/api/events?experiment='+id,{type:'answer',productId:'boj',value});
+ await answer(a,'counts-a','yes');await answer(b,'counts-a','brand');await answer(c,'counts-a','no');
+ const board=(await a('/api/board?experiment=counts-a')).data.products[0];
+ assert.deepEqual(board.voteCounts,{yes:1,maybe:1,pass:1,total:3});
+ assert.deepEqual(Object.keys(board).sort(),['id','myVote','score','voteCounts']);
+ await new Promise(resolve=>setTimeout(resolve,5));
+ await answer(a,'counts-b','brand');
+ assert.deepEqual((await a('/api/overall')).data.products[0].voteCounts,{yes:0,maybe:2,pass:1,total:3});
+ await answer(a,'counts-b','skip');
+ assert.deepEqual((await a('/api/overall')).data.products[0].voteCounts,{yes:0,maybe:1,pass:1,total:2});
+ await answer(b,'counts-a','yes');
+ assert.deepEqual((await a('/api/board?experiment=counts-a')).data.products[0].voteCounts,{yes:2,maybe:0,pass:1,total:3});
+});

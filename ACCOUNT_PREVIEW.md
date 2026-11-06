@@ -2,6 +2,10 @@
 
 Initial implementation and local review: November 2, 2026. This document describes the current behavior and preserves the earlier verification history below. Production release status, exact source and deployment evidence are recorded in the canonical Notion changelog and repository docs/releases. Earlier documented production release: Sites version 18, source `964eed08e54bb59026daa81ac102e55ddd7f8713`, deployment `appgdep_6ae932bf595881919473372685607cfe`, environment revision 3, succeeded on November 2, 2026. GitHub contains the exact application commit. The canonical Notion changelog and 13 related working/index pages were updated. Actual production inbox delivery/sign-in remains unverified; the owner deferred this check.
 
+## Current documentation publication — November 3, 2026
+
+Sites version 30 / `33c860ed30ecf63311a8a9b8dbf0dfb84fc406f3` is deployed; deployment `appgdep_6aea1d66e860819193ac5939e551e597` succeeded, environment revision 3. The Notion changelog and all 45 accessible Vouch pages were updated. Fresh publication checks: 71 automated tests passed, diff whitespace check passed, and public bottle configuration confirmed nine photographed products, open/unscheduled and excluded from overall. Production inbox/code sign-in and a real signed-in production photo upload remain unverified. Earlier verification reports and no-publication statements describe their historical tasks. See [version 30 notes](docs/releases/2026-11-03-v30.md). Local documentation changes have not been committed or pushed.
+
 ## Profile collection redesign
 
 The signed-in collection and public profile lead with photo, name, join date and a short bio. Only item vouches appear in counts, category collages and history. Category tiles open a list; history uses the first item-vouch date and folds groups after the newest two. Owners edit identity in a full-screen mobile sheet or centred dialog, manage per-vouch visibility under “Who sees each vouch”, and manage passes and brand trust under “All your answers”. Existing review, sign-in, experiment voting and product contributor behavior remain available.

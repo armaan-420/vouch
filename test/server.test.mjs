@@ -54,7 +54,7 @@ test('brand verdicts persist, replace item votes, and can be removed on base and
   await admin('/api/admin/review',{name:g.name,keys:g.sourceKeys});
   const id=(await a('/api/community')).data.products[0].id;
   let r=await a('/api/community/vote',{productId:id,value:'brand'});
-  assert.equal(r.status,200);assert.equal(r.data.products[0].score,'7.5');assert.equal(r.data.products[0].myVote,'brand');
-  r=await a('/api/community/vote',{productId:id,value:'yes'});assert.equal(r.data.products[0].score,'8.3');
-  r=await a('/api/community/vote',{productId:id,value:'skip'});assert.equal(r.data.products[0].score,null);
+  assert.equal(r.status,200);assert.equal(r.data.products[0].score,'7.5');assert.equal(r.data.products[0].myVote,'brand');assert.deepEqual(r.data.products[0].voteCounts,{yes:0,maybe:1,pass:0,total:1});
+  r=await a('/api/community/vote',{productId:id,value:'yes'});assert.equal(r.data.products[0].score,'8.3');assert.deepEqual(r.data.products[0].voteCounts,{yes:1,maybe:0,pass:0,total:1});
+  r=await a('/api/community/vote',{productId:id,value:'skip'});assert.equal(r.data.products[0].score,null);assert.deepEqual(r.data.products[0].voteCounts,{yes:0,maybe:0,pass:0,total:0});
 });

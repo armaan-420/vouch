@@ -1,6 +1,24 @@
 # Vouch
 
-A product recommendation network with category experiments, community standings, and personal product collections. The original public sunscreen experiment lets participants vote Pass, Vouch for brand, Vouch for item, or Haven’t tried; explore a community leaderboard; search for and nominate a missing product.
+A product recommendation network with category experiments, community standings, and personal product collections. The original public sunscreen experiment lets participants vote Pass, Soft-Vouch (brand trust), Vouch (item experience), or Haven’t tried; explore a community leaderboard; search for and nominate a missing product.
+
+## Local mobile layout review — November 5, 2026
+
+Local implementation only; no saved Sites version or deployment was created. Participant pages remove the category chip, header collection title, community-picks badge and footer links. The mobile landing page places product art behind the headline. Rating uses a compact header and a viewport-sized flexible product card, with Pass, Soft-Vouch (I trust this brand), Vouch (I tried this item), and I haven’t tried this. Visitor-facing flow and account copy uses collections or voting instead of experiments; internal routes, storage keys and organizer terminology are retained for compatibility.
+
+Browser checks: all eight sunscreen cards fit at 393 × 650 with no vertical or horizontal scrolling; a saved-answer revisit also fits at 393 × 570. Landing fits at 393 × 650. Back navigation and the optional-nomination handoff were exercised. These are browser viewport checks, not physical iPhone Safari verification. Very short viewports and larger accessibility text may still scroll so content remains reachable. Existing automated schedule, routing and voting checks: 14 passed. The review server uses an isolated temporary data folder with voting open, because the existing local sunscreen schedule has ended; its test responses do not change the existing local dataset or hosted data. Release-note checkpoints remain unchanged.
+
+## Local copy and alignment revision — November 5, 2026
+
+The returning headline is explicitly two lines, Welcome / back., with Your takes are in. beneath it. The first-time CTA is Start vouching. Participant results headings and navigation now use The Board, See the board, and See the final board; nomination continuation and account return links use the same board terminology. The numbered steps read Vouch for your favorites, Add your essentials, and Reveal the board. Landing headlines, introductory text and primary actions share a left edge, with equal-width, top-aligned step columns. The previous centered mobile hero spacing is preserved.
+
+Browser verification covered the first-time and returning landing at 393 × 650, headline/CTA left-edge measurements, all eight voting cards through nomination continuation and The Board. Landing and returning states fit without page scrolling. Syntax checks passed. These changes remain local, with no saved Sites version, deployment, Notion publication, or release checkpoint change.
+
+## Local landing navigation review — November 5, 2026
+
+The participant header now offers an unfilled, underlined Sign in link with a 44px tap target, or a signed-in profile photo/initial circle linking to the owner’s account page. Voting and nomination screens retain a quiet Standings link. First-time and partially answered landings keep Vouch or pass as the primary action and expose standings through a small landing-only footer link. The voting footer remains tagline-only. Visitors who answered every currently selected product (including Haven’t tried) see Welcome back, their saved-answer count, See the standings, and a secondary Revisit your takes action. Closed or ended voting opens a landing with See the final standings; direct standings URLs remain available. The welcome-back state reflects this browser’s saved responses, rather than assuming account sign-in means the current collection is complete.
+
+Local browser verification at 393 × 650 covered first-time landing/footer access, completed return, closed-voting landing/results, voting header with no page scroll, and a synthetic account sign-in and initial-circle link to its private profile. The existing 17 routing, schedule, voting and account-flow checks passed; the framework build passed. Physical iPhone and the header photo variant were not exercised. No deployment, Sites version, Notion publication, or release checkpoint update was made.
 
 ## Product library and tags
 
@@ -79,6 +97,10 @@ Experiments present one product per brand (case, accents, spacing and punctuatio
 
 The top-right action is Create Account when signed out and My Account when signed in. Product images, brands, and names open public contributor pages; participant actions stay left-aligned. Public contributors require both a public profile and a public opinion. Scores remain anonymous experiment aggregates. Numeric score colors: green at 8.0+, black at 6.5–7.9, yellow at 5.0–6.4, red below 5.0; Unrated stays neutral. The expandable score guide is removed from standings; scoring information remains in Prototype info and SCORING.md.
 
-## Previously documented release
+## Current documentation publication — November 3, 2026
+
+Sites version 30 / `33c860ed30ecf63311a8a9b8dbf0dfb84fc406f3` is deployed; deployment `appgdep_6aea1d66e860819193ac5939e551e597` succeeded, environment revision 3. The Notion changelog and all 45 accessible Vouch pages were updated. Fresh publication checks: 71 automated tests passed, diff whitespace check passed, and public bottle configuration confirmed nine photographed products, open/unscheduled and excluded from overall. Production inbox/code sign-in and a real signed-in production photo upload remain unverified. Earlier verification reports and no-publication statements describe their historical tasks. See [version 30 notes](docs/releases/2026-11-03-v30.md). Local documentation changes have not been committed or pushed.
+
+## Previously documented release — version 18 (historical)
 
 Sites version 18 is live at https://v4ch.app/sunscreen, application source `964eed08e54bb59026daa81ac102e55ddd7f8713`, deployment `appgdep_6ae932bf595881919473372685607cfe`, environment revision 3. Release notes are in [docs/releases/2026-11-02-v18.md](docs/releases/2026-11-02-v18.md) and the canonical [Notion changelog](https://app.notion.com/p/40cd2a3caa8a812d83f4f3d13065be2d). At that verification, production assets matched source; account navigation works and email signup is configured without preview delivery. Actual inbox receipt/sign-in is pending owner testing.

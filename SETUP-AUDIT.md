@@ -2,6 +2,10 @@
 
 Vouch already had public hosting through Sites on Cloudflare Workers and a managed D1 database. A second deployment on Vercel would require a hosting migration, replacement of the Cloudflare database binding, and replacement of the Sites organizer authentication. It is unnecessary for the prototype, so the existing platform is retained.
 
+## Current documentation publication — November 3, 2026
+
+Sites version 30 / `33c860ed30ecf63311a8a9b8dbf0dfb84fc406f3` is deployed; deployment `appgdep_6aea1d66e860819193ac5939e551e597` succeeded, environment revision 3. The Notion changelog and all 45 accessible Vouch pages were updated. Fresh publication checks: 71 automated tests passed, diff whitespace check passed, and public bottle configuration confirmed nine photographed products, open/unscheduled and excluded from overall. Production inbox/code sign-in and a real signed-in production photo upload remain unverified. Earlier verification reports and no-publication statements describe their historical tasks. See [version 30 notes](docs/releases/2026-11-03-v30.md). Local documentation changes have not been committed or pushed.
+
 ## What is connected
 
 | Area | Current setup |
@@ -23,7 +27,7 @@ Vouch already had public hosting through Sites on Cloudflare Workers and a manag
 - SKU identity is stable across experiments. Reuse a custom ID such as `sku-example-shampoo-250ml` for the same SKU; use a different ID for another size or formula. Existing custom SKUs can be selected again without re-entry.
 - `/api/overall` combines only included experiments. For each SKU, each anonymous browser contributes its latest verdict across those experiments. Skips do not count toward the score. A later skip supersedes that browser's earlier verdict.
 - Catalog-backed community additions can contribute by their canonical SKU identity. Name-only nominations remain experiment-specific until a durable catalog/SKU identity is available; they are not automatically merged across experiments.
-- A completed flow now requires answers to that experiment's selected products, rather than a fixed eight. Each browser still has one active nomination per experiment.
+- A completed flow requires answers to that experiment's selected products and viewing standings. Browsers can save multiple nominations with atomic replacement and preserved removal history.
 - Downloads contain the selected experiment's configuration and underlying votes, participant/session records, nominations, history and review records, rather than only a summary.
 - Request bodies have byte limits; organizer operations require server authorization; write requests reject a mismatching Origin header. Closing an experiment rejects new participant writes on the server.
 - The public interface loads product selections from the server, distinguishes each experiment, supports products without photos, and exposes the overall leaderboard.
@@ -42,7 +46,7 @@ Vouch already had public hosting through Sites on Cloudflare Workers and a manag
 - **Backup:** download results for each experiment after important test sessions. Automated database backups and a restore procedure have not been configured or recovery-tested in this project. A source rollback does not undo database writes.
 - **Scale:** D1 currently stores each experiment as one JSON record with optimistic concurrency checks. Different experiments use different records, but writes within a popular experiment contend and each read loads its entire history. This is appropriate for small pilots. Normalize participants, votes and nominations into indexed tables before a large launch or sustained high traffic. The current organizer limits are 50 experiments and 32 starting products per experiment.
 - **Identity:** votes identify browsers, not verified people. Cookie deletion, multiple browsers and scripted traffic can create additional participants. Verified accounts, stronger abuse controls and moderation would be a separate launch step.
-- **Catalog coverage:** automatic product lookup covers the connected sunscreen brand catalogs. Other categories use custom SKU entry; automatic search is not a general web-wide product database.
+- **Catalog coverage:** sunscreen lookup includes 2,201 checked-in listings plus recurring feeds; retailer imports are partial snapshots. Bottles use a nine-SKU category library. Other categories need lineup/lookup validation. Search is not a general web-wide product database.
 - **Monitoring:** platform runtime logs and the health endpoint are available. External uptime alerts and an error-reporting service are not configured.
 - **Domain:** `v4ch.app` is connected and serving over HTTPS. The home page is a Coming Soon placeholder; `/sunscreen` serves the original experiment, and each new experiment has its own path. The original Sites address continues to work.
 - **Environment:** local preview data lives in `.wrangler/state` (D1) or ignored `.data` files (Node preview). These are separate from hosted D1 and never uploaded as participant data. A separate hosted staging site is not configured.

@@ -110,3 +110,104 @@ h1[tabindex="-1"]:focus:not(:focus-visible),h2[tabindex="-1"]:focus:not(:focus-v
 h1[tabindex="-1"]:focus-visible,h2[tabindex="-1"]:focus-visible{outline:3px solid #828e31;outline-offset:4px}
 
 .collection-sync-notice{padding:18px 20px;border:1px solid var(--line);border-radius:12px;margin-top:24px;font-size:13px;line-height:1.7;background:#eef0e3}.collection-sync-notice a{color:inherit;font-weight:600}
+
+/* Participant pages keep the focus on products and opinions. */
+.collection-flow .flow-footer{justify-content:center;text-align:center}
+.collection-flow .flow-footer>button,.collection-flow .flow-footer>a{display:none}
+.collection-flow .header-countdown>span{display:none}
+.vote-actions button>span{white-space:nowrap}
+
+@media(max-width:700px){
+ .collection-flow{min-height:100svh;display:flex;flex-direction:column}
+ .collection-flow>header{height:64px;flex-shrink:0;width:100%;padding:0 20px}
+ .collection-flow>main{min-height:0;width:100%;flex:1;margin:0 auto;display:flex;flex-direction:column}
+ .collection-flow .flow-footer{width:100%;flex-shrink:0;margin:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));font-size:10px;line-height:1.4}
+ .collection-flow[data-screen="home"] .hero{flex:1;position:relative;isolation:isolate;display:flex;align-items:center;padding:24px;min-height:360px;overflow:hidden}
+ .collection-flow[data-screen="home"] .hero>div:first-child{position:relative;z-index:2;width:100%}
+ .collection-flow[data-screen="home"] .hero h1{font-size:clamp(58px,17vw,78px);max-width:340px;margin-bottom:24px;text-shadow:0 1px 16px var(--paper)}
+ .collection-flow[data-screen="home"] .hero-art{position:absolute;z-index:-1;inset:12px -65px 12px auto;width:80%;height:auto;max-width:none;margin:0;opacity:.65;border-radius:48% 48% 12px 12px}
+ .collection-flow[data-screen="home"] .hero-art:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--paper),transparent 75%)}
+ .collection-flow[data-screen="home"] .hero-art .art-label,.collection-flow[data-screen="home"] .hero-art .sticker{display:none}
+ .collection-flow[data-screen="home"] .intro{max-width:300px;color:var(--ink);font-size:14px;line-height:1.5}
+ .collection-flow[data-screen="home"] .steps{padding:12px 20px;gap:10px;font-size:10px;flex-shrink:0}
+ .collection-flow[data-screen="home"] .steps span{margin-top:3px}
+ .collection-flow[data-screen="rating"]>header{height:52px}
+ .collection-flow[data-screen="rating"] .wordmark{font-size:28px;min-height:44px;padding:0}
+ .collection-flow[data-screen="rating"] .wordmark span{font-size:26px}
+ .collection-flow[data-screen="rating"] .leaderboard-link{min-height:44px}
+ .collection-flow[data-screen="rating"]>main{flex:none;min-height:0}
+ .collection-flow[data-screen="rating"] .game{width:100%;height:calc(100svh - 89px - env(safe-area-inset-bottom));height:calc(100dvh - 89px - env(safe-area-inset-bottom));max-height:850px;padding:8px 18px 12px;display:flex;flex-direction:column;min-height:440px}
+ .collection-flow[data-screen="rating"] .game-top{min-height:32px;margin-bottom:6px;font-size:11px}
+ .collection-flow[data-screen="rating"] .previous-arrow{min-width:32px;width:32px;height:32px;min-height:32px}
+ .collection-flow[data-screen="rating"] .progress{margin-bottom:10px;flex-shrink:0}
+ .collection-flow[data-screen="rating"] .product-card{flex:1;min-height:0;display:flex;flex-direction:column}
+ .collection-flow[data-screen="rating"] .product-photo{height:auto;flex:1;min-height:60px;padding:8px;overflow:hidden}
+ .collection-flow[data-screen="rating"] .product-photo img{display:block;position:absolute;inset:8px;width:calc(100% - 16px);height:calc(100% - 16px)}
+ .collection-flow[data-screen="rating"] .product-placeholder{min-height:0;height:100%;font-size:60px}
+ .collection-flow[data-screen="rating"] .product-content{flex-shrink:0;padding:12px 14px}
+ .collection-flow[data-screen="rating"] .product-content .brand{font-size:11px;letter-spacing:1.2px;margin-bottom:5px}
+ .collection-flow[data-screen="rating"] .product-content h2{font-size:18px;line-height:1.2;min-height:0;margin-bottom:5px}
+ .collection-flow[data-screen="rating"] .formula{font-size:11px;line-height:1.35;margin-bottom:0}
+ .collection-flow[data-screen="rating"] .vote-hint,.collection-flow[data-screen="rating"] .saved-verdict{flex-shrink:0;font-size:11px;line-height:1.4;margin:10px 0 8px}
+ .collection-flow[data-screen="rating"] .vote-actions{flex-shrink:0;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ .collection-flow[data-screen="rating"] .vote-actions .pass{grid-row:auto}
+ .collection-flow[data-screen="rating"] .vote-actions button{min-width:0;min-height:64px;padding:10px 3px;border-radius:14px;font-size:13px;letter-spacing:-.3px}
+ .collection-flow[data-screen="rating"] .vote-actions button small{font-size:10px;letter-spacing:-.2px;margin-top:4px}
+ .collection-flow[data-screen="rating"] .skip-choice{flex-shrink:0;min-height:48px;margin-top:8px;padding:10px;font-size:13px}
+ .collection-flow[data-screen="rating"] .flow-footer{padding-top:10px;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+}
+@media(max-width:359px){.collection-flow[data-screen="rating"] .vote-actions button{font-size:11px}.collection-flow[data-screen="rating"] .vote-actions button small{font-size:9px}}
+
+/* Account access stays quiet; voting is the landing page's primary action. */
+.collection-flow header .leaderboard-link{min-height:44px;min-width:44px;padding:10px 8px;background:transparent;border:0;border-radius:0;color:var(--ink);font-size:12px;font-weight:500;text-decoration:underline;text-underline-offset:4px;transform:none}
+.collection-flow header .leaderboard-link:hover{background:transparent;color:#53633a;transform:none}
+.collection-flow header .profile-link{width:44px;height:44px;min-height:44px;min-width:44px;padding:0;border:1px solid var(--ink);border-radius:50%;text-decoration:none;overflow:hidden;font-size:16px;font-weight:600;flex-shrink:0}
+.collection-flow header .profile-link img{width:100%;height:100%;object-fit:cover}
+.collection-flow[data-screen="home"] .flow-footer>.landing-standings:not([hidden]){display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px;color:var(--muted);font-size:11px}
+.revisit-takes{display:block;margin-top:12px;padding:8px 0;min-height:44px}
+
+/* Keep landing headlines, copy and actions on one shared left edge. */
+.hero .hero-copy{display:flex;flex-direction:column;align-items:flex-start;min-width:0;text-align:left}
+.hero-copy h1>span{display:block}
+.hero-copy .primary{align-self:flex-start;max-width:100%;text-align:center}
+.hero-copy .intro{margin-bottom:20px}
+.hero-copy .revisit-takes{margin-left:0;margin-right:0}
+.collection-flow .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;gap:20px}
+.collection-flow .steps>div{min-width:0;line-height:1.5}
+.collection-flow .steps span{display:block;margin:5px 0 0}
+@media(max-width:700px){
+ .collection-flow[data-screen="home"] .hero-copy h1{width:100%;margin-left:0;margin-right:0}
+ .collection-flow[data-screen="home"] .steps{gap:12px}
+ .collection-flow[data-screen="home"] .steps span{max-width:14ch;line-height:1.4}
+}
+
+/* Returning visitors can revisit their takes directly after the confirmation. */
+.hero-copy .intro:has(+.revisit-takes){margin-bottom:0}
+.hero-copy .revisit-takes{margin-top:0;margin-bottom:16px;padding:8px 0;min-height:44px}
+
+@media(min-width:375px) and (max-width:700px){.collection-flow[data-screen="home"] .steps>div:first-child span{max-width:none;white-space:nowrap}}
+
+/* Quiet credibility below each score, with an on-demand vote breakdown. */
+.score-summary{display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;gap:1px;align-self:center}
+.score-summary .score{line-height:1.1;padding-top:0}
+.vote-details{position:relative;font-family:'DM Sans',sans-serif}
+.vote-details summary{display:flex;align-items:center;justify-content:flex-end;gap:4px;list-style:none;cursor:pointer;min-height:36px;padding:5px 0 5px 8px;font-size:11px;font-weight:400;line-height:1.2;color:var(--muted);white-space:nowrap;border-radius:4px}
+.vote-details summary::-webkit-details-marker{display:none}
+.vote-details summary:hover,.vote-details[open] summary{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.vote-details summary:focus-visible{outline:3px solid #828e31;outline-offset:3px}
+.vote-chevron{font-size:12px;line-height:1;transition:transform .15s}
+.vote-details[open] .vote-chevron{transform:rotate(180deg)}
+.vote-details[open]{z-index:5}
+.vote-breakdown{position:absolute;right:0;top:calc(100% + 4px);width:264px;max-width:calc(100vw - 36px);padding:20px;background:#fffefa;border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 35px #292d2418;text-align:left;color:var(--ink);white-space:normal}
+.vote-breakdown-title{font-size:14px;font-weight:600;margin:0 0 5px}
+.vote-breakdown-product{font-size:11px;color:var(--muted);line-height:1.4;margin:0 0 16px;overflow-wrap:anywhere}
+.vote-breakdown dl{margin:0;display:grid;gap:13px}
+.vote-breakdown dl>div{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:12px}
+.vote-breakdown dt{display:flex;gap:5px;align-items:center}
+.vote-breakdown dt span{color:var(--muted);font-size:10px}
+.vote-breakdown dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+.vote-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;background:#729148}
+.vote-dot-maybe{background:#b69638}.vote-dot-pass{background:#c67a63}
+.vote-breakdown-total{margin:16px 0 8px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
+.vote-breakdown-note{font-size:10px;line-height:1.6;color:var(--muted);margin:0}
+@media(max-width:700px),(pointer:coarse){.vote-details summary{min-height:44px}.score-summary{gap:0}}

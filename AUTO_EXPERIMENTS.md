@@ -1,8 +1,8 @@
-# Automatic Edit drafts — local implementation
+# Automatic Edit drafts
 
-Visitors suggest a category on the home page, immediately after the standings list, or through Suggest an Edit in the public top navigation. Vouch records support, researches ten products, matches catalog identities, and builds a private draft for organizer review. The app runs this process; Codex does not need to remain in a chat or rebuild the application for each suggestion.
+Visitors suggest a category immediately after the standings list or through Suggest a category in the shared hamburger menu. The root teaser has no inline suggestion card. Vouch records support, researches ten products, matches catalog identities, and builds a private draft for organizer review. The app runs this process; Codex does not need to remain in a chat or rebuild the application for each suggestion.
 
-This implementation is local-only. No Sites version, deployment, push, release note, or Notion checkpoint was created or changed.
+Deployed as Sites version 41 on November 6, 2026. Automatic research is enabled with a server-only OpenAI key and a 20-start daily budget (runtime revision 5). Scheduled unattended invocation remains unverified; see Release Notes and the Notion operating guide for current verification.
 
 ## Try the isolated preview
 
@@ -12,7 +12,7 @@ From this repository, run:
 npm run preview:auto
 ```
 
-Open http://127.0.0.1:4188/ and suggest **running shoes** or **backpacks**. Then open http://127.0.0.1:4188/admin#suggestions-panel. The local runner advances once a second, even with the organizer page closed. A ten-product draft normally appears in about twelve seconds. Restarting the server resumes saved jobs.
+Open http://127.0.0.1:4188/sunscreen, choose Suggest a category from the menu and suggest **running shoes** or **backpacks**. Then open http://127.0.0.1:4188/admin#suggestions-panel. The local runner advances once a second, even with the organizer page closed. A ten-product draft normally appears in about twelve seconds. Restarting the server resumes saved jobs.
 
 This command forces fixture research and disables live catalog providers. It sends no research requests or email. Running shoes and backpacks have fixed illustrative product names; other categories have explicitly synthetic Demo Brand products. Fixture reasons and source links are labeled as such; they are not evidence of current popularity, availability, or quality. Missing photos are expected. Fixture moderation only exercises the local blocklist, not semantic moderation.
 
@@ -92,7 +92,7 @@ Baseline: **110 passed**. Current suite: **156 passed**, including normalization
 
 The final production build passed. The isolated HTTP smoke check passed with a ten-product, zero-photo fixture draft in 12.2 seconds and one local notification. It exercises autonomous local processing, draft 404/organizer preview, a product edit, approval, a real vote, water-bottle duplicate handling and the local notification inbox. Browser checks verify category submission, generated ten-product review, product-detail editing and saving, and private Board preview. The draft Board has no horizontal overflow at 320px and 390px; the organizer was also checked at 390px. The browser's original native confirmation stalled automation; it was replaced with an in-page accessible confirmation. The later table-workspace check verified the in-page confirmation and approval-to-Live transition in a separate synthetic browser QA dataset; participant voting also passes the API smoke check. Full screen-reader and physical-device testing remain unverified.
 
-Live research for running shoes/backpacks was skipped because no `OPENAI_API_KEY` or `CHANNEL3_API_KEY` was set in this session. There are no measured live picks, photo match counts, token costs or live latency to report. Fixture runs test workflow mechanics, not research quality. Real Responses model/tool/schema compatibility and email inbox delivery still need a configured local live check.
+The release check completed real gpt-5.4 web-search/structured-output research for running shoes: ten validated picks from ten brands with HTTPS sources; the direct check reported 9,996 total tokens. A separate production running-shoes suggestion is retained as a private review case. Fixture runs test mechanics, not research quality. Source accuracy, full catalog-match coverage, notification inbox delivery and unattended cron registration remain separate verification limits.
 
 AI picks and sources can be wrong or outdated. “Top ten” is recognition-based and is not tested best. Catalog photo coverage depends on provider access and matching; niche categories can need manual changes. Simple plural folding is not a linguistic synonym system. Local fake research intentionally does not semantically moderate arbitrary categories. Registry/job writes are separate records: draft generation recovers by origin and approval can be repeated, but this is not a distributed transaction across records. Records are bounded per request, not a comprehensive anti-abuse system. Hosted cron execution and Sites support for registering that schedule remain unverified; the generated Worker handler alone does not prove unattended execution.
 

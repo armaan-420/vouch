@@ -51,7 +51,7 @@
 
 .skip-choice{min-height:56px;background:#fffefa;border:2px solid #8b9479;color:var(--ink);font-size:15px;margin-top:16px;font-weight:700}
 .community-actions button[data-choice="brand"]{background:#e6ebc9}
-.community-actions button[data-choice="skip"]{flex:0 0 auto;border:0;background:transparent;color:var(--muted);font-size:10px;font-weight:400;padding:6px 4px;text-decoration:underline;text-underline-offset:3px}.community-actions button[data-choice="skip"][aria-pressed="true"]{box-shadow:none;color:var(--ink);font-weight:600}.community-row .community-tag{margin:6px 0 0;padding:3px 7px;font-size:9px}.rank{flex-shrink:0}
+.community-actions button[data-choice="skip"]{border:1px solid #8b9479;background:#fffefa;font-weight:600}.rank-info .brand:has(.community-tag){display:flex;align-items:center;gap:7px;flex-wrap:nowrap}.rank-info .brand:has(.community-tag)>a{min-width:0;overflow-wrap:anywhere}.rank-info .brand .community-tag{flex-shrink:0}.rank-info .brand .community-tag{margin:0;padding:3px 7px;font-size:8px;letter-spacing:0;font-weight:600;white-space:nowrap}.rank{flex-shrink:0}
 .community-actions button[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--ink)}
 
 .nomination-step{max-width:680px}.nomination-step .nominate{margin-top:0}.nomination-step .nomination-heading{display:block}.nomination-step .nomination-heading h2{font-size:42px;line-height:1.08}.nomination-step .nomination-save-top{margin-top:18px}.nomination-continue{display:block;width:100%;margin-top:20px}@media(max-width:700px){.nomination-step .nomination-heading h2{font-size:35px}}
@@ -242,4 +242,6 @@ h1[tabindex="-1"]:focus-visible,h2[tabindex="-1"]:focus-visible{outline:3px soli
 @media(max-width:600px){.picker-results .product-result{padding:13px 11px;gap:10px}.picker-results .product-result strong{font-size:13px}.picker-results .product-result img,.picker-results .search-photo-placeholder{width:35px;min-width:35px;height:48px}.picker-selection .selection-chip{width:100%;justify-content:space-between}.nominate .nominate-submit{width:100%}}
 
 /* Community additions share the listing columns; controls sit beneath the product. */
-.community-row{display:grid;grid-template-columns:24px 64px minmax(0,1fr) auto;gap:10px 18px}.community-row .community-actions{grid-column:3/-1;margin-top:0}.community-row .score{padding-top:0}@media(max-width:700px){.community-row{grid-template-columns:24px 53px minmax(0,1fr) auto;gap:8px 11px}.community-row .community-actions{grid-column:2/-1}}
+.community-row{display:grid;grid-template-columns:24px 64px minmax(0,1fr) auto;gap:10px 18px}.community-row .community-actions{grid-column:3/-1;margin-top:0;flex-wrap:nowrap;gap:6px}.community-actions button{min-width:44px;min-height:44px;padding:8px 10px;white-space:nowrap}.community-row .score{padding-top:0}@media(max-width:700px){.community-row{grid-template-columns:24px 53px minmax(0,1fr) auto;gap:8px 11px}.community-row .community-actions{grid-column:3/-1;gap:2px}.community-row .community-actions button{font-size:clamp(8px,2.2vw,10px);padding:6px 3px;min-width:44px;min-height:44px}}
+
+@media(max-width:360px){.community-row{grid-template-columns:18px 32px minmax(0,1fr) auto;column-gap:6px}.community-row .rank-image-link img{width:32px;height:40px}.community-row .community-actions button{font-size:8px;padding:6px 2px}.community-row .brand:has(.community-tag){gap:4px}}

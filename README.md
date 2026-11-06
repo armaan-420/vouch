@@ -2,6 +2,18 @@
 
 A product recommendation network with category experiments, community standings, and personal product collections. The original public sunscreen experiment lets participants vote Pass, Soft-Vouch (brand trust), Vouch (item experience), or Haven’t tried; explore a community leaderboard; search for and nominate a missing product.
 
+## Shared public navigation — local preview
+
+Public headers now share desktop search/category/feedback/account actions and a compact mobile menu. Search appears on Edit pages and hands products to the existing product/nomination flows. Feedback is private, rate-limited and available to the organizer under Feedback. See [TOP_NAV.md](TOP_NAV.md) for files, controls, checks, screenshots and remaining verification limits.
+
+## Organizer workspace — local layout
+
+The organizer uses sidebar navigation for Home, Experiments, Product Library and Suggestions. Home keeps its existing overview. The other sections open searchable tables with addressable detail pages: experiment settings/participation, cross-experiment product voting activity and tags, and suggestion research with row actions. Suggestion deletion is recoverable and leaves live Edits intact. See [ADMIN_WORKSPACE.md](ADMIN_WORKSPACE.md) for columns, vote deduplication, action semantics, checks and local-data limits.
+
+## Automatic Edit drafts — local preview
+
+Run `npm run preview:auto` to test category suggestions becoming private ten-product drafts, organizer lineup editing and one-confirmation approval. The isolated preview uses labeled fixture research, no live catalog providers, and a local notification inbox; it does not deploy or change hosted records. See [AUTO_EXPERIMENTS.md](AUTO_EXPERIMENTS.md) for the test flow, real-research setup, budget, state machine, verification and limitations.
+
 ## Category-scoped live lookup — November 6, 2026
 
 Sites version 39 is live, application source `38a2e8da8dc7917b4287e89630b3a79f78f0e7b3`, deployment `appgdep_6aede26afa848191adfde3bb14d1aad9`, environment revision 4. Channel3 uses the active voting category for missing-favorite searches; local results answer first and repeated searches use category-specific caching. Link paste, barcode/photo controls and disclosed contributor-page offers are enabled. Shopify remains deferred. The empty shampoo/TV preview boards remain local; production retains its existing collections.

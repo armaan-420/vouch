@@ -1,0 +1,56 @@
+(()=>{
+ 'use strict';
+ const header=document.querySelector('[data-site-nav]');if(!header)return;
+ const menu=header.querySelector('.site-menu'),menuToggle=header.querySelector('.site-menu-toggle'),search=header.querySelector('.site-search'),input=header.querySelector('#site-search-input'),searchToggle=header.querySelector('.site-search-toggle'),searchClose=header.querySelector('.site-search-close'),popover=header.querySelector('.site-search-popover'),results=header.querySelector('#site-search-results'),status=header.querySelector('#site-search-status'),nominate=header.querySelector('.site-search-nominate');
+ const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const menuIcon=menuToggle.innerHTML,closeIcon=searchClose.innerHTML;
+ let context=null,picker=null,menuOpen=false,searchOpen=false,scrollBefore=null,scrim=null,controller=null,timer=null,version=0,feedbackDialog=null,feedbackFocus=null;
+ function lock(){if(scrollBefore===null){scrollBefore=document.body.style.overflow;document.body.style.overflow='hidden';}}
+ function unlock(){if(!menuOpen&&!searchOpen&&scrollBefore!==null){document.body.style.overflow=scrollBefore;scrollBefore=null;}}
+ function syncScrim(){scrim?.remove();scrim=null;if(menuOpen||searchOpen){scrim=document.createElement('div');scrim.className='site-nav-scrim';scrim.style.top=Math.max(0,header.getBoundingClientRect().bottom)+'px';scrim.setAttribute('aria-hidden','true');scrim.onclick=()=>closePanels();document.body.append(scrim);}}
+ function closeMenu(focus=true){if(!menuOpen)return;menuOpen=false;menu.hidden=true;header.classList.remove('is-menu-open');menuToggle.setAttribute('aria-expanded','false');menuToggle.setAttribute('aria-label','Menu');menuToggle.innerHTML=menuIcon;syncScrim();unlock();if(focus)menuToggle.focus({preventScroll:true});}
+ function hideResults(){popover.hidden=true;input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');}
+ function closeSearch(focus=true){const wasOpen=searchOpen;searchOpen=false;header.classList.remove('is-search-open');searchToggle.setAttribute('aria-expanded','false');version++;clearTimeout(timer);controller?.abort();hideResults();syncScrim();unlock();if(wasOpen&&focus)searchToggle.focus({preventScroll:true});}
+ function closePanels(focus=true){closeMenu(focus);closeSearch(focus);}
+ function toggleMenu(){if(menuOpen){closeMenu();return;}closeSearch(false);menuOpen=true;menu.hidden=false;header.classList.add('is-menu-open');menuToggle.setAttribute('aria-expanded','true');menuToggle.setAttribute('aria-label','Close menu');menuToggle.innerHTML=closeIcon;lock();syncScrim();}
+ function openSearch(){if(!context||context.draft)return;closeMenu(false);searchOpen=true;header.classList.add('is-search-open');searchToggle.setAttribute('aria-expanded','true');lock();syncScrim();input.focus();if(input.value.trim().length>=2)runSearch();}
+ menuToggle.onclick=toggleMenu;searchToggle.onclick=openSearch;searchClose.onclick=()=>closeSearch();
+ menu.querySelector('[data-suggest-edit]').onclick=()=>{closeMenu();window.VouchSuggestions?.open(menuToggle);};
+ header.querySelectorAll('[data-site-feedback]').forEach(button=>button.onclick=()=>{const fromMenu=menu.contains(button);closeMenu();openFeedback(fromMenu?menuToggle:button);});
+ menu.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>closeMenu()));
+ document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(menuOpen||searchOpen){event.preventDefault();closePanels();}else if(!popover.hidden)hideResults();});
+ document.addEventListener('click',event=>{if(!event.composedPath().includes(header)){if(menuOpen||searchOpen)closePanels();else hideResults();}});
+ // Keep keyboard focus within the expanded navigation until it closes.
+ header.addEventListener('keydown',event=>{if(event.key!=='Tab'||!menuOpen&&!searchOpen)return;const nodes=[...header.querySelectorAll('a[href],button,input')].filter(n=>!n.disabled&&n.getClientRects().length),first=nodes[0],last=nodes.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});
+ document.addEventListener('focusin',event=>{if(!header.contains(event.target)&&!searchOpen)hideResults();});
+ window.addEventListener('resize',()=>{if(menuOpen||searchOpen)syncScrim();});
+ function choose(product){
+  if(product.onBoardId){const href=context?.productPath(product);if(href){closePanels(false);location.href=href;}return;}
+  if(!context?.canNominate){status.textContent='Nominations are paused for this Edit.';return;}
+  const query=input.value.trim();closePanels();context.nominate(product,query);
+ }
+ function initializePicker(){if(picker)return;picker=window.VouchProductPicker({input,results,more:header.querySelector('.site-search-more'),clear:header.querySelector('.site-search-clear'),another:header.querySelector('.site-search-another'),esc,isSelected:()=>false,onChoose:choose,onClear:()=>{version++;controller?.abort();clearTimeout(timer);hideResults();},boardLabel:'On the board · View product',unselectedLabel:'Not on board · Nominate',enhance:false,focusAfterChoose:false});}
+ async function runSearch(){
+  const query=input.value.trim();if(!context||query.length<2){picker?.clear();hideResults();return;}
+  const current=++version;controller?.abort();controller=new AbortController();picker.clear();popover.hidden=false;input.setAttribute('aria-expanded','true');status.textContent='Looking up products…';nominate.hidden=true;
+  try{const response=await window.VouchCatalog.fetch(query,context.searchUrl(query),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(12000)])}),data=await response.json();if(current!==version)return;if(!response.ok)throw Error('Search unavailable.');const products=data.products||[];picker.setProducts(products);popover.hidden=false;input.setAttribute('aria-expanded','true');status.textContent=products.length?products.length+' '+(products.length===1?'match':'matches')+'.':"No match. Nominate it by name.";nominate.hidden=products.length>0||!context.canNominate;
+  }catch(error){if(current!==version||error.name==='AbortError')return;picker.clear();popover.hidden=false;input.setAttribute('aria-expanded','true');status.textContent='Search is unavailable. Try again or nominate by name.';nominate.hidden=!context?.canNominate;}
+ }
+ input.addEventListener('input',()=>{version++;controller?.abort();clearTimeout(timer);picker?.clear();hideResults();if(input.value.trim().length>=2){popover.hidden=false;input.setAttribute('aria-expanded','true');status.textContent='Looking up products…';nominate.hidden=true;timer=setTimeout(runSearch,250);}});
+ input.addEventListener('focus',()=>{if(input.value.trim().length>=2&&results.children.length){popover.hidden=false;input.setAttribute('aria-expanded','true');}});
+ nominate.onclick=()=>{const query=input.value.trim();closePanels();context?.nominate(null,query);};
+ function productNoun(category){let noun=String(category||'products').trim().toLowerCase();if(!noun||noun.length>40)return 'products';if(/(sh|ch|ss|x|z)$/.test(noun))return noun+'es';if(/[^aeiou]y$/.test(noun))return noun.slice(0,-1)+'ies';return noun.endsWith('s')?noun:noun+'s';}
+ function configure(value){context=value;const enabled=!!context.experimentId&&!context.draft;search.hidden=!enabled;searchToggle.hidden=!enabled;input.placeholder='Search '+productNoun(context.category);input.setAttribute('aria-label',input.placeholder);const board=menu.querySelector('[data-site-board]');board.hidden=false;board.href=context.experimentPath+(context.draft?'?preview=1&board=1':'?board=1');if(enabled)initializePicker();if(context.voting&&(searchOpen||menuOpen))closePanels(false);}
+ async function refreshAccount(){if(document.body.classList.contains('collection-flow'))return;try{const response=await fetch('/api/account/me');if(!response.ok)return;const me=await response.json(),link=header.querySelector('.leaderboard-link');link.classList.toggle('profile-link',!!me.authenticated);link.href='/account';link.setAttribute('aria-label',me.authenticated?'My profile':'Sign in');link.textContent=me.authenticated?(me.profile?.displayName||'V').trim().charAt(0).toUpperCase():'Sign in';const photo=me.profile?.photo;if(me.authenticated&&typeof photo==='string'&&photo.startsWith('/api/account/photos/')){const image=document.createElement('img');image.src=photo;image.alt='';link.replaceChildren(image);}}catch{/* Keep the account link available during a transient failure. */}}
+ function openFeedback(trigger){
+  if(!feedbackDialog){feedbackDialog=document.createElement('dialog');feedbackDialog.className='suggestion-dialog feedback-dialog';feedbackDialog.id='feedback-dialog';feedbackDialog.setAttribute('aria-labelledby','feedback-title');document.body.append(feedbackDialog);feedbackDialog.addEventListener('close',()=>{if(feedbackFocus?.isConnected)feedbackFocus.focus({preventScroll:true});});}
+  if(feedbackDialog.open)return;feedbackFocus=trigger;feedbackDialog.innerHTML=`<button class="suggestion-dialog-close" type="button" aria-label="Close feedback form">×</button><h2 id="feedback-title">A note for Vouch.</h2><form class="suggestion-form feedback-form"><label>What's working, what isn't?<textarea name="message" required minlength="5" maxlength="1000" rows="5"></textarea></label><label>Email (if you'd like a reply)<input name="email" type="email" maxlength="254" autocomplete="email"></label><button class="primary" type="submit">Send feedback</button><p role="status" aria-live="polite"></p></form>`;
+  feedbackDialog.querySelector('.suggestion-dialog-close').onclick=()=>feedbackDialog.close();const form=feedbackDialog.querySelector('form'),button=form.querySelector('[type=submit]'),message=form.querySelector('[role=status]');let pending=false;
+  form.addEventListener('input',()=>{if(!pending){button.disabled=false;button.textContent='Send feedback';message.textContent='';}});
+  form.onsubmit=async event=>{event.preventDefault();if(pending)return;pending=true;button.disabled=true;button.textContent='Sending…';message.textContent='';try{const response=await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:form.elements.message.value,email:form.elements.email.value,path:location.pathname,experimentId:context?.experimentId||null})}),data=await response.json();if(!response.ok)throw Error(data.error||'Could not send feedback. Please try again.');form.reset();button.textContent='Feedback sent ✓';message.textContent='Thanks — we read every note.';}catch(error){button.disabled=false;button.textContent='Send feedback';message.textContent=error.message;}finally{pending=false;}};
+  feedbackDialog.showModal();form.elements.message.focus();
+ }
+ window.VouchSiteNav={configure,refreshAccount};
+ if(document.querySelector('.draft-banner'))header.querySelectorAll('[data-suggest-edit]').forEach(trigger=>trigger.hidden=true);
+ if(!document.body.classList.contains('collection-flow'))refreshAccount();document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAccount();});
+})();

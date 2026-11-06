@@ -9,9 +9,10 @@
   <link rel="stylesheet" href="/style.css">
   <style>
     body.coming-soon{min-height:100svh;display:flex;flex-direction:column}
-    .coming-header{width:100%;max-width:none;height:auto;min-height:104px;padding:24px clamp(24px,5vw,72px);border:0;gap:24px;flex-shrink:0}
-    .coming-header .wordmark{font-size:44px;line-height:1;letter-spacing:-3px}
-    .coming-header .wordmark span{font-size:34px}
+
+
+
+    .coming-content>.coming-status{margin-bottom:24px}
     .coming-status{display:inline-flex;align-items:center;gap:9px;border:1px solid #d8dccb;border-radius:99px;padding:10px 15px;font-size:10px;font-weight:500;letter-spacing:1.3px;text-transform:uppercase;white-space:nowrap}
     .coming-status:before{content:"";height:6px;width:6px;border-radius:50%;background:#72823d}
     main.coming-main{width:100%;max-width:1120px;min-height:0;margin:0 auto;flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:44px 24px 68px}
@@ -23,22 +24,20 @@
     .coming-main h1 em{color:#697837;font-weight:400}
     .coming-description{font-size:15px;line-height:1.8;color:#6c7165;max-width:410px;margin:0 auto}
     .coming-footer{max-width:none;width:calc(100% - clamp(48px,10vw,144px));margin:0 auto;padding:24px 0 28px;justify-content:center;border-top:1px solid #dedfd5;text-align:center;flex-shrink:0;font-size:11px;letter-spacing:.2px;line-height:1.6;color:#73776b}
-    @media(max-width:600px){.coming-header{min-height:90px;padding:24px}.coming-header .wordmark{font-size:37px}.coming-header .wordmark span{font-size:29px}.coming-status{font-size:9px;letter-spacing:1px;padding:9px 12px}.coming-main h1{font-size:clamp(44px,11vw,65px);line-height:1.04;margin-bottom:25px}.coming-emblem{width:66px;height:66px;border-radius:22px;margin-bottom:32px}.coming-emblem svg{width:39px;height:39px}main.coming-main{padding:48px 20px 70px}.coming-description{font-size:14px;max-width:295px}.coming-description span{display:block}.desktop-break{display:none}.coming-footer{font-size:10px;padding-bottom:25px}}
-    @media(max-height:650px) and (min-width:601px){main.coming-main{padding-top:16px;padding-bottom:32px}.coming-emblem{width:58px;height:58px;margin-bottom:22px}.coming-emblem svg{width:35px;height:35px}.coming-main h1{font-size:76px;margin-bottom:20px}.coming-header{min-height:84px}.coming-footer{padding:18px 0}}
+    @media(max-width:600px){.coming-status{font-size:9px;letter-spacing:1px;padding:9px 12px}.coming-main h1{font-size:clamp(44px,11vw,65px);line-height:1.04;margin-bottom:25px}.coming-emblem{width:66px;height:66px;border-radius:22px;margin-bottom:32px}.coming-emblem svg{width:39px;height:39px}main.coming-main{padding:48px 20px 70px}.coming-description{font-size:14px;max-width:295px}.coming-description span{display:block}.desktop-break{display:none}.coming-footer{font-size:10px;padding-bottom:25px}}
+    @media(max-height:650px) and (min-width:601px){main.coming-main{padding-top:16px;padding-bottom:32px}.coming-emblem{width:58px;height:58px;margin-bottom:22px}.coming-emblem svg{width:35px;height:35px}.coming-main h1{font-size:76px;margin-bottom:20px}.coming-footer{padding:18px 0}}
   </style>
 </head>
 <body class="coming-soon">
-  <header class="coming-header">
-    <div class="wordmark" aria-label="Vouch">vouch<span aria-hidden="true">✳</span></div>
-    <span class="coming-status">Coming soon</span>
-  </header>
+  <header class="site-header coming-header" data-site-nav><div class="site-brand-group"><a class="wordmark" href="/" aria-label="Vouch home">vouch<span aria-hidden="true">✳</span></a><span class="header-label" hidden></span></div><nav class="site-navigation" aria-label="Vouch navigation"><div class="site-search" hidden><div class="site-search-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="site-search-input" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="site-search-results" aria-describedby="site-search-status" aria-label="Search products" placeholder="Search products" autocomplete="off" maxlength="100"><button type="button" class="site-icon-button site-search-close" aria-label="Close search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="site-search-popover" hidden><p id="site-search-status" role="status" aria-live="polite"></p><div id="site-search-results" role="listbox" aria-label="Matching products"></div><button class="text-button site-search-more" type="button" hidden>See more results</button><button class="text-button site-search-nominate" type="button" hidden>Nominate by name</button></div><button class="site-search-clear" type="button" hidden>Clear search</button><button class="site-search-another" type="button" hidden>Search again</button></div><button class="site-icon-button site-search-toggle" type="button" aria-label="Search products" aria-expanded="false" aria-controls="site-search-input" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button><div class="site-desktop-links"><button class="site-text-link" type="button" data-suggest-edit aria-haspopup="dialog">Suggest a category</button><button class="site-text-link" type="button" data-site-feedback aria-haspopup="dialog">Feedback</button></div><a class="leaderboard-link" href="/account">Sign in</a><button class="site-icon-button site-menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="site-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="site-menu" id="site-menu" hidden><button type="button" data-suggest-edit aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg><span>Suggest a category</span></button><button type="button" data-site-feedback aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 5H5v15h14v-8M11 13l2-5 5-5 3 3-5 5-5 2Z"/></svg><span>Give feedback</span></button><a data-site-board href="/" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg><span>The board</span></a><a href="/account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg><span>Your collection</span></a></div></nav></header>
   <main class="coming-main">
     <div class="coming-content">
+      <span class="coming-status">Coming soon</span>
       <div class="coming-emblem" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><path d="M24 3v42M3 24h42M9.15 9.15l29.7 29.7M9.15 38.85l29.7-29.7" stroke="currentColor" stroke-width="2.8"/></svg></div>
       <h1><span>Good taste deserves</span><em>good company.</em></h1>
       <p class="coming-description"><span>A home for the products you swear by.</span><br class="desktop-break"><span> And the people whose taste you trust.</span></p>
     </div>
   </main>
   <footer class="coming-footer">A little less hype. A little more human.</footer>
-</body>
+<script src="/suggestions.js"></script><script src="/site-nav.js"></script></body>
 </html>

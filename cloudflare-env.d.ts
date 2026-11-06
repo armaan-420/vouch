@@ -1,5 +1,12 @@
 declare namespace Cloudflare {
   interface Env {
+    OPENAI_API_KEY?: string;
+    EXPERIMENT_RESEARCH_MODEL?: string;
+    EXPERIMENT_RESEARCH_PROVIDER?: string;
+    EXPERIMENT_RESEARCH_DAILY_BUDGET?: string;
+    EXPERIMENT_AUTO_BUILD?: string;
+    SUGGESTION_NOTIFY_EMAIL?: string;
+    SUGGESTION_ADMIN_URL?: string;
     CHANNEL3_API_KEY?: string;
     SHOPIFY_CATALOG_CLIENT_ID?: string;
     SHOPIFY_CATALOG_CLIENT_SECRET?: string;

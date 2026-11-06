@@ -59,3 +59,6 @@ yarn-error.log*
 /update-flow.mjs
 
 /node_modules
+
+# Local navigation review screenshots
+/output/nav-*.png

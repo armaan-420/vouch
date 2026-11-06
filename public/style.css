@@ -240,3 +240,6 @@ h1[tabindex="-1"]:focus-visible,h2[tabindex="-1"]:focus-visible{outline:3px soli
 .nominate .nominate-submit,.nomination-actions .nomination-continue,#create-experiment>button.primary{background:#123c2e;color:#f5f0e8;min-height:48px}
 #nomination-saved.picker-saved{position:static;transform:none;display:block;font-size:12px;line-height:1.5;margin:14px 0 0;color:#546042}
 @media(max-width:600px){.picker-results .product-result{padding:13px 11px;gap:10px}.picker-results .product-result strong{font-size:13px}.picker-results .product-result img,.picker-results .search-photo-placeholder{width:35px;min-width:35px;height:48px}.picker-selection .selection-chip{width:100%;justify-content:space-between}.nominate .nominate-submit{width:100%}}
+
+/* Community additions share the listing columns; controls sit beneath the product. */
+.community-row{display:grid;grid-template-columns:24px 64px minmax(0,1fr) auto;gap:10px 18px}.community-row .community-actions{grid-column:3/-1;margin-top:0}.community-row .score{padding-top:0}@media(max-width:700px){.community-row{grid-template-columns:24px 53px minmax(0,1fr) auto;gap:8px 11px}.community-row .community-actions{grid-column:2/-1}}

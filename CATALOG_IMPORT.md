@@ -1,5 +1,7 @@
 # Retailer catalog import — November 2, 2026
 
+Retailer imports are frozen; new live lookup work uses the provider adapters described in [PRODUCT_LOOKUP.md](PRODUCT_LOOKUP.md).
+
 Imported 1,371 additional retailer listings into the release catalog, bringing its checked-in total from 829 to 2,200. Production can contain additional products from its independent live feed refresh. This is a product listing count, not a claim that every formulation is unique.
 
 | Source | Added listings | Coverage |

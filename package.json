@@ -13,7 +13,8 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "test": "node --test test/*.test.mjs",
-    "dev:local": "node server.mjs"
+    "dev:local": "node server.mjs",
+    "preview:lookup": "node scripts/preview-product-lookup.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

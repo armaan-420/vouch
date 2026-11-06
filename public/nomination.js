@@ -30,7 +30,7 @@ function mountNomination(){
     if(saving)return;
     if(p.onBoardId){if(screen==='game')go('board');document.getElementById('product-'+p.onBoardId)?.scrollIntoView({behavior:'smooth',block:'center'});return}
     if(has(p))selectedNominations=selectedNominations.filter(n=>n.product?.id!==p.id);
-    else {if(selectedNominations.length>=50){error.textContent='Choose up to 50 nominations.';return}selectedNominations.push({name:p.brand+' '+p.name,product:p})}
+    else {if(selectedNominations.length>=50){error.textContent='Choose up to 50 nominations.';return}selectedNominations.push({name:[p.brand,p.name].filter(Boolean).join(' '),product:p})}
     changed();selection();highlight();status.textContent=`${selectedNominations.length} selected. Keep selecting or search another brand.`;
   }
   function highlight(){nominationPicker.refresh();}
@@ -41,12 +41,12 @@ function mountNomination(){
     const q=input.value.trim();nominationDraft=input.value;
     if(q.length<2){collapse();fallback.hidden=true;status.textContent='Type at least two characters to search.';return}
     const version=++searchVersion;searchController?.abort();searchController=new AbortController();collapse();fallback.hidden=true;status.textContent='Looking up products…';
-    try{const response=await fetch(apiUrl('/api/products/search?q='+encodeURIComponent(q)),{signal:AbortSignal.any([searchController.signal,AbortSignal.timeout(12000)])});const data=await response.json();if(!response.ok)throw Error(data.error);if(version!==searchVersion||!form.isConnected)return;matches=data.products;fallback.hidden=false;fallback.textContent=`Can’t find it? Add “${q}” for review`;
+    try{const response=await window.VouchCatalog.fetch(q,apiUrl('/api/products/search?q='+encodeURIComponent(q)),{signal:AbortSignal.any([searchController.signal,AbortSignal.timeout(12000)])});const data=await response.json();if(!response.ok)throw Error(data.error);if(version!==searchVersion||!form.isConnected)return;matches=data.products;fallback.hidden=false;fallback.textContent=`Can’t find it? Add “${q}” for review`;
       nominationPicker.setProducts(matches);
-      status.textContent=matches.length?`${matches.length} ${matches.length===1?'match':'matches'}. You can pick more than one.${data.stale?' Saved catalogue. Refresh pending.':''}${data.partial?' Some catalogs unavailable.':''}`:'No matches. Add this name and we’ll check the product details.';
-    }catch(err){if(err.name==='AbortError'||version!==searchVersion||!form.isConnected)return;collapse();status.textContent='Live search is unavailable right now. You can still add the name below.';fallback.textContent='Add “'+q+'” for review';fallback.hidden=false}
+      status.textContent=matches.length?`${matches.length} ${matches.length===1?'match':'matches'}. You can pick more than one.${data.stale?' Saved catalogue. Refresh pending.':''}${data.partial?' Some catalogs unavailable.':''}`:'No matches. Add this name and we’ll check the product details.';if(data.live?.limited)status.textContent='Showing saved results; live search is busy';
+    }catch(err){if(err.name==='AbortError'||version!==searchVersion||!form.isConnected)return;collapse();status.textContent=/^https?:\/\//i.test(q)?"We couldn't read that link. Try the product name.":'Live search is unavailable right now. You can still add the name below.';fallback.textContent='Add “'+q+'” for review';fallback.hidden=false}
   }
-  input.oninput=()=>{fallback.textContent='Add this name for review';nominationDraft=input.value;searchVersion++;searchController?.abort();clearTimeout(searchTimer);collapse();changed();fallback.hidden=true;status.textContent=input.value.trim().length<2?'Type at least two characters to search.':'Looking up products…';searchTimer=setTimeout(runSearch,300)};
+  input.oninput=()=>{fallback.textContent='Add this name for review';nominationDraft=input.value;searchVersion++;searchController?.abort();clearTimeout(searchTimer);collapse();changed();fallback.hidden=true;status.textContent=input.value.trim().length<2?'Type at least two characters to search.':'Looking up products…';searchTimer=setTimeout(runSearch,input.value.trim().length>=3?450:300)};
   fallback.onclick=()=>{if(saving)return;const name=input.value.trim();if(name.length<2)return;const n={name,product:null};if(selectedNominations.some(x=>key(x)===key(n))){status.textContent='That name is already selected.';return}if(selectedNominations.length>=50){error.textContent='Choose up to 50 nominations.';return}selectedNominations.push(n);changed();selection();searchVersion++;searchController?.abort();clearTimeout(searchTimer);input.value='';nominationDraft='';collapse();fallback.hidden=true;status.textContent='Name added for review. Add another favorite.';input.focus()};
   form.onsubmit=async e=>{
     e.preventDefault();if(saving)return;if(continueButton&&!selectedNominations.length&&!(state.nominations||[]).length){go('board');return}changed();saving=true;searchVersion++;searchController?.abort();clearTimeout(searchTimer);collapse();input.disabled=true;fallback.disabled=true;submit.disabled=true;nominationPicker.setDisabled(true);selection();

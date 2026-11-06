@@ -11,6 +11,7 @@ const eslintConfig = defineConfig([
     ".wrangler/**",
     ".sites-runtime/**",
     "outputs/**",
+    "public/vendor/**", // Pinned third-party browser builds; keep upstream code intact.
     "work/**",
   ]),
   {

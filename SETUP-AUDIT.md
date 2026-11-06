@@ -14,7 +14,7 @@ Sites version 30 / `33c860ed30ecf63311a8a9b8dbf0dfb84fc406f3` is deployed; deplo
 | Organizer dashboard | `/admin`, protected by ChatGPT sign-in and the server-side `ADMIN_EMAILS` allowlist |
 | Server | Vinext request routes running on a Cloudflare Worker |
 | Database | Managed Cloudflare D1, bound as `DB` in `.openai/hosting.json` |
-| Saved inputs | Anonymous visitor/session activity, verdicts, nomination history, product confirmations and catalog data |
+| Saved inputs | Anonymous visitor/session activity, verdicts, nomination history, product confirmations, catalog data, expiring provider snapshots and daily lookup usage; see [PRODUCT_LOOKUP.md](PRODUCT_LOOKUP.md) |
 | Deployment | Versioned source and build archive published through Sites; schema migrations applied by the hosting service |
 | Runtime configuration | Organizer allowlist configured as a hosting secret; no database credentials in the browser |
 | Operational check | `/api/health` reads the database and returns 503/500 on unavailable storage |

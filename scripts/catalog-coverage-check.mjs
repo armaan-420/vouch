@@ -1,0 +1,22 @@
+// Developer-only coverage check. Never imported by the application; no raw
+// provider responses, credentials, titles, images or offers are written.
+import fs from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import {createChannel3} from '../lib/catalog/providers/channel3.mjs';
+import {createShopifyCatalog} from '../lib/catalog/providers/shopify-catalog.mjs';
+import {tokens} from '../lib/catalog/normalize.mjs';
+import {WATER_BOTTLES} from '../lib/water-bottles.mjs';
+export const queries=['Beauty of Joseon Relief Sun Rice + Probiotics','Supergoop Unseen Sunscreen','EltaMD UV Clear','La Roche-Posay Anthelios Melt-in Milk','Neutrogena Ultra Sheer Dry-Touch','SKIN1004 Hyalu-Cica Water-Fit Sun Serum','Round Lab Birch Moisturizing Sunscreen','Isntree Hyaluronic Acid Watery Sun Gel','Bioré UV Aqua Rich Watery Essence','Beauty of Joseon','Owala FreeSip 24 oz','Stanley IceFlow Flip Straw','Hydro Flask 32 oz Wide Mouth','YETI Rambler 26 oz bottle','Nalgene 32 oz Wide Mouth','Samsung 65 inch OLED TV','LG C4 OLED 65','Olaplex No. 4 shampoo','Titleist Pro V1 golf balls','Away The Carry-On'];
+export function summarize(query,result){const words=tokens(query),top=result.products?.slice(0,3)||[];const match=top.find(p=>{const hay=tokens((p.brand||'')+' '+p.name).join(' ');return words.filter(w=>hay.includes(w)).length>=Math.ceil(words.length*.7)&&hay.includes(words[0]);});const p=match||top[0];return {status:result.status,httpStatus:result.httpStatus??'—',latency:result.latency??0,count:result.products?.length||0,match:!!match,brand:!!p?.brand,image:!!p?.image,variant:!!p?.variantLabel,sellers:p?.retailerCount||0};}
+export async function checkCoverage({env=process.env,outputDirectory=new URL('../outputs/',import.meta.url),fetcher=fetch}={}){
+ const providers=[];if(env.CHANNEL3_API_KEY)providers.push(createChannel3({apiKey:env.CHANNEL3_API_KEY,fetcher}));
+ if(env.SHOPIFY_CATALOG_CLIENT_ID&&env.SHOPIFY_CATALOG_CLIENT_SECRET||(typeof process!=='undefined'&&process.argv.includes('--keyless-shopify')))providers.push(createShopifyCatalog({clientId:env.SHOPIFY_CATALOG_CLIENT_ID,clientSecret:env.SHOPIFY_CATALOG_CLIENT_SECRET,mcpUrl:env.SHOPIFY_CATALOG_MCP_URL,fetcher}));
+ const urls=[...['Owala','Stanley'].map(brand=>WATER_BOTTLES.find(p=>p.brand===brand)?.url).filter(Boolean),'https://beautyofjoseon.com/products/relief-sun-rice-probiotics','https://www.ulta.com/p/sunglaze-body-gel-cream-sunscreen-spf-50-pimprod2057250'];
+ const rows=[],rates={};for(const provider of providers){let matches=0,successes=0;for(const query of queries){const facts=summarize(query,await provider.search(query,{limit:5}));rows.push([provider.name,query,facts]);matches+=Number(facts.match);successes+=Number(facts.status==='ok');await new Promise(resolve=>setTimeout(resolve,350));if(['auth_error','rate_limited'].includes(facts.status))break;}
+ rates[provider.name]={rate:matches/queries.length,successes};for(let i=0;i<urls.length;i++){if(!successes)break;const r=await provider.lookupUrl(urls[i]);rows.push([provider.name,'URL lookup '+(i+1),summarize('',r)]);await new Promise(resolve=>setTimeout(resolve,350));if(['auth_error','rate_limited'].includes(r.status))break;}}
+ const order=!rates.channel3?.successes?'shopify,channel3':rates.shopify?.rate-rates.channel3.rate>=.2?'shopify,channel3':'channel3,shopify';
+ const date=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ const report=`# Catalog coverage — ${date}\n\n${providers.length?'US queries; 5 results requested. Match is a heuristic, not manual confirmation.':'Live run skipped: no credentials. Keyless Shopify requires --keyless-shopify.'}\n\nProvider priority: ${order}${!rates.channel3?.successes?' (Channel3 not verified with a working key)':''}.\n\n| Provider | Query | Status | HTTP | ms | Results | Top-3 match | Brand | Image | Variant | Sellers |\n|---|---|---|---|---|---|---|---|---|---|---|\n`+rows.map(([p,q,f])=>`| ${p} | ${q} | ${f.status} | ${f.httpStatus} | ${f.latency} | ${f.count} | ${f.match} | ${f.brand} | ${f.image} | ${f.variant} | ${f.sellers} |`).join('\n')+'\n';
+ await fs.mkdir(outputDirectory,{recursive:true});const file=new URL('catalog-coverage-'+date+'.md',outputDirectory);await fs.writeFile(file,report);return {file:fileURLToPath(file),queries:rows.length,order};
+}
+if(typeof process!=='undefined'&&process.argv[1]===fileURLToPath(import.meta.url))console.log(await checkCoverage());

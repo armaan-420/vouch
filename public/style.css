@@ -214,3 +214,33 @@ h1[tabindex="-1"]:focus-visible,h2[tabindex="-1"]:focus-visible{outline:3px soli
 .vote-breakdown-footnote{border-top:1px solid #e9e9e0;padding-top:11px;margin:12px 0 0;font-size:9px;line-height:1.5;color:#74796e}
 @media(max-width:700px){.score-summary{gap:6px}.vote-details .vouch-count-chip{min-width:74px;gap:7px;min-height:34px;padding:7px 9px;font-size:12px}.vouch-count-chip svg{width:16px;height:16px}.rank-row{gap:10px}.vote-breakdown{max-width:calc(100vw - 36px)}}
 @media(pointer:coarse){.vouch-count-chip:before{content:'';position:absolute;inset:-5px 0;border-radius:99px}}
+
+/* Shared multi-select search: typing and saved selections each have their own space. */
+.picker-label{display:block;font-size:13px;font-weight:600;margin:0 0 9px}
+.selection-box.picker-search{display:flex;flex-wrap:nowrap;padding:0 8px 0 14px;gap:6px;min-height:58px}
+.picker-search .product-search-input{flex:1;width:100%;min-width:0;max-width:100%;margin:0;padding:17px 0;font-size:16px;border:0;background:transparent;outline:none}
+.picker-clear{border:0;background:transparent;color:#657052;font-size:23px;min-width:44px;min-height:44px;border-radius:50%}
+#product-results.picker-results,#catalog-choices.picker-results{max-height:none!important;overflow:visible!important;border:1px solid #cdd4be;border-radius:12px;background:#fffef9}
+.picker-results .product-result{gap:12px;padding:13px 15px;min-height:88px;border-radius:0}
+.picker-results .product-result:first-child{border-radius:12px 12px 0 0}.picker-results .product-result:last-child{border-radius:0 0 12px 12px}
+.picker-results .product-result .result-info{flex:1;min-width:0;overflow-wrap:anywhere}
+.picker-results .product-result strong{font-size:14px;line-height:1.45}.picker-results .search-brand{font-size:10px}.picker-results .product-result small{font-size:11px;line-height:1.5}
+.picker-results .product-result img,.picker-results .search-photo-placeholder{width:43px;min-width:43px;height:54px;flex-shrink:0}
+.result-check{width:19px;height:19px;min-width:19px;flex:0 0 19px!important;display:grid;place-items:center;border:1px solid #8b947b;border-radius:3px;font-size:14px;line-height:1}
+.product-result[aria-selected="true"] .result-check{background:#657044;color:#fffef9;border-color:#657044}
+.picker-more{display:block;width:100%;border:1px solid #cdd4be;border-top:0;border-radius:0 0 10px 10px;background:#fffef9;color:#566444;padding:14px;min-height:48px;font-size:12px}
+.picker-tools{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:8px}
+.picker-tools .text-button{font-size:12px;min-height:44px;text-decoration:underline;text-underline-offset:4px;padding:7px 0;margin:0;text-align:left}
+.picker-selection{border-top:1px solid #cbd3bc;margin-top:20px;padding-top:20px}
+.picker-selection-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.picker-selection-heading h3{font-size:13px;font-weight:600;margin:0;font-family:'DM Sans',sans-serif}.picker-selection-heading h3 span{font-weight:400;color:#657052}
+.picker-selection-heading .text-button{font-size:12px;min-height:44px;padding:7px 0}
+.picker-selection .selection-chips{display:flex;gap:8px;flex-wrap:wrap}
+.picker-selection .selection-chip{background:#f7f9ef;border:1px solid #c3ceae;color:#292d24;border-radius:10px;padding:6px 5px 6px 12px;gap:5px;font-size:12px;line-height:1.4;max-width:100%;min-width:0}
+.picker-selection .selection-chip>span{white-space:normal;max-width:none;overflow-wrap:anywhere;min-width:0;overflow:visible}
+.picker-selection .selection-chip small{display:block;font-size:10px;color:#657052;margin-top:3px}
+.picker-selection .selection-chip button{width:44px;height:44px;min-width:44px;min-height:44px;flex-shrink:0}.picker-selection .selection-chip button:hover{background:#e2e8d4}
+.picker-empty{font-size:12px!important;color:#657052;margin:0;line-height:1.5}
+.nominate .nominate-submit,.nomination-actions .nomination-continue,#create-experiment>button.primary{background:#123c2e;color:#f5f0e8;min-height:48px}
+#nomination-saved.picker-saved{position:static;transform:none;display:block;font-size:12px;line-height:1.5;margin:14px 0 0;color:#546042}
+@media(max-width:600px){.picker-results .product-result{padding:13px 11px;gap:10px}.picker-results .product-result strong{font-size:13px}.picker-results .product-result img,.picker-results .search-photo-placeholder{width:35px;min-width:35px;height:48px}.picker-selection .selection-chip{width:100%;justify-content:space-between}.nominate .nominate-submit{width:100%}}

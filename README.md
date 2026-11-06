@@ -2,6 +2,16 @@
 
 A product recommendation network with category experiments, community standings, and personal product collections. The original public sunscreen experiment lets participants vote Pass, Soft-Vouch (brand trust), Vouch (item experience), or Haven’t tried; explore a community leaderboard; search for and nominate a missing product.
 
+## Separate product search — November 5, 2026
+
+Participant nominations on The Board and after the voting cards, plus the organizer experiment product picker, share product-picker.js. The search field remains full width while selected products appear below it. Selecting a catalog result keeps the query and results open; remove individual selections or Clear all. Clear search and Search another brand preserve selections. Arrow keys, Enter and Escape operate the result list. Phones at up to 600px show three initial results, wider screens five; See more adds the same number without nested result scrolling. Search still returns at most 20 matches; this release does not expand coverage or introduce fuzzy matching.
+
+Nomination and experiment-creation actions use forest green #123C2E with ivory #F5F0E8. Selected chips retain the original pale #F7F9EF fill and #C3CEAE border; the rejected sand concept is not used. Manual names are marked For review. Catalog selection still preserves exact IDs, on-board products navigate to their existing card, and the final nomination action saves before opening The Board. Save failures retain selections for retry.
+
+Validation: 73 existing automated tests pass, frontend syntax checks pass, production build passes. Isolated local browser checks cover repeated searches, keyboard selection, pagination, organizer selections, saving, and 390px phone layout without horizontal overflow. Physical phone keyboard and full screen-reader testing remain unverified. Publication provenance is recorded in the release notes after deployment and Notion publication.
+
+Earlier November 5 sections below retain their local-review chronology; the version 31 release subsequently included those source changes. See the current release notes for deployment evidence.
+
 ## Local mobile layout review — November 5, 2026
 
 Local implementation only; no saved Sites version or deployment was created. Participant pages remove the category chip, header collection title, community-picks badge and footer links. The mobile landing page places product art behind the headline. Rating uses a compact header and a viewport-sized flexible product card, with Pass, Soft-Vouch (I trust this brand), Vouch (I tried this item), and I haven’t tried this. Visitor-facing flow and account copy uses collections or voting instead of experiments; internal routes, storage keys and organizer terminology are retained for compatibility.

@@ -37,8 +37,8 @@ document.addEventListener('keydown',event=>{
  if(open){open.open=false;open.querySelector('summary').focus();event.preventDefault();}
 });
 function communityCard(p,i){
- const actions=[['no','Pass 👎'],['brand','Soft-Vouch 🤏'],['yes','Vouch 👍'],['skip','I haven’t tried this']];
- return `<div class="rank-row community-row"><span class="rank">${String(i+1).padStart(2,'0')}</span>${standingsImage(p,true)}<div class="rank-info">${standingsName(p,true)}${p.myVote?`<span class="your-vote">You ${verdictLabel(p.myVote)}</span>`:''}</div>${scoreSummary(p)}<div class="community-actions">${actions.map(([value,label])=>`<button data-community="${esc(p.id)}" data-choice="${value}" aria-pressed="${p.myVote===value}">${label}</button>`).join('')}</div></div>`;
+ const actions=[['no','Pass 👎','👎'],['brand','Soft-Vouch 🤏','🤏'],['yes','Vouch 👍','👍'],['skip','I haven’t tried this','🤷']];
+ return `<div class="rank-row community-row"><span class="rank">${String(i+1).padStart(2,'0')}</span>${standingsImage(p,true)}<div class="rank-info">${standingsName(p,true)}${p.myVote?`<span class="your-vote">You ${verdictLabel(p.myVote)}</span>`:''}</div>${scoreSummary(p)}<div class="community-actions">${actions.map(([value,label,emoji])=>`<button data-community="${esc(p.id)}" data-choice="${value}" aria-label="${label}" aria-pressed="${p.myVote===value}"><span class="community-action-label" aria-hidden="true">${label}</span><span class="community-action-emoji" aria-hidden="true">${emoji}</span></button>`).join('')}</div></div>`;
 }
 function score(p){return baseBoard[p.id]?.score??null}
 function go(s){history.replaceState(null,'',experimentPath);screen=s;if(s!=='game'){const announcement=document.getElementById('voting-announcement');if(announcement)announcement.textContent=''}render();window.scrollTo({top:0,behavior:'instant'});if(s==='board'){if(experimentStatus()==='open')track('leaderboard').catch(()=>{});refreshCommunity()}}

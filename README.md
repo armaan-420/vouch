@@ -4,7 +4,7 @@ A product recommendation network with category experiments, community standings,
 
 ## Compact vote counts — November 5, 2026
 
-Approved board UI: a soft pale chip beneath each rated score says “N votes” (singular “1 vote”), counts all active Yes / Maybe / Pass verdicts and excludes skips. It is 16px tall with 9px text and 2px × 5px padding. Unrated rows have no chip. Tap to reveal only “The community says,” the exact total, and the three colored Yes / Maybe / Pass counts. Click outside or Escape closes the breakdown. Community additions and the overall board share this component; the existing score formula and latest-per-browser deduplication are unchanged. Browser counts are not verified unique people and differ from public account contributors. Source and publication evidence are recorded in the release notes after successful deployment.
+Approved board UI: a soft pale chip beneath each rated score says “N votes” (singular “1 vote”), counts all active Yes / Maybe / Pass verdicts and excludes skips. It is 16px tall with 9px text and 2px × 5px padding. Unrated rows have no chip. Tap to reveal only “The community says,” the exact total, and the three colored Yes / Maybe / Pass counts. Click outside or Escape closes the breakdown. Community additions and the overall board share this component; the existing score formula and latest-per-browser deduplication are unchanged. Browser counts are not verified unique people and differ from public account contributors. Published as Sites version 35, application source `7a523461e5d64b031167623eeac57030e550a342`; deployment `appgdep_6aed50f74eb8819197af0844668e611b` succeeded. All 73 tests and the production build passed; deployed app.js/style.css match source. The Notion release log and 17 affected working pages were updated successfully. See [version 35 notes](docs/releases/2026-11-05-v35.md).
 
 ## Separate product search — November 5, 2026
 
@@ -118,3 +118,6 @@ Sites version 30 / `33c860ed30ecf63311a8a9b8dbf0dfb84fc406f3` is deployed; deplo
 ## Previously documented release — version 18 (historical)
 
 Sites version 18 is live at https://v4ch.app/sunscreen, application source `964eed08e54bb59026daa81ac102e55ddd7f8713`, deployment `appgdep_6ae932bf595881919473372685607cfe`, environment revision 3. Release notes are in [docs/releases/2026-11-02-v18.md](docs/releases/2026-11-02-v18.md) and the canonical [Notion changelog](https://app.notion.com/p/40cd2a3caa8a812d83f4f3d13065be2d). At that verification, production assets matched source; account navigation works and email signup is configured without preview delivery. Actual inbox receipt/sign-in is pending owner testing.
+
+### Community listings (November 5, 2026)
+Qualified community nominations appear alongside the original lineup in score order, with matching rank, image, product name and score layout. A small Community Nominated label identifies additions; direct voting remains available, with a compact text option for “I haven’t tried this.” The overall board includes qualified nominations from organizer-included collections; reviewed name-only products remain separate per collection when no shared SKU exists.

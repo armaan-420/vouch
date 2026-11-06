@@ -5,9 +5,9 @@ import os from 'node:os';
 import path from 'node:path';
 import {createVouchServer} from '../server.mjs';
 
-async function fixture(t){
+async function fixture(t,options={}){
   const directory=await fs.mkdtemp(path.join(os.tmpdir(),'vouch-experiments-'));
-  const server=await createVouchServer({directory,productSearch:{find:async()=>null,search:async()=>({products:[]})}});
+  const server=await createVouchServer({directory,productSearch:options.productSearch||{find:async()=>null,search:async()=>({products:[]})}});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));
   const origin='http://127.0.0.1:'+server.address().port;
   t.after(async()=>{await new Promise(r=>server.close(r));await fs.rm(directory,{recursive:true,force:true})});
@@ -121,4 +121,31 @@ test('board counts follow replacement and overall uses the latest verdict per br
  assert.deepEqual((await a('/api/overall')).data.products[0].voteCounts,{yes:0,maybe:1,pass:1,total:2});
  await answer(b,'counts-a','yes');
  assert.deepEqual((await a('/api/board?experiment=counts-a')).data.products[0].voteCounts,{yes:2,maybe:0,pass:1,total:3});
+});
+
+
+test('qualified nominations enter overall; shared SKUs deduplicate and name-only additions remain visible',async t=>{
+ const product={id:'catalog-new-spf',brand:'New Brand',name:'Daily SPF',image:'https://example.com/spf.png'};
+ const f=await fixture(t,{productSearch:{find:async id=>id===product.id?product:null,search:async()=>({products:[product]})}}),admin=f.browser(),a=f.browser(),b=f.browser();
+ for(const id of ['community-a','community-b']){
+   await admin('/api/admin/experiments',experiment(id));
+   for(const visitor of [a,b])await visitor('/api/nominations?experiment='+id,{nominations:[{productId:product.id},{name:'Reviewed SPF'}]});
+   const groups=(await admin('/api/admin/summary?experiment='+id)).data.nominations;
+   await admin('/api/admin/review?experiment='+id,{name:'Reviewed SPF',keys:groups.find(g=>g.name==='Reviewed SPF').sourceKeys});
+ }
+ assert.equal((await a('/api/overall')).data.products.length,0);
+ for(const id of ['community-a','community-b'])await admin('/api/admin/experiment-settings',{id,closed:false,includeInOverall:true});
+ let overall=(await a('/api/overall')).data.products;
+ assert.equal(overall.filter(p=>p.id===product.id).length,1);
+ assert.equal(overall.filter(p=>p.name==='Reviewed SPF').length,2);
+ assert.equal(overall.find(p=>p.id===product.id).score,null);
+ const first=(await a('/api/community?experiment=community-a')).data.products.find(p=>p.skuId===product.id);
+ await a('/api/community/vote?experiment=community-a',{productId:first.id,value:'yes'});
+ await b('/api/community/vote?experiment=community-a',{productId:first.id,value:'brand'});
+ await new Promise(resolve=>setTimeout(resolve,5));
+ await a('/api/community/vote?experiment=community-b',{productId:first.id,value:'no'});
+ const row=(await a('/api/overall')).data.products.find(p=>p.id===product.id);
+ assert.equal(row.communityNominated,true);assert.equal(row.image,product.image);
+ assert.deepEqual(row.voteCounts,{yes:0,maybe:1,pass:1,total:2});
+ assert.equal((await a('/api/community/vote?experiment=community-a',{productId:first.id,value:'skip'})).status,200);
 });

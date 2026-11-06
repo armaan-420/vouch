@@ -2,25 +2,33 @@
   "project": "Vouch",
   "notion_changelog_url": "https://app.notion.com/p/40cd2a3caa8a812d83f4f3d13065be2d",
   "notion_changelog_page_id": "40cd2a3c-aa8a-812d-83f4-f3d13065be2d",
-  "last_documented_commit": "7a523461e5d64b031167623eeac57030e550a342",
-  "last_documented_sites_version": 35,
+  "last_documented_commit": "38a2e8da8dc7917b4287e89630b3a79f78f0e7b3",
+  "last_documented_sites_version": 39,
   "sites_project_id": "appgprj_6ae5468eccc88191ad1d6413c672392a",
-  "deployment_id": "appgdep_6aed50f74eb8819197af0844668e611b",
+  "deployment_id": "appgdep_6aede26afa848191adfde3bb14d1aad9",
   "deployment_status": "succeeded",
-  "publication_date": "2026-11-05",
+  "publication_date": "2026-11-06",
   "timezone": "America/New_York",
-  "source_worktree_at_publication": "Exact application source pushed and packaged at 7a523461; documentation mirrors and checkpoints follow successful Notion publication.",
-  "validation": "73 automated tests passed; frontend syntax, whitespace and production build passed. Isolated browser checks verified raw total, tiny chip, no chip on Unrated and minimal breakdown. Production app.js/style.css match release source; Sites version 35 deployment succeeded.",
+  "source_worktree_at_publication": "Approved source reconciled with live v37, pushed and packaged at 38a2e8da; documentation mirrors and checkpoints advanced only after successful Notion publication.",
+  "validation": "110 tests and final production build passed, including an actual Cloudflare-runtime redirect regression test. Production category searches report Channel3 ok, repeated queries hit cache, fresh-offer endpoints return 200, health/config return 200, anonymous organizer access is 401, and six public assets match source. Browser search UI shows 18 water-bottle matches.",
   "trigger": "On user request to publish Vouch release notes, log changes, or update Notion after project work; no scheduled watcher.",
-  "environment_revision": 3,
-  "notion_pages_updated": 18,
-  "documentation_mirror_status": "Release notes and 17 affected working Notion pages updated successfully; local mirrors and checkpoint advanced afterward. Historical sources preserved.",
+  "environment_revision": 4,
+  "notion_pages_updated": 13,
+  "documentation_mirror_status": "Release notes, new Product Lookup production guide and eleven affected working Notion pages published successfully; local mirrors/checkpoints advanced afterward. Historical source artifacts preserved.",
   "github_repository_url": "https://github.com/armaan-420/vouch",
   "live_url": "https://v4ch.app/sunscreen",
   "pending_checks": [
     "Actual production inbox delivery and full email-code sign-in",
     "Real signed-in production profile-photo upload",
     "Full browser accessibility, larger-text/physical-phone small-label usability and failed-network photo recovery audit",
-    "Load/abuse validation and normalized indexed storage before broad scale"
+    "Load/abuse validation and normalized indexed storage before broad scale",
+    "Physical iPhone barcode scanner/camera and production product-photo search",
+    "Manual exact-formula/variant coverage and measured search/completion gains",
+    "Shopify authentication/identity-storage questions deferred; adapter disabled",
+    "Shampoo/TV real production lineups not created; demo boards remain local"
+  ],
+  "product_lookup_guide_url": "https://app.notion.com/p/410d2a3caa8a817cbd4bc22f981a73e2",
+  "enabled_live_providers": [
+    "channel3"
   ]
 }

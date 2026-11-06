@@ -2,6 +2,12 @@
 
 A product recommendation network with category experiments, community standings, and personal product collections. The original public sunscreen experiment lets participants vote Pass, Soft-Vouch (brand trust), Vouch (item experience), or Haven’t tried; explore a community leaderboard; search for and nominate a missing product.
 
+## Category-scoped live lookup — November 6, 2026
+
+Sites version 39 is live, application source `38a2e8da8dc7917b4287e89630b3a79f78f0e7b3`, deployment `appgdep_6aede26afa848191adfde3bb14d1aad9`, environment revision 4. Channel3 uses the active voting category for missing-favorite searches; local results answer first and repeated searches use category-specific caching. Link paste, barcode/photo controls and disclosed contributor-page offers are enabled. Shopify remains deferred. The empty shampoo/TV preview boards remain local; production retains its existing collections.
+
+All 110 tests and final build pass. Production searches, cache reuse and current offers were verified, and six public assets match source. The Notion changelog, new lookup guide and eleven affected working pages were published before advancing checkpoints. See [release notes](docs/releases/2026-11-06-v39.md), [production guide](docs/product-lookup-production-guide.md), and [PRODUCT_LOOKUP.md](PRODUCT_LOOKUP.md) for controls and remaining device/coverage checks. Earlier dated sections retain their historical status.
+
 ## Compact vote counts — November 5, 2026
 
 Approved board UI: a soft pale chip beneath each rated score says “N votes” (singular “1 vote”), counts all active Yes / Maybe / Pass verdicts and excludes skips. It is 16px tall with 9px text and 2px × 5px padding. Unrated rows have no chip. Tap to reveal only “The community says,” the exact total, and the three colored Yes / Maybe / Pass counts. Click outside or Escape closes the breakdown. Community additions and the overall board share this component; the existing score formula and latest-per-browser deduplication are unchanged. Browser counts are not verified unique people and differ from public account contributors. Published as Sites version 35, application source `7a523461e5d64b031167623eeac57030e550a342`; deployment `appgdep_6aed50f74eb8819197af0844668e611b` succeeded. All 73 tests and the production build passed; deployed app.js/style.css match source. The Notion release log and 17 affected working pages were updated successfully. See [version 35 notes](docs/releases/2026-11-05-v35.md).

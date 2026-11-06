@@ -2,7 +2,11 @@
 
 Vouch already had public hosting through Sites on Cloudflare Workers and a managed D1 database. A second deployment on Vercel would require a hosting migration, replacement of the Cloudflare database binding, and replacement of the Sites organizer authentication. It is unnecessary for the prototype, so the existing platform is retained.
 
-## Current documentation publication — November 3, 2026
+## Current production and documentation — November 6, 2026
+
+Sites version 39 / `38a2e8da8dc7917b4287e89630b3a79f78f0e7b3` is deployed; deployment `appgdep_6aede26afa848191adfde3bb14d1aad9` succeeded with environment revision 4. Channel3 alone is enabled with a server-only secret and the reviewed link/barcode/photo/Where-to-buy switches. Additive migrations created expiring catalog cache and atomic daily usage tables. Existing auth, public access and records are preserved. All 110 tests and final build pass; production category search/cache/fresh-offer checks pass. Thirteen Notion pages were created/updated successfully before local checkpoint advancement. Full details: [version 39](docs/releases/2026-11-06-v39.md), [lookup operations](docs/product-lookup-production-guide.md).
+
+## Prior documentation publication — November 3, 2026
 
 Sites version 30 / `33c860ed30ecf63311a8a9b8dbf0dfb84fc406f3` is deployed; deployment `appgdep_6aea1d66e860819193ac5939e551e597` succeeded, environment revision 3. The Notion changelog and all 45 accessible Vouch pages were updated. Fresh publication checks: 71 automated tests passed, diff whitespace check passed, and public bottle configuration confirmed nine photographed products, open/unscheduled and excluded from overall. Production inbox/code sign-in and a real signed-in production photo upload remain unverified. Earlier verification reports and no-publication statements describe their historical tasks. See [version 30 notes](docs/releases/2026-11-03-v30.md). Local documentation changes have not been committed or pushed.
 

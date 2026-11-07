@@ -16,7 +16,7 @@ Configured processing researches ten recognized currently sold products, one bra
 
 Picks match existing local/Channel3 catalog identities by normalized brand and model-token overlap, preferring photos. Unmatched picks become draft custom products. Identity references are persisted; short-lived provider images/offers/prices/commissions are not. Missing photos require review. Price and affiliate economics never select or rank research picks.
 
-States: queued → researching → matching → ready or needs attention; rejected and failed retain reviewable context. Eight photos yields ready; four or more usable products with fewer photos yields needs attention; fewer than four yields rejected. Ready does not mean public.
+States: queued → researching → matching → ready or needs attention; rejected and failed retain reviewable context. Every product having a photo plus complete source coverage yields ready; four or more usable products with missing photos or source coverage yields needs attention; fewer than four yields rejected. Ready does not mean public.
 
 Draft paths/data/votes/nominations and draft-only product/account discovery return 404 to visitors. Organizer preview requires authorization plus preview=1; voting remains disabled. Drafts are excluded from overall results and start with includeInOverall=false. Missing legacy status means live.
 
@@ -24,7 +24,7 @@ Draft paths/data/votes/nominations and draft-only product/account discovery retu
 
 Open Suggestions to search and filter Live, Draft, In research, Rejected, Failed or Deleted. Rows show category/path, support, status, research/photo summary, update time and actions. Open a row for picks, sources, history, preview and lineup editing.
 
-Approve uses one explicit confirmation and publishes a completed draft. Reject removes its private registry entry but retains research/history. Refresh queues a new budgeted attempt, preserves prior research and can replace a draft lineup; it cannot rewrite a live Edit. Delete moves the suggestion to Deleted, halts processing and holds its private draft for restoration. Restore recovers it unless its path has been taken. Deleting a live suggestion never deletes the live Edit or votes. Active leases temporarily disable actions.
+Approve uses one explicit confirmation and publishes a completed draft only after the server rechecks all product photos and the required research coverage. Reject removes its private registry entry but retains research/history. Refresh queues a new budgeted attempt, preserves prior research and can replace a draft lineup; it cannot rewrite a live Edit. Delete moves the suggestion to Deleted, halts processing and holds its private draft for restoration. Restore recovers it unless its path has been taken. Deleting a live suggestion never deletes the live Edit or votes. Active leases temporarily disable actions.
 
 ## Activation and operating controls
 
@@ -46,3 +46,17 @@ Release evidence: <mention url="https://app.notion.com/p/40cd2a3caa8a812d83f4f3d
 
 The real running-shoes job completed a private ten-product draft. It is marked Draft · needs attention because all ten products need photos; source/model/variant quality needs manual review. The public page, preview query without organizer authorization, experiment API and board API return 404. No production approval was performed. Production Product Library search and product details were also verified against existing voting activity. Unattended cron execution remains unverified.
 
+
+## Research and photo requirements — November 7, 2026
+
+The research brief now requests actual TikTok trend evidence, at least one and preferably two distinct Wirecutter brand picks, another brand recommended by the first organic Google result, and an AI recommendation corroborated by reputable editorial/manufacturer sources. Ten products from distinct brands remain the target. AI means the configured OpenAI model synthesis, not a separate ChatGPT consumer session.
+
+The private organizer record stores channel, exact product, source URL, query, explanation, and Google search URL/rank when applicable. Returned evidence must appear in provider source metadata to count automatically; a Google result also requires its actual search page in that metadata. This verifies URL provenance, not the truth of endorsements or trend claims. Blocked/paywalled/missing coverage stays incomplete; do not invent a source or equate hosted web search with Google ranking. An organizer can personally check and record missing evidence in Suggestions. Manual records carry an organizer marker and timestamp. Source research is never added to visitor-facing product records.
+
+Approval requires complete TikTok/Wirecutter/Google/AI coverage for products still in the final lineup and a photo for every item. Google must contribute a different brand from the Wirecutter evidence. One verified Wirecutter pick is sufficient; two is preferred. Legacy drafts must complete these checks too. Removing or changing a product invalidates its coverage. Missing sources or photos keep drafts private; no category is approved automatically.
+
+All draft products have a photo URL field in Edit lineup. Custom products save that photo directly. Provider products can receive an organizer photo override, preserved through identity storage and response hydration without retaining short-lived provider media. Otherwise provider photos are re-resolved at approval. Publication checks for a valid public HTTPS photo URL, not guaranteed future availability or exact visual identity; organizer review should confirm each image loads and matches the model. Existing live categories are not retroactively unpublished.
+
+The research tool-call allowance is now 16 (previously 5), with a 16,000 output-token ceiling. The daily start cap remains 20 and is not a monetary budget. Research quality, source access and future third-party photo availability still require operational review. Local automated checks use explicitly labeled fixtures; no new production category was submitted or approved during validation.
+
+Validation for this update: 162 automated tests and the production build pass. A local browser check confirmed ten photo fields for a ten-product draft, the private research summary, and disabled approval with missing photos. The revised live research brief has not been exercised on a new production category; source accessibility remains unverified.

@@ -3,6 +3,7 @@ export function createD1Store(db: D1Database, recordKey='experiment', initial:()
   const readRow = (key: string) => db.prepare('SELECT json, version FROM app_records WHERE key = ?').bind(key).first<{json:string;version:number}>();
   return {
     scope(key:string, factory:()=>any=fresh){return createD1Store(db,key,factory)},
+    async destroy(){await db.prepare('DELETE FROM app_records WHERE key = ?').bind(recordKey).run();},
     async read() { const row=await readRow(recordKey);return row?JSON.parse(row.json):initial(); },
     async transaction<T>(fn:(data:any)=>T):Promise<T> {
       for(let attempt=0;attempt<12;attempt++) {

@@ -99,3 +99,15 @@ test('catalog photos are rechecked and organizer photo overrides survive draft s
  assert.equal((await s.auto.handle(req('/api/admin/suggestions/edit',{key:j.key,id:j.draft.id,title:j.draft.title,category:j.draft.category,productIds:j.draft.products.map(p=>p.id),customProducts:[],photoOverrides:{'c3-0':'https://example.com/attached.jpg'}}))).status,200);
  assert.equal((await s.listing())[0].readiness.canApprove,true);assert.equal((await s.listing())[0].draft.products[0].photoOverride,'https://example.com/attached.jpg');
 });
+
+test('missing photo lookup attaches catalog identities while keeping draft private',async t=>{
+ let photos=false;const picks=fakeResearch('backpacks').picks,catalog=picks.map((p,i)=>({id:'c3-photo-'+i,provider:'channel3',providerId:'photo-'+i,brand:p.brand,name:p.productName,image:'https://example.com/photo-'+i+'.jpg'}));
+ const s=await setup(t,{search:{search:async()=>({products:photos?catalog:[]}),find:async id=>catalog.find(p=>p.id===id)}});await s.submit('backpacks');const j=await s.build();assert.equal(j.readiness.photoCount,0);photos=true;
+ const response=await s.auto.handle(req('/api/admin/suggestions/photos',{key:j.key}));assert.equal(response.status,200);assert.equal((await response.json()).missing,0);const [next]=await s.listing();assert.equal(next.draft.status,'draft');assert.equal(next.readiness.canApprove,true);assert.equal(next.draft.products[0].image,undefined);assert.equal(next.draft.products[0].provider,'channel3');assert.equal((await s.api(req('/api/experiment?experiment='+next.draft.id,null,false))).status,404);
+});
+test('manual draft additions remain visible and need their own photos before approval',async t=>{
+ const s=await setup(t);await s.submit('backpacks');const j=await s.build(),manual={id:'sku-manual-fixture',brand:'Manual brand',name:'Manual product',url:'https://example.com/product'};
+ const save=products=>s.auto.handle(req('/api/admin/suggestions/edit',{key:j.key,id:j.draft.id,title:j.draft.title,category:j.draft.category,productIds:[],customProducts:products}));
+ const original=j.draft.products.map(p=>({...p,image:'https://example.com/photo.jpg'}));assert.equal((await save([...original,manual])).status,200);assert.equal((await s.listing())[0].draft.products.length,11);assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,409);
+ assert.equal((await save([...original,{...manual,image:'https://example.com/manual.jpg'}])).status,200);assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,200);
+});

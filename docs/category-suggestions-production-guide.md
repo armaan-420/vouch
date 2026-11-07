@@ -60,3 +60,7 @@ All draft products have a photo URL field in Edit lineup. Custom products save t
 The research tool-call allowance is now 16 (previously 5), with a 16,000 output-token ceiling. The daily start cap remains 20 and is not a monetary budget. Research quality, source access and future third-party photo availability still require operational review. Local automated checks use explicitly labeled fixtures; no new production category was submitted or approved during validation.
 
 Validation for this update: 162 automated tests and the production build pass. A local browser check confirmed ten photo fields for a ten-product draft, the private research summary, and disabled approval with missing photos. The revised live research brief has not been exercised on a new production category; source accessibility remains unverified.
+
+## Experiment curation and draft preparation — November 7, 2026
+
+Refresh suggestions is now limited to the list page. Private draft details include Find missing photos and Edit lineup, with a shared name/URL/manual product adder. The visible lineup includes organizer additions, and every item must have a photo before approval. Existing bundled images count toward readiness. See [Experiment management](experiment-management-guide.md) for the Products, Settings and Participation, Missing Products, and Community Additions tabs, plus disable/reactivate/permanent-delete behavior.

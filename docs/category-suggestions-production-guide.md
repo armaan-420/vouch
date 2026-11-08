@@ -74,3 +74,11 @@ Failed jobs with a saved response and no accepted research show Recover saved re
 The organizer-only diagnostics endpoint reports provider completion/incomplete status, output token limits and validation failures without exposing the provider key, visitor data or raw provider error payloads. New failures retain classified error codes rather than only the generic build-step message.
 
 Validation: 181 tests pass, including evidence rejection without loss of valid picks, unchanged approval gates, saved-response recovery without another model start, diagnostics authorization and redaction, and the admin PIN suite. Production recovery must remain private; source gaps and missing photos still require review.
+
+## Suggestion review layout — November 8, 2026
+
+Suggestion details now open as a visual review page. The header summarizes lineup size, attached photos, completed source checks and the remaining launch requirements. Product lineup shows photo cards, clear missing-photo states, and expandable reasoning/source links. A researched-model note identifies catalog listings whose names differ from the research reference.
+
+Research & sources groups TikTok, Wirecutter, Google and AI evidence into separate cards with accepted-coverage status, expandable evidence records, research limitations, and the existing checked-source form. Details & history contains dates, attempt counts, community notes and previous research lineups. The selected tab and expanded reading sections survive automatic refreshes.
+
+Common actions stay visible; refresh, reject and delete move into More actions. The Suggestions list has a single Review link per row. The lineup editor, manual/URL/search additions, photo lookup and server approval requirements continue to use the existing behavior. This change does not rerun research, alter saved suggestions or publish a draft.

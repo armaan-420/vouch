@@ -124,3 +124,13 @@ test('diagnostics are organizer-only, read-only, and tied to a saved research re
  const s=await setup(t,{research});await s.submit('backpacks');await s.auto.advance();assert.equal((await s.auto.handle(req('/api/admin/suggestions/diagnostics?key=backpack',null,false))).status,401);
  const r=await s.auto.handle(req('/api/admin/suggestions/diagnostics?key=backpack'));assert.equal(r.status,200);assert.equal((await r.json()).diagnostic.validationError,'Invalid research format.');assert.equal(calls,1);assert.equal((await s.listing())[0].state,'researching');
 });
+
+test('invalid channel evidence preserves valid picks but cannot count toward publication',()=>{
+ const r=fakeResearch('backpacks');r.evidence[0].url='https://editorial.example.com/tiktok-trend';const result=validateResearch(r);assert.equal(result.picks.length,10);assert.equal(result.evidence.length,3);assert.equal(result.sourceIssues[0].channel,'tiktok');assert.equal(result.sourceIssues[0].reason,'TikTok evidence needs a TikTok URL.');assert.equal(researchCoverage(result).counts.tiktok,0);assert.equal(researchCoverage(result).complete,false);assert.equal(validateResearch(result).sourceIssues.length,1);
+});
+test('failed research recovers its saved response without a new request or budget start',async t=>{
+ let starts=0,polls=0,time=Date.now(),recover=false;const result=fakeResearch('backpacks');result.evidence[0].url='https://editorial.example.com/tiktok-trend';
+ const research={fake:true,start:async()=>{starts++;return {responseId:'resp-saved',pending:true};},poll:async()=>{polls++;if(!recover)throw Error('Prior validation failure');return {result:validateResearch(structuredClone(result))};}};
+ const s=await setup(t,{research,now:()=>time});await s.submit('backpacks');await s.auto.advance();for(let i=0;i<3;i++){time+=10000;await s.auto.advance();}let [job]=await s.listing();assert.equal(job.state,'failed');const jobs=await s.store.scope('suggestion-jobs',()=>({jobs:{},budget:{}})),budget=structuredClone((await jobs.read()).budget);
+ recover=true;assert.equal((await s.auto.handle(req('/api/admin/suggestions/resume',{key:job.key}))).status,200);for(let i=0;i<12;i++)await s.auto.advance();[job]=await s.listing();assert.equal(job.draft.status,'draft');assert.equal(job.research.picks.length,10);assert.equal(job.research.sourceIssues[0].channel,'tiktok');assert.equal(job.readiness.canApprove,false);assert.equal(job.readiness.coverage.counts.tiktok,0);assert.equal(starts,1);assert.deepEqual((await jobs.read()).budget,budget);assert.equal((await s.auto.handle(req('/api/admin/suggestions/resume',{key:job.key}))).status,409);
+});

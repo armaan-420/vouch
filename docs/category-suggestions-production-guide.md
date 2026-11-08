@@ -64,3 +64,13 @@ Validation for this update: 162 automated tests and the production build pass. A
 ## Experiment curation and draft preparation — November 7, 2026
 
 Refresh suggestions is now limited to the list page. Private draft details include Find missing photos and Edit lineup, with a shared name/URL/manual product adder. The visible lineup includes organizer additions, and every item must have a photo before approval. Existing bundled images count toward readiness. See [Experiment management](experiment-management-guide.md) for the Products, Settings and Participation, Missing Products, and Community Additions tabs, plus disable/reactivate/permanent-delete behavior.
+
+## Source validation and saved-response recovery — November 7, 2026
+
+A completed provider response can contain valid product picks alongside invalid channel evidence, such as an editorial URL labeled TikTok. Those evidence records now become private source-review warnings and do not count toward coverage. Valid ten-brand product research continues into a private draft; approval still requires complete accepted source coverage and photos for every item. Invalid product identities, unsafe pick source URLs, and malformed research output still fail validation.
+
+Failed jobs with a saved response and no accepted research show Recover saved research. This resumes polling the existing response and gives it a fresh processing window; it does not start a new model request or consume another daily research start. It cannot overwrite a live Edit. Refresh research remains the separate action for requesting new research.
+
+The organizer-only diagnostics endpoint reports provider completion/incomplete status, output token limits and validation failures without exposing the provider key, visitor data or raw provider error payloads. New failures retain classified error codes rather than only the generic build-step message.
+
+Validation: 181 tests pass, including evidence rejection without loss of valid picks, unchanged approval gates, saved-response recovery without another model start, diagnostics authorization and redaction, and the admin PIN suite. Production recovery must remain private; source gaps and missing photos still require review.

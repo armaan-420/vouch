@@ -27,3 +27,13 @@ test('Shopify hydrate batches up to fifty and never retries a rate-limited batch
 test('disabled live mode and local find work without any cache database access',async()=>{const r=createProductResolver({local,enabled:false,cache:{get:async()=>{throw Error('new migration not applied')}}});assert.equal((await r.find('local')).id,'local');assert.equal((await r.search('Local',options)).products.length,0);});
 
 test('organizer photo overrides survive hydration when the provider has no photo',async()=>{const r=createProductResolver({local,enabled:false});const [hydrated]=await r.hydrate([{...product,image:undefined,photoOverride:'https://images.example.com/attached.jpg'}]);assert.equal(hydrated.image,'https://images.example.com/attached.jpg');assert.deepEqual(hydrated.images,['https://images.example.com/attached.jpg']);});
+
+// Different search scopes can choose different canonical listings for one model.
+test('cyclic duplicate aliases retain catalog photos across resolver restarts',async()=>{
+ const cache=memoryCache(),a={...product,id:'c3-a',providerId:'a'},b={...product,id:'c3-b',providerId:'b'};
+ await cache.set('product:'+a.id,a,600);await cache.set('product:'+b.id,b,600);
+ await cache.set('alias:channel3:a',{...b,image:undefined},600);await cache.set('alias:channel3:b',{...a,image:undefined},600);
+ const r=createProductResolver({local,cache,enabled:false});
+ assert.equal((await r.find(a.id)).image,product.image);assert.equal((await r.find(b.id)).image,product.image);
+ const hydrated=await r.hydrate([a,b]);assert.equal(hydrated.every(p=>p.image===product.image),true);
+});

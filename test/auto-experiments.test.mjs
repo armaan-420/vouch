@@ -153,3 +153,11 @@ test('photo repair records new photos and per-item outcomes without replacing an
 test('failed photo searches report zero new photos and keep a manual repair path',async t=>{
  const s=await setup(t);await s.submit('backpacks');const j=await s.build(),report=await(await s.auto.handle(req('/api/admin/suggestions/photos',{key:j.key}))).json();assert.equal(report.added,0);assert.equal(report.missing,10);assert.equal(report.results.every(r=>r.outcome==='no_results'),true);assert.equal((await s.listing())[0].photoLookup.checked,10);assert.equal((await s.auto.handle(req('/api/admin/suggestions/photos',{key:j.key},false))).status,401);
 });
+
+test('photo repair counts only photos that resolve after the identity is saved',async t=>{
+ const s=await setup(t);await s.submit('backpacks');const j=await s.build();
+ const matched=j.draft.products.map((p,i)=>({...p,id:'c3-lost-'+i,provider:'channel3',providerId:'lost-'+i,image:'https://example.com/photo.jpg'}));
+ const auto=createSuggestions({store:s.store,authorizeAdmin:()=>true,development:true,search:{search:async q=>({products:matched.filter(p=>q.includes(p.brand))}),find:async()=>null}});
+ const report=await(await auto.handle(req('/api/admin/suggestions/photos',{key:j.key}))).json();
+ assert.equal(report.added,0);assert.equal(report.missing,10);assert.equal(report.results.every(r=>r.outcome==='saved_photo_unavailable'),true);assert.equal(report.results.every(r=>r.productId.startsWith('c3-lost-')),true);
+});

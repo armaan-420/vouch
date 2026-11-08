@@ -89,6 +89,6 @@ Find missing photos now tries the current category, then the broader product cat
 
 Each request checks up to ten missing products, three at a time, prioritizing the least recently checked items. Private per-item results distinguish attached photos, no matching photo, duplicate identities, and unavailable catalog lookups. The button shows a loading state and the number of newly added photos. An unresolved card offers Add photo, which opens and focuses its existing photo URL field. Research, source requirements and approval remain unchanged; photo lookup never publishes a draft.
 
-Duplicate catalog aliases now use bounded traversal so circular aliases cannot lose photos during hydration. Newly added counts are computed after saved identities resolve, and per-item reports follow the replacement identity.
+Cached search results now refresh their product-photo snapshots, and a photo-less duplicate alias cannot hide a matching snapshot. Duplicate catalog aliases use bounded traversal so circular aliases cannot lose photos during hydration. Newly added counts are computed after saved identities resolve, and per-item reports follow the replacement identity.
 
-Validation: 187 automated tests pass, including cross-category matching, rejection of wrong brands and incomplete models, URL fallback, unavailable-provider reporting, persisted lookup results, and private-draft identity/order preservation.
+Validation: 188 automated tests pass, including cross-category matching, rejection of wrong brands and incomplete models, URL fallback, unavailable-provider reporting, persisted lookup results, and private-draft identity/order preservation.

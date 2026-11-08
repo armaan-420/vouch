@@ -37,3 +37,12 @@ test('cyclic duplicate aliases retain catalog photos across resolver restarts',a
  assert.equal((await r.find(a.id)).image,product.image);assert.equal((await r.find(b.id)).image,product.image);
  const hydrated=await r.hydrate([a,b]);assert.equal(hydrated.every(p=>p.image===product.image),true);
 });
+
+test('cached photo searches refresh missing product snapshots and survive a photo-less alias',async()=>{
+ const cache=memoryCache(),a={...product,id:'c3-a',providerId:'a'},b={...product,id:'c3-b',providerId:'b',image:null};
+ const r=createProductResolver({local,cache,enabled:true,providers:[{name:'channel3',search:async()=>({status:'ok',products:[a]})}]});
+ await r.search('Bottle',options);await cache.delete('product:'+a.id);
+ await cache.set('product:'+b.id,b,600);await cache.set('alias:channel3:a',{...b},600);
+ assert.equal((await r.search('Bottle',options)).live.cached,true);
+ assert.equal((await r.find(a.id)).image,a.image);assert.equal((await r.hydrate([a]))[0].image,a.image);
+});

@@ -6,7 +6,7 @@ import path from 'node:path';
 import {createFileStore} from '../lib/file-store.mjs';
 import {createSuggestions} from '../lib/auto-experiments/api.mjs';
 import {categoryKey,blocked,fakeResearch,validateResearch,createResearch,researchCoverage,validateEvidence} from '../lib/auto-experiments/research.mjs';
-import {chooseMatch,matchState} from '../lib/auto-experiments/matching.mjs';
+import {chooseMatch,matchState,choosePhotoMatch,findProductPhoto} from '../lib/auto-experiments/matching.mjs';
 import {createApplicationApi} from '../lib/application-api.mjs';
 import {initialRegistry} from '../lib/experiment-api.mjs';
 import {experimentPage} from '../lib/experiment-pages.mjs';
@@ -133,4 +133,23 @@ test('failed research recovers its saved response without a new request or budge
  const research={fake:true,start:async()=>{starts++;return {responseId:'resp-saved',pending:true};},poll:async()=>{polls++;if(!recover)throw Error('Prior validation failure');return {result:validateResearch(structuredClone(result))};}};
  const s=await setup(t,{research,now:()=>time});await s.submit('backpacks');await s.auto.advance();for(let i=0;i<3;i++){time+=10000;await s.auto.advance();}let [job]=await s.listing();assert.equal(job.state,'failed');const jobs=await s.store.scope('suggestion-jobs',()=>({jobs:{},budget:{}})),budget=structuredClone((await jobs.read()).budget);
  recover=true;assert.equal((await s.auto.handle(req('/api/admin/suggestions/resume',{key:job.key}))).status,200);for(let i=0;i<12;i++)await s.auto.advance();[job]=await s.listing();assert.equal(job.draft.status,'draft');assert.equal(job.research.picks.length,10);assert.equal(job.research.sourceIssues[0].channel,'tiktok');assert.equal(job.readiness.canApprove,false);assert.equal(job.readiness.coverage.counts.tiktok,0);assert.equal(starts,1);assert.deepEqual((await jobs.read()).budget,budget);assert.equal((await s.auto.handle(req('/api/admin/suggestions/resume',{key:job.key}))).status,409);
+});
+
+test('photo repair falls back across categories while requiring the same brand and complete model',async()=>{
+ const pick={brand:'LANEIGE',name:'Lip Sleeping Mask'},match={id:'c3-mask',provider:'channel3',providerId:'mask',brand:'LA NEIGE',name:'Lip Sleeping Mask (20g)',category:'Lip Masks',image:'https://example.com/mask.jpg'},calls=[];
+ const result=await findProductPhoto(pick,{category:'Lip Balm',visitorKey:'test',search:{search:async(q,options)=>{calls.push(options.category);return {products:options.category==='Products'?[{...match,brand:'Different'},match]:[]};}}});assert.deepEqual(calls,['Lip Balm','Products']);assert.equal(result.product.id,'c3-mask');assert.equal(result.method,'broader_catalog');
+ assert.equal(choosePhotoMatch(pick,[{...match,brand:'Other'}, {...match,name:'Lip Glowy Balm'}]),null);assert.equal(choosePhotoMatch(pick,[{...match,name:'Lip Mask'}]),null);
+});
+test('photo repair can use a saved product URL and reports unavailable catalogs',async()=>{
+ const p={brand:'Violette_FR',name:'Bisou Balm',url:'https://violettefr.com/products/bisou-balm'},found={id:'c3-balm',brand:p.brand,name:p.name,image:'https://example.com/balm.jpg'};
+ const result=await findProductPhoto(p,{category:'Lip balm',visitorKey:'test',search:{search:async()=>({products:[]}),lookupUrl:async(url,options)=>{assert.equal(url,p.url);assert.equal(options.category,'Products');return found;}}});assert.equal(result.method,'product_url');assert.equal(result.product.id,found.id);
+ const unavailable=await findProductPhoto(p,{category:'Lip balm',visitorKey:'test',search:{search:async()=>({products:[],partial:true,live:{providers:{channel3:'timeout'}}})}});assert.equal(unavailable.reason,'catalog_unavailable');
+});
+test('photo repair records new photos and per-item outcomes without replacing another brand or changing order',async t=>{
+ const s=await setup(t);await s.submit('backpacks');const j=await s.build();const matched=j.draft.products.map((p,i)=>({...p,id:'c3-fallback-'+i,provider:'channel3',providerId:'fallback-'+i,image:'https://example.com/photo.jpg'}));
+ const auto=createSuggestions({store:s.store,authorizeAdmin:r=>r.headers.get('x-admin')==='yes',development:true,search:{search:async(q,options)=>({products:options.category==='Products'?matched.filter(p=>q.includes(p.brand)):[]}),find:async id=>matched.find(p=>p.id===id)}});
+ const r=await auto.handle(req('/api/admin/suggestions/photos',{key:j.key})),report=await r.json();assert.equal(r.status,200);assert.equal(report.added,10);assert.equal(report.missing,0);const [after]=await s.listing();assert.deepEqual(after.draft.products.map(p=>p.brand),j.draft.products.map(p=>p.brand));assert.equal(after.photoLookup.results.length,10);assert.equal(after.draft.products.every(p=>p.image===undefined),true);assert.equal(after.draft.status,'draft');
+});
+test('failed photo searches report zero new photos and keep a manual repair path',async t=>{
+ const s=await setup(t);await s.submit('backpacks');const j=await s.build(),report=await(await s.auto.handle(req('/api/admin/suggestions/photos',{key:j.key}))).json();assert.equal(report.added,0);assert.equal(report.missing,10);assert.equal(report.results.every(r=>r.outcome==='no_results'),true);assert.equal((await s.listing())[0].photoLookup.checked,10);assert.equal((await s.auto.handle(req('/api/admin/suggestions/photos',{key:j.key},false))).status,401);
 });

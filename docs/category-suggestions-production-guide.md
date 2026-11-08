@@ -82,3 +82,11 @@ Suggestion details now open as a visual review page. The header summarizes lineu
 Research & sources groups TikTok, Wirecutter, Google and AI evidence into separate cards with accepted-coverage status, expandable evidence records, research limitations, and the existing checked-source form. Details & history contains dates, attempt counts, community notes and previous research lineups. The selected tab and expanded reading sections survive automatic refreshes.
 
 Common actions stay visible; refresh, reject and delete move into More actions. The Suggestions list has a single Review link per row. The lineup editor, manual/URL/search additions, photo lookup and server approval requirements continue to use the existing behavior. This change does not rerun research, alter saved suggestions or publish a draft.
+
+## Missing-photo repair — November 8, 2026
+
+Find missing photos now tries the current category, then the broader product catalog, then the saved product URL through the catalog provider. Every attached photo must match the normalized brand and every model word; broader lookup does not permit a different brand or substitute product. Only catalog identity is saved, with the researched name and lineup order preserved.
+
+Each request checks up to ten missing products, three at a time, prioritizing the least recently checked items. Private per-item results distinguish attached photos, no matching photo, duplicate identities, and unavailable catalog lookups. The button shows a loading state and the number of newly added photos. An unresolved card offers Add photo, which opens and focuses its existing photo URL field. Research, source requirements and approval remain unchanged; photo lookup never publishes a draft.
+
+Validation: 185 automated tests pass, including cross-category matching, rejection of wrong brands and incomplete models, URL fallback, unavailable-provider reporting, persisted lookup results, and private-draft identity/order preservation.

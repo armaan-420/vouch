@@ -23,6 +23,7 @@ declare namespace Cloudflare {
     UPCITEMDB_USER_KEY?: string;
     DB?: D1Database;
     ADMIN_EMAILS?: string;
+    VOUCH_ADMIN_PIN?: string;
     VOUCH_AUTH_SECRET?: string;
     RESEND_API_KEY?: string;
     VOUCH_EMAIL_FROM?: string;

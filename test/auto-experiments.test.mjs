@@ -111,3 +111,16 @@ test('manual draft additions remain visible and need their own photos before app
  const original=j.draft.products.map(p=>({...p,image:'https://example.com/photo.jpg'}));assert.equal((await save([...original,manual])).status,200);assert.equal((await s.listing())[0].draft.products.length,11);assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,409);
  assert.equal((await save([...original,{...manual,image:'https://example.com/manual.jpg'}])).status,200);assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,200);
 });
+
+test('research diagnostics identify incomplete and invalid output without leaking provider error payloads',async()=>{
+ const incomplete=createResearch({env:{OPENAI_API_KEY:'test-key'},fetcher:async()=>Response.json({status:'incomplete',max_output_tokens:16000,incomplete_details:{reason:'max_output_tokens'},usage:{output_tokens:16000},error:{message:'sk-private-do-not-report'}})});
+ assert.deepEqual(await incomplete.inspect('resp-test'),{responseStatus:'incomplete',incompleteReason:'max_output_tokens',outputTokens:16000,maxOutputTokens:16000,validationError:null});
+ await assert.rejects(incomplete.poll('resp-test'),e=>e.code==='provider_incomplete'&&e.diagnostic.incompleteReason==='max_output_tokens'&&!JSON.stringify(e).includes('sk-private'));
+ const invalid=createResearch({env:{OPENAI_API_KEY:'test-key'},fetcher:async()=>Response.json({status:'completed',output:[{content:[{type:'output_text',text:'sk-private-invalid-json'}]}]})});
+ assert.equal((await invalid.inspect('resp-test')).validationError,'Research output was not valid JSON.');await assert.rejects(invalid.poll('resp-test'),e=>e.code==='research_validation'&&!e.message.includes('sk-private'));
+});
+test('diagnostics are organizer-only, read-only, and tied to a saved research response',async t=>{
+ let calls=0;const research={fake:true,start:async()=>({responseId:'resp-fixture',pending:true}),inspect:async id=>{calls++;assert.equal(id,'resp-fixture');return {responseStatus:'completed',validationError:'Invalid research format.'};}};
+ const s=await setup(t,{research});await s.submit('backpacks');await s.auto.advance();assert.equal((await s.auto.handle(req('/api/admin/suggestions/diagnostics?key=backpack',null,false))).status,401);
+ const r=await s.auto.handle(req('/api/admin/suggestions/diagnostics?key=backpack'));assert.equal(r.status,200);assert.equal((await r.json()).diagnostic.validationError,'Invalid research format.');assert.equal(calls,1);assert.equal((await s.listing())[0].state,'researching');
+});

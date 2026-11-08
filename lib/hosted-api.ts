@@ -1,3 +1,4 @@
+import {createAdminAuth} from './admin-auth.mjs';
 import {createSuggestions} from './auto-experiments/api.mjs';
 import {createCatalogRuntime} from './catalog/runtime.mjs';
 import {bucketPhotoStorage} from './profile-photo.mjs';
@@ -10,14 +11,18 @@ import {createResendDelivery,createSuggestionDelivery} from './email-delivery.mj
 import initialCatalog from '../data/catalog-bootstrap.json';
 const initializeSearch=async(store:ReturnType<typeof createD1Store>)=>createCatalogRuntime({local:await createProductSearch({storage:store.catalog,initialCatalog}),env,db:env.DB,store,development:import.meta.env.DEV});
 let searchPromise:ReturnType<typeof initializeSearch>|undefined;
-export function isOrganizer(request:Request){
-  const email=request.headers.get('oai-authenticated-user-email')?.toLowerCase();
-  const allowed=String(env.ADMIN_EMAILS||'').toLowerCase().split(',').map(x=>x.trim()).filter(Boolean);
-  if(import.meta.env.DEV&&email==='seedy@sites.test')return true;
-  return !!email&&allowed.includes(email);
+export function hostedAdminAuth(){
+ return createAdminAuth({store:createD1Store(env.DB),pin:env.VOUCH_ADMIN_PIN});
+}
+export async function isOrganizer(request:Request){
+ return !!env.DB&&hostedAdminAuth().authorize(request);
 }
 export async function hostedApi(request:Request){
   if(!env.DB)return Response.json({error:'Database unavailable.'},{status:503});
+  const adminAuth=hostedAdminAuth();
+  const authResponse=await adminAuth.handle(request);
+  if(authResponse)return authResponse;
+  if(new URL(request.url).pathname.startsWith('/api/admin/')&&!await adminAuth.authorize(request))return Response.json({error:'Enter the admin PIN to continue.'},{status:401,headers:{'Cache-Control':'private, no-store'}});
   const store=createD1Store(env.DB);
   // Retry initialization after a transient storage failure.
   searchPromise??=initializeSearch(store).catch(error=>{searchPromise=undefined;throw error});

@@ -1,6 +1,12 @@
+## PIN access — November 7, 2026
+
+The admin workspace and its APIs now use a server-validated PIN session, replacing the ChatGPT organizer email allowlist. The PIN is configured as the secret runtime setting `VOUCH_ADMIN_PIN`; never put it in source or browser assets. A successful unlock sets a Secure, HttpOnly, SameSite=Strict cookie. The database stores only its token hash and enforces a fixed 24-hour expiry that activity does not extend. Changing the configured PIN invalidates previous sessions. Lock workspace signs out the current browser immediately. Five incorrect attempts from one IP temporarily block further attempts for 15 minutes. Admin writes and login/logout require the same origin.
+
+Loopback development can enable the same gate with `VOUCH_ADMIN_PIN` or the server's `adminAuthOptions`. Without that setting the legacy local-only organizer bypass remains available for synthetic fixtures; hosted access always fails closed without a configured PIN. The public collection pages retain their existing access.
+
 ## Production status — <date start="2026-11-06" />, version 41
 
-Deployed source `eb60d8582103ff7d94a6be2f71dc0ee66e74dee2`; deployment `appgdep_6aee4e25c6ec8191811e0ec37fc5e833` succeeded, environment revision 5. [Open admin](https://v4ch.app/admin). The existing ChatGPT organizer sign-in and ADMIN_EMAILS allowlist remain required; anonymous inventory, suggestions and feedback APIs return 401.
+Deployed source `eb60d8582103ff7d94a6be2f71dc0ee66e74dee2`; deployment `appgdep_6aee4e25c6ec8191811e0ec37fc5e833` succeeded, environment revision 5. [Open admin](https://v4ch.app/admin). At that release, ChatGPT organizer sign-in and the ADMIN_EMAILS allowlist were required; anonymous inventory, suggestions and feedback APIs return 401.
 
 ## Navigate the workspace
 

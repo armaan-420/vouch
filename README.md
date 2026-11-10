@@ -2,9 +2,13 @@
 
 ## Source repository
 
-The source is maintained at [armaan-420/vouch on GitHub](https://github.com/armaan-420/vouch), on the `main` branch. This checkout uses the `github` remote. Commit local changes and run `git push github main` to publish them; local edits do not sync automatically.
+The source is maintained at [armaan-420/vouch on GitHub](https://github.com/armaan-420/vouch), on `main`. In this checkout, completed commits to `main` automatically push to the `github` remote through `.githooks/post-commit`. Unsaved/uncommitted edits stay local. A failed push prints a warning and preserves the local commit; retry with `git push github main` after resolving the cause.
 
-GitHub stores source, tests, product assets and documentation. The running app and its database remain hosted through Sites/Cloudflare; pushing to GitHub does not deploy the site. Runtime credentials and visitor data stay outside Git.
+On a new clone, inspect any existing hooks, then enable automatic pushing with `git config --local core.hooksPath .githooks`. The hook only pushes to the exact Vouch repository, skips other branches, and never force-pushes. Set `VOUCH_SKIP_AUTO_SYNC=1` for a deliberately local commit.
+
+The website, database and photo storage remain in the cloud through Sites/Cloudflare at [v4ch.app](https://v4ch.app). Completed Codex implementation tasks follow `AGENTS.md`: check, commit, sync, publish through Sites, and verify. This is an agent-run publishing workflow, not a permanent GitHub-to-Sites deployment webhook. Direct GitHub edits and commits made outside that workflow do not deploy automatically. Scheduled reviews remain read-only.
+
+GitHub Actions runs the automated test suite for pushes and pull requests. Runtime credentials and visitor data stay outside Git. CI does not access production or deploy the website.
 
 ## Current production — November 8, 2026, version 50
 

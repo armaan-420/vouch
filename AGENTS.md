@@ -1,5 +1,17 @@
 # Vouch prototype — agent instructions
 
+## Completed implementation tasks: sync and publish
+
+Armaan requested automatic GitHub syncing and continued Sites/Cloudflare hosting on November 10, 2026. For user-requested implementation tasks, finish the cloud workflow without a separate routine publishing confirmation unless the user asks for local-only work, a draft, or no deployment.
+
+- Preserve the existing public site at https://v4ch.app and its D1/R2 data. Use the Sites skill and the project ID in `.openai/hosting.json`; do not create a replacement Site or migrate providers.
+- Inspect the working tree and include only intended project changes. Exclude credentials, runtime data and visitor records. Run appropriate checks before committing.
+- Commit completed work and push it to `https://github.com/armaan-420/vouch.git` (`github` remote, `main`). The opt-in local `.githooks/post-commit` hook performs a normal push on main. Verify the remote SHA and retry a failed push after resolving the cause; never force-push or discard remote changes.
+- For application changes, use the Sites source helper and native save/deploy tools to publish the exact checked source, then wait for a successful deployment and perform appropriate read-only verification. Sync any helper-created final commit to GitHub too. A GitHub push alone does not deploy Sites.
+- Documentation, Git hooks and CI-only changes do not need a production redeployment. Keep Notion release notes on request only.
+- These rules do not override the scheduled-review rules below. Reviews remain report-only and must not commit to main or trigger its sync hook. Use an isolated review branch for optional fixes.
+- For a new clone, inspect existing hooks before enabling `git config --local core.hooksPath .githooks`. Local edits are not auto-committed; completed tasks must explicitly commit. If publishing is unavailable, report the exact incomplete step rather than claiming it went live.
+
 ## Scheduled reviews
 
 These rules apply to every scheduled or automated review run (code review, QA smoke, UX review, suggestions review, dependency audit). They also apply to any chat that invokes a `vouch-*-review` or `vouch-qa-smoke` skill.

@@ -1,5 +1,23 @@
 # Vouch setup audit — November 1, 2026
 
+## Current production — November 8, 2026, version 50
+
+Sites version 50 is deployed at [Vouch](https://v4ch.app), source `cd5ba45f12d0fa29da0df441209efa6a0d05fb33`, deployment `appgdep_6af00aae41948191a294a21a3d8708d0`, environment revision 6. It succeeded on November 8, 2026 at 12:37 AM America/New_York. This documentation update covers deployed versions 42–50 since version 41.
+
+All 188 automated tests and a fresh production build pass. Read-only production GET checks return 200 for the root, sunscreen, water bottles, admin login and health; anonymous inventory, suggestions and feedback return 401. Eight current admin assets exactly match source. No production records were changed during this documentation update. Lint was not rerun; version 41 recorded four errors and nine warnings, so this update makes no clean-lint claim.
+
+Unattended research execution remains unverified; Sites currently lists no attached schedules. Source provenance does not establish endorsement accuracy or Google rank, and photos require visual review. Real production email-code inbox delivery, signed-in profile-photo upload, full screen-reader/physical-device accessibility, exhaustive matching and broad abuse/load tests remain outstanding. No new demand, retention, revenue or purchase outcome is established.
+
+Release: [version 50](docs/releases/2026-11-08-v50.md). Earlier dated checks retain their historical scope.
+
+Hosted admin access now uses a server-configured four-digit PIN instead of the previous ChatGPT sign-in/email allowlist. Sessions last a fixed 24 hours; Lock admin revokes the session, and changing the PIN invalidates prior sessions. Cookies are Secure, HttpOnly and SameSite=Strict; only random-token hashes are stored. Five failed attempts per IP-derived bucket in 15 minutes trigger a temporary block. Admin writes require same origin. Participant email-code accounts remain separate.
+
+Experiment details now open Products, Settings and Participation, Missing Products, and Community Additions. Products supports name/URL/manual additions, photo URLs, reorder and removal with revision checks; removal preserves history and re-adding the same identity preserves its votes. Keep at least one product, at most 32, and one per brand. Live additions and reactivation require photos. Disable hides public access and overall participation while retaining data; Reactivate keeps the schedule. Permanent Delete requires the exact path and clears experiment activity and its associated suggestion, reserves the path, and retains shared products/personal opinions. Interrupted cleanup stays disabled for retry. Recoverable suggestion deletion is a separate action.
+
+No new dependency or schema migration is introduced by versions 42–50. Durable session/deletion-marker state uses the existing store.
+
+---
+
 Vouch already had public hosting through Sites on Cloudflare Workers and a managed D1 database. A second deployment on Vercel would require a hosting migration, replacement of the Cloudflare database binding, and replacement of the Sites organizer authentication. It is unnecessary for the prototype, so the existing platform is retained.
 
 ## Current production and documentation — November 6, 2026
@@ -15,17 +33,17 @@ Sites version 30 / `33c860ed30ecf63311a8a9b8dbf0dfb84fc406f3` is deployed; deplo
 | Area | Current setup |
 | --- | --- |
 | Public website | https://v4ch.app |
-| Organizer dashboard | `/admin`, protected by ChatGPT sign-in and the server-side `ADMIN_EMAILS` allowlist |
+| Organizer dashboard | `/admin`, protected by the server-configured PIN and fixed 24-hour admin sessions |
 | Server | Vinext request routes running on a Cloudflare Worker |
 | Database | Managed Cloudflare D1, bound as `DB` in `.openai/hosting.json` |
 | Saved inputs | Anonymous visitor/session activity, verdicts, nomination history, product confirmations, catalog data, expiring provider snapshots and daily lookup usage; see [PRODUCT_LOOKUP.md](PRODUCT_LOOKUP.md) |
 | Deployment | Versioned source and build archive published through Sites; schema migrations applied by the hosting service |
-| Runtime configuration | Organizer allowlist configured as a hosting secret; no database credentials in the browser |
+| Runtime configuration | Organizer PIN configured as a hosting secret; no database credentials in the browser |
 | Operational check | `/api/health` reads the database and returns 503/500 on unavailable storage |
 
 ## Changes made
 
-- Separate experiments have immutable product selections and independent votes, nominations, metrics and exports. Existing sunscreen records retain their original database key and are preserved.
+- Separate experiments have revision-protected editable product selections and independent votes, nominations, metrics and exports. Existing sunscreen records retain their original database key and are preserved.
 - The organizer can create experiments, select original or catalog products, register custom SKUs from any category, copy participation links, close collection, and choose which results contribute to the overall leaderboard.
 - Every new experiment starts excluded from the overall leaderboard. The original sunscreen experiment is also excluded by default.
 - SKU identity is stable across experiments. Reuse a custom ID such as `sku-example-shampoo-250ml` for the same SKU; use a different ID for another size or formula. Existing custom SKUs can be selected again without re-entry.
@@ -38,8 +56,8 @@ Sites version 30 / `33c860ed30ecf63311a8a9b8dbf0dfb84fc406f3` is deployed; deplo
 
 ## How to run a test
 
-1. Sign into `/admin` with the allowed organizer account.
-2. Expand **Create a separate experiment**, name it, choose its products, and create it. Its link ID must be unique. Product selections are fixed after creation so changing a test does not silently reinterpret existing votes.
+1. Open `/admin` and enter the configured organizer PIN.
+2. Expand **Create a separate experiment**, name it, choose its products, and create it. Its link ID must be unique. Products can be changed through the revision-protected Products tab; prior votes are retained, so record lineup changes when interpreting results.
 3. Copy its participation link and share it with testers. Each link uses its experiment ID as its path, such as `/sunscreen-test-b`. Legacy `?experiment=<id>` links redirect to the matching path.
 4. Select that experiment in the dashboard to inspect its funnel, review nominations, or download its full results.
 5. Close the experiment when collection is finished. Closing preserves its results and can be reversed.

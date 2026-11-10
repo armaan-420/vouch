@@ -1,6 +1,20 @@
 # Vouch participant authentication
 
-This account system is separate from organizer Sign in with ChatGPT. The organizer allowlist and Sites authentication routes remain unchanged. Email verification is required before a participant identity is issued. The same verified email returns to the same opaque account ID; emails do not appear in profile or authentication response payloads.
+## Current production — November 8, 2026, version 50
+
+Sites version 50 is deployed at [Vouch](https://v4ch.app), source `cd5ba45f12d0fa29da0df441209efa6a0d05fb33`, deployment `appgdep_6af00aae41948191a294a21a3d8708d0`, environment revision 6. It succeeded on November 8, 2026 at 12:37 AM America/New_York. This documentation update covers deployed versions 42–50 since version 41.
+
+All 188 automated tests and a fresh production build pass. Read-only production GET checks return 200 for the root, sunscreen, water bottles, admin login and health; anonymous inventory, suggestions and feedback return 401. Eight current admin assets exactly match source. No production records were changed during this documentation update. Lint was not rerun; version 41 recorded four errors and nine warnings, so this update makes no clean-lint claim.
+
+Unattended research execution remains unverified; Sites currently lists no attached schedules. Source provenance does not establish endorsement accuracy or Google rank, and photos require visual review. Real production email-code inbox delivery, signed-in profile-photo upload, full screen-reader/physical-device accessibility, exhaustive matching and broad abuse/load tests remain outstanding. No new demand, retention, revenue or purchase outcome is established.
+
+Release: [version 50](docs/releases/2026-11-08-v50.md). Earlier dated checks retain their historical scope.
+
+Hosted admin access now uses a server-configured four-digit PIN instead of the previous ChatGPT sign-in/email allowlist. Sessions last a fixed 24 hours; Lock admin revokes the session, and changing the PIN invalidates prior sessions. Cookies are Secure, HttpOnly and SameSite=Strict; only random-token hashes are stored. Five failed attempts per IP-derived bucket in 15 minutes trigger a temporary block. Admin writes require same origin. Participant email-code accounts remain separate.
+
+---
+
+Participant email-code accounts are separate from the hosted organizer PIN and 24-hour admin session. Email verification is required before a participant identity is issued. The same verified email returns to the same opaque account ID; emails do not appear in profile or authentication response payloads.
 
 ## Preview versus hosted email
 
@@ -30,7 +44,7 @@ Do not paste credentials into source, release notes, or browser code. Sender-dom
 
 ## Research basis
 
-The Sites identity skill supplies platform identity and Sign in with ChatGPT, without an email-code interface. Cloudflare Workers supports standard Web APIs and HTTPS email-provider requests. Better Auth provides an established alternative email-OTP implementation, but requires its database integration and configured delivery provider; this preview adds a dedicated participant adapter without replacing Sites organizer authentication.
+The Sites identity skill supplies platform identity and Sign in with ChatGPT, without an email-code interface. Cloudflare Workers supports standard Web APIs and HTTPS email-provider requests. Better Auth provides an established alternative email-OTP implementation, but requires its database integration and configured delivery provider; the participant adapter is independent from the current PIN-based organizer authentication.
 
 - [Better Auth email OTP](https://github.com/better-auth/better-auth/blob/main/docs/content/docs/plugins/email-otp.mdx)
 - [Better Auth email provider setup](https://better-auth.com/docs/concepts/email)

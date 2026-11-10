@@ -1,12 +1,40 @@
 # Vouch
 
+## Source repository
+
+The source is maintained at [armaan-420/vouch on GitHub](https://github.com/armaan-420/vouch), on the `main` branch. This checkout uses the `github` remote. Commit local changes and run `git push github main` to publish them; local edits do not sync automatically.
+
+GitHub stores source, tests, product assets and documentation. The running app and its database remain hosted through Sites/Cloudflare; pushing to GitHub does not deploy the site. Runtime credentials and visitor data stay outside Git.
+
+## Current production — November 8, 2026, version 50
+
+Sites version 50 is deployed at [Vouch](https://v4ch.app), source `cd5ba45f12d0fa29da0df441209efa6a0d05fb33`, deployment `appgdep_6af00aae41948191a294a21a3d8708d0`, environment revision 6. It succeeded on November 8, 2026 at 12:37 AM America/New_York. This documentation update covers deployed versions 42–50 since version 41.
+
+All 188 automated tests and a fresh production build pass. Read-only production GET checks return 200 for the root, sunscreen, water bottles, admin login and health; anonymous inventory, suggestions and feedback return 401. Eight current admin assets exactly match source. No production records were changed during this documentation update. Lint was not rerun; version 41 recorded four errors and nine warnings, so this update makes no clean-lint claim.
+
+Unattended research execution remains unverified; Sites currently lists no attached schedules. Source provenance does not establish endorsement accuracy or Google rank, and photos require visual review. Real production email-code inbox delivery, signed-in profile-photo upload, full screen-reader/physical-device accessibility, exhaustive matching and broad abuse/load tests remain outstanding. No new demand, retention, revenue or purchase outcome is established.
+
+Release: [version 50](docs/releases/2026-11-08-v50.md). Earlier dated checks retain their historical scope.
+
+Hosted admin access now uses a server-configured four-digit PIN instead of the previous ChatGPT sign-in/email allowlist. Sessions last a fixed 24 hours; Lock admin revokes the session, and changing the PIN invalidates prior sessions. Cookies are Secure, HttpOnly and SameSite=Strict; only random-token hashes are stored. Five failed attempts per IP-derived bucket in 15 minutes trigger a temporary block. Admin writes require same origin. Participant email-code accounts remain separate.
+
+Experiment details now open Products, Settings and Participation, Missing Products, and Community Additions. Products supports name/URL/manual additions, photo URLs, reorder and removal with revision checks; removal preserves history and re-adding the same identity preserves its votes. Keep at least one product, at most 32, and one per brand. Live additions and reactivation require photos. Disable hides public access and overall participation while retaining data; Reactivate keeps the schedule. Permanent Delete requires the exact path and clears experiment activity and its associated suggestion, reserves the path, and retains shared products/personal opinions. Interrupted cleanup stays disabled for retry. Recoverable suggestion deletion is a separate action.
+
+Research targets ten distinct brands with TikTok, Wirecutter, Google-first-organic-result and AI coverage tied to exact products. One Wirecutter brand is required, two preferred; Google must add a different brand. Returned source metadata establishes provenance only. Organizer-checked evidence is marked and timestamped. Missing sources or photos for any final-lineup product block approval, including legacy drafts. Invalid evidence becomes a private warning without discarding valid picks. Saved-response recovery avoids another model start; Refresh research starts a new budgeted attempt. Limits are 16,000 output tokens, 16 tool calls and 20 starts per Eastern day.
+
+Suggestion review now has Product lineup, Research & sources, and Details & history tabs. Photo cards show missing images and researched-model differences; channel cards expose accepted coverage, source limitations and expandable evidence. Selected tabs and reading sections survive polling. List rows use Review; refresh/reject/delete live under More actions. Find missing photos reports progress and Add photo focuses the URL field. Admin product fields retain the corrected layout.
+
+See [admin operations](docs/admin-portal-operations.md), [suggestion review](docs/category-suggestions-production-guide.md) and [experiment management](docs/experiment-management-guide.md).
+
+---
+
 A product recommendation network with category experiments, community standings, and personal product collections. The original public sunscreen experiment lets participants vote Pass, Soft-Vouch (brand trust), Vouch (item experience), or Haven’t tried; explore a community leaderboard; search for and nominate a missing product.
 
-## Shared public navigation — local preview
+## Shared public navigation — deployed
 
 Public headers now share desktop search/category/feedback/account actions and a compact mobile menu. Search appears on Edit pages and hands products to the existing product/nomination flows. Feedback is private, rate-limited and available to the organizer under Feedback. See [TOP_NAV.md](TOP_NAV.md) for files, controls, checks, screenshots and remaining verification limits.
 
-## Organizer workspace — local layout
+## Organizer workspace — deployed
 
 The organizer uses sidebar navigation for Home, Experiments, Product Library and Suggestions. Home keeps its existing overview. The other sections open searchable tables with addressable detail pages: experiment settings/participation, cross-experiment product voting activity and tags, and suggestion research with row actions. Suggestion deletion is recoverable and leaves live Edits intact. See [ADMIN_WORKSPACE.md](ADMIN_WORKSPACE.md) for columns, vote deduplication, action semantics, checks and local-data limits.
 
@@ -58,7 +86,7 @@ The organizer includes nine water bottle SKUs with product photos, used by the l
 
 ## Accounts and product profiles
 
-Participants finish the experiment and see the standings before an optional Save my picks invitation. Signed-out participants who answered every selected card see a small modal after scrolling past the third ranked product (or viewing the last product on a shorter board). It appears once per experiment per tab visit, is dismissible without losing scroll position, and never gates results. Email-code signup happens inside the modal, followed by explicit contribution and visibility review. Participants save a private collection and can publish selected opinions. Item vouches, passes, and brand trust remain separate. New signed-in answers save directly to the account, including on a new browser, with new opinions private by default. Contextual collection pages offer review/recovery of earlier responses that missed the account; account save failures are visible and retryable. Existing experiment responses and scoring remain preserved. See [ACCOUNT_PREVIEW.md](ACCOUNT_PREVIEW.md) for flow, data ownership, checks, and limitations, and [AUTH_SETUP.md](AUTH_SETUP.md) for real-email configuration. The loopback development preview uses a clearly labeled local test inbox and sends no email. Hosted email uses Resend with server-only configuration; an available auth status confirms configuration, not inbox delivery. Suggestions, trusted-contributor recognition and discounts are upcoming features, clearly labeled in the invitation.
+Participants finish the experiment and see the standings before an optional Save my picks invitation. Signed-out participants who answered every selected card see a small modal after scrolling past the third ranked product (or viewing the last product on a shorter board). It appears once per experiment per tab visit, is dismissible without losing scroll position, and never gates results. Email-code signup happens inside the modal, followed by explicit contribution and visibility review. Participants save a private collection and can publish selected opinions. Item vouches, passes, and brand trust remain separate. New signed-in answers save directly to the account, including on a new browser, with new opinions private by default. Contextual collection pages offer review/recovery of earlier responses that missed the account; account save failures are visible and retryable. Existing experiment responses and scoring remain preserved. See [ACCOUNT_PREVIEW.md](ACCOUNT_PREVIEW.md) for flow, data ownership, checks, and limitations, and [AUTH_SETUP.md](AUTH_SETUP.md) for real-email configuration. The loopback development preview uses a clearly labeled local test inbox and sends no email. Hosted email uses Resend with server-only configuration; an available auth status confirms configuration, not inbox delivery. Category suggestions are deployed; advanced trusted-contributor recognition and discounts remain upcoming.
 
 ## Profile collection redesign
 

@@ -2,19 +2,19 @@
   "project": "Vouch",
   "notion_changelog_url": "https://app.notion.com/p/40cd2a3caa8a812d83f4f3d13065be2d",
   "notion_changelog_page_id": "40cd2a3c-aa8a-812d-83f4-f3d13065be2d",
-  "last_documented_commit": "eb60d8582103ff7d94a6be2f71dc0ee66e74dee2",
-  "last_documented_sites_version": 41,
+  "last_documented_commit": "cd5ba45f12d0fa29da0df441209efa6a0d05fb33",
+  "last_documented_sites_version": 50,
   "sites_project_id": "appgprj_6ae5468eccc88191ad1d6413c672392a",
-  "deployment_id": "appgdep_6aee4e25c6ec8191811e0ec37fc5e833",
+  "deployment_id": "appgdep_6af00aae41948191a294a21a3d8708d0",
   "deployment_status": "succeeded",
-  "publication_date": "2026-11-06",
+  "publication_date": "2026-11-08",
   "timezone": "America/New_York",
-  "source_worktree_at_publication": "Approved local admin, suggestions, shared navigation and feedback changes committed and packaged as eb60d858; latest v40 community controls retained. Checkpoints advanced after successful Notion publication.",
-  "validation": "156 tests and final build passed; existing lint baseline: four errors and nine warnings. Nine deployed assets match source. Public collection/health routes and private admin protection passed. Authenticated organizer library search/details and a real private ten-product running-shoes draft verified; all ten need photos. No approval performed.",
+  "source_worktree_at_publication": "Application worktree initially clean at deployed version 50; reviewed every source change since version 41, including intermediate commits. This documentation-only pass leaves documentation edits local and does not create a new Sites release.",
+  "validation": "188 tests and fresh production build pass. Root, sunscreen, water bottles, admin login and health GET return 200; anonymous inventory/suggestions/feedback return 401 and auth status false. Eight deployed admin assets exactly match source. Lint not rerun; v41 baseline was four errors and nine warnings. No production records modified; private draft state and authenticated actions not rechecked.",
   "trigger": "On user request to publish Vouch release notes, log changes, or update Notion after project work; no scheduled watcher.",
-  "environment_revision": 5,
-  "notion_pages_updated": 21,
-  "documentation_mirror_status": "Canonical changelog, eighteen existing working pages and two new operating guides published successfully; local mirrors and checkpoints advanced afterward. Historical source artifacts preserved.",
+  "environment_revision": 6,
+  "notion_pages_updated": 28,
+  "documentation_mirror_status": "Canonical changelog, 27 working Notion pages and Notion publication checkpoint published successfully. Local operating guides, working documents, dated release/evidence copies and both checkpoint files updated afterward. Historical source artifacts preserved.",
   "github_repository_url": "https://github.com/armaan-420/vouch",
   "live_url": "https://v4ch.app/sunscreen",
   "pending_checks": [
@@ -29,7 +29,9 @@
     "Unattended Sites cron registration and suggestion-job invocation",
     "Production draft photo/catalog matching coverage and manual source/model accuracy review",
     "Optional organizer suggestion notification destination and actual email delivery",
-    "Physical-phone navigation/search keyboard and full screen-reader testing"
+    "Physical-phone navigation/search keyboard and full screen-reader testing",
+    "Strict TikTok/Wirecutter/Google/AI source accuracy and exact final-lineup coverage",
+    "Authenticated production recovery/photo lookup and curation actions not re-exercised in the documentation pass"
   ],
   "product_lookup_guide_url": "https://app.notion.com/p/410d2a3caa8a817cbd4bc22f981a73e2",
   "enabled_live_providers": [
@@ -43,8 +45,23 @@
     "model": "gpt-5.4",
     "daily_start_budget": 20,
     "unattended_schedule_verified": false,
-    "production_review_case": "running-shoes",
-    "draft_state": "needs_attention",
-    "draft_approved": false
-  }
+    "production_review_case": "Historical running-shoes observation; private production draft state not re-read in this update",
+    "draft_state": "unverified_current_state",
+    "draft_approved": null,
+    "attached_sites_schedules_at_review": 0,
+    "max_output_tokens": 16000,
+    "max_tool_calls": 16
+  },
+  "documented_versions": [
+    50,
+    49,
+    48,
+    47,
+    46,
+    45,
+    44,
+    43,
+    42
+  ],
+  "local_documentation_committed": false
 }

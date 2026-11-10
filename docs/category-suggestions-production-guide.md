@@ -1,3 +1,23 @@
+## Current production — November 8, 2026, version 50
+
+Sites version 50 is deployed at [Vouch](https://v4ch.app), source `cd5ba45f12d0fa29da0df441209efa6a0d05fb33`, deployment `appgdep_6af00aae41948191a294a21a3d8708d0`, environment revision 6. It succeeded on November 8, 2026 at 12:37 AM America/New_York. This documentation update covers deployed versions 42–50 since version 41.
+
+All 188 automated tests and a fresh production build pass. Read-only production GET checks return 200 for the root, sunscreen, water bottles, admin login and health; anonymous inventory, suggestions and feedback return 401. Eight current admin assets exactly match source. No production records were changed during this documentation update. Lint was not rerun; version 41 recorded four errors and nine warnings, so this update makes no clean-lint claim.
+
+Unattended research execution remains unverified; Sites currently lists no attached schedules. Source provenance does not establish endorsement accuracy or Google rank, and photos require visual review. Real production email-code inbox delivery, signed-in profile-photo upload, full screen-reader/physical-device accessibility, exhaustive matching and broad abuse/load tests remain outstanding. No new demand, retention, revenue or purchase outcome is established.
+
+Release: [version 50](releases/2026-11-08-v50.md). Earlier dated checks retain their historical scope.
+
+Research targets ten distinct brands with TikTok, Wirecutter, Google-first-organic-result and AI coverage tied to exact products. One Wirecutter brand is required, two preferred; Google must add a different brand. Returned source metadata establishes provenance only. Organizer-checked evidence is marked and timestamped. Missing sources or photos for any final-lineup product block approval, including legacy drafts. Invalid evidence becomes a private warning without discarding valid picks. Saved-response recovery avoids another model start; Refresh research starts a new budgeted attempt. Limits are 16,000 output tokens, 16 tool calls and 20 starts per Eastern day.
+
+Find missing photos checks the category, broader catalog, then saved product URL, requiring the same normalized brand and every model word. Up to ten missing items are checked per request, three at a time, with per-item results and manual Add photo fallback. Provider identities, research names and order are preserved. Organizer photo overrides survive storage/hydration; cached searches refresh snapshots and bounded duplicate-alias resolution prevents photo loss. Inspect images for model accuracy and availability.
+
+Suggestion review now has Product lineup, Research & sources, and Details & history tabs. Photo cards show missing images and researched-model differences; channel cards expose accepted coverage, source limitations and expandable evidence. Selected tabs and reading sections survive polling. List rows use Review; refresh/reject/delete live under More actions. Find missing photos reports progress and Add photo focuses the URL field. Admin product fields retain the corrected layout.
+
+Recover saved research resumes the saved provider response without a new model start. Refresh research is a new budgeted request. Diagnostics are organizer-only. Historical production-draft observations below were not refreshed during this documentation task.
+
+---
+
 ## Production status — <date start="2026-11-06" />, version 41
 
 Suggestions, private draft processing and organizer review are deployed at [Vouch](https://v4ch.app/sunscreen). Source `eb60d8582103ff7d94a6be2f71dc0ee66e74dee2`; deployment `appgdep_6aee4e25c6ec8191811e0ec37fc5e833` succeeded, environment revision 5.

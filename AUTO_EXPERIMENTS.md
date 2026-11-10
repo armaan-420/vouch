@@ -1,8 +1,28 @@
 # Automatic Edit drafts
 
+## Current production — November 8, 2026, version 50
+
+Sites version 50 is deployed at [Vouch](https://v4ch.app), source `cd5ba45f12d0fa29da0df441209efa6a0d05fb33`, deployment `appgdep_6af00aae41948191a294a21a3d8708d0`, environment revision 6. It succeeded on November 8, 2026 at 12:37 AM America/New_York. This documentation update covers deployed versions 42–50 since version 41.
+
+All 188 automated tests and a fresh production build pass. Read-only production GET checks return 200 for the root, sunscreen, water bottles, admin login and health; anonymous inventory, suggestions and feedback return 401. Eight current admin assets exactly match source. No production records were changed during this documentation update. Lint was not rerun; version 41 recorded four errors and nine warnings, so this update makes no clean-lint claim.
+
+Unattended research execution remains unverified; Sites currently lists no attached schedules. Source provenance does not establish endorsement accuracy or Google rank, and photos require visual review. Real production email-code inbox delivery, signed-in profile-photo upload, full screen-reader/physical-device accessibility, exhaustive matching and broad abuse/load tests remain outstanding. No new demand, retention, revenue or purchase outcome is established.
+
+Release: [version 50](docs/releases/2026-11-08-v50.md). Earlier dated checks retain their historical scope.
+
+Research targets ten distinct brands with TikTok, Wirecutter, Google-first-organic-result and AI coverage tied to exact products. One Wirecutter brand is required, two preferred; Google must add a different brand. Returned source metadata establishes provenance only. Organizer-checked evidence is marked and timestamped. Missing sources or photos for any final-lineup product block approval, including legacy drafts. Invalid evidence becomes a private warning without discarding valid picks. Saved-response recovery avoids another model start; Refresh research starts a new budgeted attempt. Limits are 16,000 output tokens, 16 tool calls and 20 starts per Eastern day.
+
+Find missing photos checks the category, broader catalog, then saved product URL, requiring the same normalized brand and every model word. Up to ten missing items are checked per request, three at a time, with per-item results and manual Add photo fallback. Provider identities, research names and order are preserved. Organizer photo overrides survive storage/hydration; cached searches refresh snapshots and bounded duplicate-alias resolution prevents photo loss. Inspect images for model accuracy and availability.
+
+Suggestion review now has Product lineup, Research & sources, and Details & history tabs. Photo cards show missing images and researched-model differences; channel cards expose accepted coverage, source limitations and expandable evidence. Selected tabs and reading sections survive polling. List rows use Review; refresh/reject/delete live under More actions. Find missing photos reports progress and Add photo focuses the URL field. Admin product fields retain the corrected layout.
+
+Recover saved research resumes a saved response without a new daily start. Refresh research starts a new budgeted attempt. All drafts remain private until explicit approval and current source/photo checks. Hosted admin uses PIN sessions; the unrestricted loopback preview remains development-only.
+
+---
+
 Visitors suggest a category immediately after the standings list or through Suggest a category in the shared hamburger menu. The root teaser has no inline suggestion card. Vouch records support, researches ten products, matches catalog identities, and builds a private draft for organizer review. The app runs this process; Codex does not need to remain in a chat or rebuild the application for each suggestion.
 
-Deployed as Sites version 41 on November 6, 2026. Automatic research is enabled with a server-only OpenAI key and a 20-start daily budget (runtime revision 5). Scheduled unattended invocation remains unverified; see Release Notes and the Notion operating guide for current verification.
+Initial automatic-draft deployment was Sites version 41 on November 6, 2026; current version 50 uses runtime revision 6 and retains automatic research with a server-only OpenAI key and a 20-start daily budget. Scheduled unattended invocation remains unverified; see Release Notes and the Notion operating guide for current verification.
 
 ## Try the isolated preview
 
@@ -22,7 +42,7 @@ Data is isolated in ignored `.data/auto-experiments-preview/`. The preview seeds
 2. In Suggestions, inspect products, reasons, sources, notes, state, and support count.
 3. Preview the private Board. Voting and nominations are disabled.
 4. Edit lineup: change title/path; remove/add catalog products using the shared picker; edit custom product brand/name and optional HTTPS photo/manufacturer URL.
-5. Approve, then confirm **Approve Edit** once. The participation path becomes available for voting.
+5. Complete the required source checks and attach a photo to every final-lineup product, then choose Approve and confirm **Approve Edit** once. The participation path becomes available for voting.
 6. Dismiss removes a draft from the registry but retains its job and research. Retry research rebuilds the same draft. Build draft also works with automatic building off, but does not bypass moderation.
 
 `npm run dev:local` instead uses your normal `.data/` and environment. Without an OpenAI key it uses fixtures. With a key it uses OpenAI and requires `EXPERIMENT_AUTO_BUILD=on` or manual Build draft. Never expose the Node preview beyond loopback.
@@ -59,7 +79,7 @@ Public draft paths, experiment data, boards, votes, nominations, catalog routes 
 
 Each advance acquires a sixty-second durable lease using the existing optimistic transaction helper. Provider HTTP requests time out after eighteen seconds; OpenAI research starts with `background:true` and polls the saved response ID on later steps. Research has a ten-minute deadline. Catalog matching handles one pick per step. Repeated final steps recover the existing draft by its suggestion origin. Research-start requests use a stable idempotency key per research attempt; step failures retry up to three times with exponential backoff, then retain a generic redacted error in failed state. Manual retry starts a new budgeted research attempt.
 
-The default budget is twenty research starts per Eastern day. Over-budget jobs stay queued; in-progress matching can finish. This limits starts, not dollar spend or total web-search tool charges. Each response also caps output at 10,000 tokens and five tool calls. Actual returned usage is retained for review, with no invented dollar estimate.
+The default budget is twenty research starts per Eastern day. Over-budget jobs stay queued; in-progress matching can finish. This limits starts, not dollar spend or total web-search tool charges. Each response also caps output at 16,000 tokens and sixteen tool calls. Actual returned usage is retained for review, with no invented dollar estimate.
 
 The five-minute trigger performs one step, so an unattended hosted build can take approximately an hour, plus research polling. Organizer polling is faster, but neither timing is a latency guarantee. The local one-second driver is intended to make repeated flow testing convenient.
 
@@ -80,7 +100,7 @@ No values or secret files are written by this feature. Supply local values throu
 | `CATALOG_LIVE_PROVIDERS`, `CHANNEL3_API_KEY` | Existing catalog settings; enable Channel3 to improve matching/photo coverage. |
 | Shopify catalog variables | Optional existing provider configuration; see PRODUCT_LOOKUP.md. |
 
-For eventual Sites use, configure research key/model/budget, explicitly turn auto-build on, configure the existing catalog provider(s), and optionally set the notification address, admin URL and Resend settings. Existing organizer `ADMIN_EMAILS` authorization is retained. Do not enable fake mode in production. Production activation requires a server research key; without it, queued jobs remain paused without consuming budget or retries. The organizer displays a configuration message.
+For eventual Sites use, configure research key/model/budget, explicitly turn auto-build on, configure the existing catalog provider(s), and optionally set the notification address, admin URL and Resend settings. Hosted organizer authorization uses the server-configured PIN and fixed 24-hour sessions. Do not enable fake mode in production. Production activation requires a server research key; without it, queued jobs remain paused without consuming budget or retries. The organizer displays a configuration message.
 
 Notifications contain category, state and the organizer link, never visitor notes or identifiers. A durable claim ensures at most one notification attempt per job. Failed delivery leaves a visible organizer warning; it is not retried automatically, avoiding duplicate email. Local notifications go only to the test inbox.
 

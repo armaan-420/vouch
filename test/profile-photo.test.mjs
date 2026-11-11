@@ -32,6 +32,8 @@ test('photo ownership, private reads, atomic validation, replacement and removal
  const record=await scope.read();assert.match(record.accounts[key].photo,/^[a-f0-9-]+\.png$/);assert.doesNotMatch(JSON.stringify(record),/base64|GPS secret/);
  assert.equal((await call('/api/account/photo',{image:'bad'})).status,400);assert.equal((await call(profile.photo)).status,200);
  await call('/api/account/profile',{visibility:'public'});assert.equal((await call(profile.photo,undefined,null)).status,200);
+ await call('/api/account/profile',{showName:false});assert.equal((await call(profile.photo,undefined,null)).status,404);assert.equal((await call(profile.photo)).status,200);
+ await call('/api/account/profile',{showName:true});assert.equal((await call(profile.photo,undefined,null)).status,200);
  const second=(await (await call('/api/account/photo',{image:url(png())})).json()).profile;assert.notEqual(profile.photo,second.photo);assert.equal((await call(profile.photo)).status,404);
  await call('/api/account/profile',{visibility:'private'});assert.equal((await call(second.photo,undefined,null)).status,404);
  await call('/api/account/photo',{image:null});assert.equal((await call(second.photo)).status,404);assert.equal((await fs.readdir(path.join(dir,'profile-photos'))).length,0);

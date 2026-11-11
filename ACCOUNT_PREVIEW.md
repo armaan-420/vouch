@@ -1,5 +1,18 @@
 # Vouch accounts and product profiles — implementation and verification
 
+## Current attribution flow — November 11, 2026
+
+After all selected products and optional nominations, signed-out participants without a saved browser profile see “Who’s behind these vouches?” before rankings. The optional form uses native `autocomplete="name"` and `autocomplete="email"` inputs in an autofill-enabled form. Submit creates a browser profile without a password or email code; Skip for now goes directly to rankings and stays dismissed for that experiment. The old scroll-triggered Save my picks modal is no longer loaded. Existing participants with profiles proceed directly to rankings.
+
+The form explicitly explains that names appear with item vouches by default. New browser profiles and item vouches are public; passes, brand-only trust and skips do not become public item endorsements. Existing profile and opinion privacy choices are preserved. Profile → Who sees your name opens a checked-by-default control in Edit profile. Turning it off renders public product contributions as Anonymous, removes their profile link and badge, and denies public profile/photo access; the owner still sees their own name. Per-product visibility remains separately available. Name privacy changes do not alter experiment votes or aggregate scores.
+
+The form accepts ordinary email addresses and assigns Wharton early tester only to the exact, case-insensitive `wharton.upenn.edu` domain. No verification or results gate is introduced. The address is used in memory then discarded: this form stores no email address or email-derived identifier. The badge is early-participation recognition, not verified affiliation or expertise. It appears on the rankings banner, profile and named product contributions. Email account signup also carries this badge after its existing email-code flow; that separate sign-in system retains its existing hashed email identifier.
+
+An HttpOnly, SameSite browser credential controls browser-profile edits. Signing out or clearing cookies removes access to that browser profile. If the participant subsequently signs in by email in the same browser, their browser profile and claimed opinions attach to that verified account without duplicate product contributors; existing account privacy wins when merging. Earlier private accounts remain private. No historical visitor records are migrated or republished.
+
+Validation and deployment status are recorded in `docs/tester-attribution.md`. This section supersedes the historical signup-prompt flow below. Notion release notes and checkpoints remain unchanged.
+
+
 Initial implementation and local review: November 2, 2026. This document describes the current behavior and preserves the earlier verification history below. Production release status, exact source and deployment evidence are recorded in the canonical Notion changelog and repository docs/releases. Earlier documented production release: Sites version 18, source `964eed08e54bb59026daa81ac102e55ddd7f8713`, deployment `appgdep_6ae932bf595881919473372685607cfe`, environment revision 3, succeeded on November 2, 2026. GitHub contains the exact application commit. The canonical Notion changelog and 13 related working/index pages were updated. Actual production inbox delivery/sign-in remains unverified; the owner deferred this check.
 
 ## Current documentation publication — November 3, 2026

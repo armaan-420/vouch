@@ -206,3 +206,22 @@ test('failed validation diagnostics explain returned counts without exposing pro
  const {responseDiagnostics}=await import('../lib/auto-experiments/research.mjs');const d=responseDiagnostics({status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(r)}]}],usage:{output_tokens:2902},max_output_tokens:16000});
  assert.equal(d.pickCount,10);assert.equal(d.distinctBrandCount,9);assert.equal(d.duplicateBrandCount,1);assert.match(d.validationError,/ten distinct brands/);assert.equal(d.outputTokens,2902);assert.equal(JSON.stringify(d).includes('Demo Brand'),false);
 });
+test('manual suggestion draft needs no research and stays private with editable ordered products',async t=>{
+ const s=await setup(t);await s.submit('cutting boards');const [job]=await s.listing();const products=[{id:'sku-manual-board-a',brand:'Brand A',name:'Board A'},{id:'sku-manual-board-b',brand:'Brand B',name:'Board B'}],payload={key:job.key,id:'manual-cutting-boards',title:'Cutting boards',category:'Cutting boards',productIds:[],customProducts:products,productOrder:products.map(p=>p.id).reverse()};
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/create-manual',payload,false))).status,401);
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/create-manual',payload))).status,200);
+ let [j]=await s.listing();assert.equal(j.creationMode,'manual');assert.equal(j.draft.status,'draft');assert.deepEqual(j.draft.products.map(p=>p.id),payload.productOrder);assert.equal(j.readiness.canApprove,false);
+ for(let i=0;i<3;i++)await s.auto.advance();[j]=await s.listing();assert.equal(j.attempts,0);assert.equal(j.draft.products.length,2);
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/create-manual',payload))).status,409);
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,409);
+ assert.equal((await s.api(req('/api/experiment?experiment='+j.draft.id,null,false))).status,404);
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/evidence',{key:j.key,evidence:{channel:'ai',brand:'Brand A',productName:'Board A',url:null,searchUrl:null,query:'Manual research',note:'Checked manufacturer source',rank:null}}))).status,200);
+});
+test('manual creation respects active research leases and malformed order never creates a draft',async t=>{
+ const s=await setup(t);await s.submit('cutting boards');const [j]=await s.listing(),scope=await s.store.scope('suggestion-jobs',()=>({jobs:{}}));const payload={key:j.key,id:'manual-boards',title:'Boards',category:'Boards',productIds:[],customProducts:[{id:'sku-manual-board',brand:'Brand',name:'Board'}],productOrder:['wrong']};assert.equal((await s.auto.handle(req('/api/admin/suggestions/create-manual',payload))).status,400);
+ await scope.transaction(d=>{d.jobs[j.key].lockedUntil=Date.now()+60000;});assert.equal((await s.auto.handle(req('/api/admin/suggestions/create-manual',{...payload,productOrder:['sku-manual-board']}))).status,409);
+ assert.equal((await s.listing())[0].draft,null);
+});
+test('manual save reuses an automatic draft completed while the editor was open',async t=>{
+ const s=await setup(t);await s.submit('serving trays');const j=await s.build();const r=await s.auto.handle(req('/api/admin/suggestions/create-manual',{key:j.key,id:'manual-trays',title:'Manual trays',category:'Serving trays',productIds:[],customProducts:[{id:'sku-manual-tray',brand:'Manual brand',name:'Serving tray'}]}));assert.equal(r.status,200);const [next]=await s.listing();assert.equal(next.draft.id,j.draft.id);assert.equal(next.draft.products.length,1);assert.equal(next.creationMode,'manual');
+});

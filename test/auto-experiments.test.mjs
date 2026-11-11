@@ -191,3 +191,13 @@ test('an interrupted job lease expires and processing resumes without duplicate 
 test('notification retry stops before provider idempotency expires after an outage',async t=>{
  let time=Date.now(),calls=0;const s=await setup(t,{now:()=>time,env:{SUGGESTION_NOTIFY_EMAIL:'test@example.com'},notify:async()=>{calls++;throw Error('outage');}});await s.submit('backpacks');await s.build();time+=25*3600000;await s.auto.advance();assert.equal(calls,1);assert.equal((await s.listing())[0].notification.status,'failed');
 });
+test('card actions remove and replace in place while preserving private draft and approval checks',async t=>{
+ const s=await setup(t);await s.submit('backpacks');const j=await s.build(),ids=j.draft.products.map(p=>p.id),replacement={id:'sku-manual-replacement',brand:'New brand',name:'Replacement pack',image:'https://example.com/new.jpg'};
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/replace-product',{key:j.key,productId:ids[2],product:replacement},false))).status,401);
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/replace-product',{key:j.key,productId:ids[2],product:replacement}))).status,200);
+ let [next]=await s.listing();assert.deepEqual(next.draft.products.map(p=>p.id),ids.map((id,i)=>i===2?replacement.id:id));assert.equal(next.draft.status,'draft');assert.equal(next.readiness.canApprove,false);
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/remove-product',{key:j.key,productId:ids[4]}))).status,200);
+ [next]=await s.listing();assert.equal(next.draft.products.length,9);assert.equal(next.draft.products.some(p=>p.id===ids[4]),false);
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/remove-product',{key:j.key,productId:ids[4]}))).status,409);
+ assert.equal((await s.api(req('/api/experiment?experiment='+j.draft.id,null,false))).status,404);
+});

@@ -271,3 +271,21 @@ h1[tabindex="-1"]:focus-visible,h2[tabindex="-1"]:focus-visible{outline:3px soli
 @media(min-width:761px) and (max-width:1050px){.site-header{padding:0 22px;gap:16px;height:80px}.site-header .wordmark{font-size:34px;letter-spacing:-2.4px}.site-header .wordmark span{font-size:29px}.site-navigation{gap:14px}.site-desktop-links{gap:15px}.site-text-link{font-size:11px}.site-search{min-width:120px}.site-search-field{padding:0 11px}.site-search-field input{font-size:12px}.site-header .leaderboard-link{padding:10px 13px}.site-brand-group{flex-direction:column;gap:3px}.site-header .header-countdown{font-size:8px}}
 @media(max-width:760px){.site-header{height:68px;padding:0 16px;gap:8px}.site-header .wordmark{font-size:32px;letter-spacing:-2.2px}.site-header .wordmark span{font-size:28px;margin-left:3px}.site-brand-group{flex:1;min-width:0}.site-header .header-label{display:none}.site-navigation{flex:0 0 auto;gap:4px}.site-header .site-desktop-links,.site-header .site-search{display:none}.site-header .site-menu-toggle,.site-header .site-search-toggle{display:inline-flex}.site-header .leaderboard-link{font-size:12px;min-width:68px;padding:10px 12px}.site-header .site-menu-toggle{margin-right:-6px}.site-search-popover .result-info strong{font-size:13px}.site-search-popover .result-info small{font-size:11px}.site-header.voting-header{height:52px}.site-header.voting-header .site-search-toggle,.site-header.voting-header .site-menu-toggle{display:none}.site-header.voting-header .site-navigation{gap:0}.site-header.voting-header .wordmark{font-size:30px}.site-header.voting-header .wordmark span{font-size:26px}}
 @media(prefers-reduced-motion:reduce){.site-header *{transition:none!important;scroll-behavior:auto!important}}
+
+/* Mobile nomination search uses the visible viewport above the software keyboard. */
+html.nomination-search-open,html.nomination-search-open body{overflow:hidden;overscroll-behavior:none}
+.nomination-search-dialog{position:fixed;inset:auto;margin:0;padding:0;max-width:none;max-height:none;box-sizing:border-box;border:0;border-radius:0;background:#F5F0E8;color:#123C2E;overflow:hidden}
+.nomination-search-dialog[open]{display:flex;flex-direction:column}
+.nomination-search-dialog::backdrop{background:#F5F0E8}
+.nomination-search-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 16px 0;padding-top:max(8px,env(safe-area-inset-top));flex-shrink:0;font-size:13px}
+.nomination-search-header .text-button{min-width:44px;min-height:44px;margin:0;padding:8px;color:#123C2E;font-size:14px}
+.nomination-search-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 16px max(16px,env(safe-area-inset-bottom));scroll-padding-top:78px}
+.nomination-search-dialog #nomination-search-content{display:flow-root}
+.nomination-search-dialog .picker-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.nomination-search-dialog .picker-search{position:sticky;top:0;z-index:1;background:#fffef9;box-shadow:0 0 0 6px #F5F0E8;min-height:54px}
+.nomination-search-dialog .picker-search input{padding:15px 0}
+.nomination-search-dialog .search-status{min-height:0;padding:10px 0;font-size:12px}
+.nomination-search-dialog .picker-results .product-result{min-height:76px;padding:10px;gap:10px}
+.nomination-search-dialog .product-result:focus-visible,.nomination-search-dialog button:focus-visible{outline:2px solid #123C2E;outline-offset:-2px}
+
+.nomination-search-dialog .picker-results .search-photo-placeholder{flex:0 0 43px}

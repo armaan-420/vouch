@@ -5,13 +5,14 @@ function nominationLabel(product){
 }
 let nominationDraft='',selectedNominations=null;
 let searchTimer,searchController,searchVersion=0,nominationPicker;
-function nominationView({inFlow=false}={}){return `<section class="nominate" id="nominate"><p class="eyebrow">MAKE ROOM FOR YOUR FAVORITES</p><div class="nomination-heading"><h2>${inFlow?'Did we miss your holy grail?<br><em>Nominate a product.</em>':'Your favorites missing?'}</h2></div><p>Nominate what we didn't include. When two people nominate the same one, it joins the board.</p><form id="nomination-form"><label class="picker-label" for="nomination-name">Find a product</label><div class="selection-box picker-search"><input id="nomination-name" class="product-search-input" name="name" aria-label="Search a brand or product name" role="combobox" aria-autocomplete="list" aria-controls="product-results" aria-describedby="search-status" aria-expanded="false" placeholder="Search a brand or product name" autocomplete="off" maxlength="100" value="${esc(nominationDraft)}"><button type="button" class="picker-clear" id="nomination-clear" aria-label="Clear search" hidden>×</button></div><div class="search-status" id="search-status" aria-live="polite">Search, select, and keep adding favorites.</div><div id="product-results" class="picker-results" role="listbox" aria-multiselectable="true" aria-label="Matching products"></div><button type="button" class="picker-more" id="nomination-more" hidden>See more results</button><div class="picker-tools"><button class="text-button manual-fallback" id="manual-nomination" type="button" hidden>Add this name for review</button><button type="button" class="text-button" id="nomination-another" hidden>Search another brand →</button></div><div class="picker-selection"><div class="picker-selection-heading"><h3>Your nominations <span id="nomination-count">· 0</span></h3><button type="button" class="text-button" id="nomination-clear-all" hidden>Clear all</button></div><div id="selected-product" class="selection-chips" aria-label="Selected nominations"></div><p id="nomination-empty" class="picker-empty">Products you select will appear here.</p></div><p id="nomination-saved" class="picker-saved" role="status" hidden>Nominations saved.</p><button class="primary nominate-submit" id="nominate-submit" type="submit" hidden>Save nominations</button><p id="nomination-error" role="alert"></p></form></section>`}
+function nominationView({inFlow=false}={}){return `<section class="nominate" id="nominate"><p class="eyebrow">MAKE ROOM FOR YOUR FAVORITES</p><div class="nomination-heading"><h2>${inFlow?'Did we miss your holy grail?<br><em>Nominate a product.</em>':'Your favorites missing?'}</h2></div><p>Nominate what we didn't include. When two people nominate the same one, it joins the board.</p><form id="nomination-form"><div id="nomination-search-content"><label class="picker-label" for="nomination-name">Find a product</label><div class="selection-box picker-search"><input id="nomination-name" class="product-search-input" name="name" aria-label="Search a brand or product name" role="combobox" aria-autocomplete="list" aria-controls="product-results" aria-describedby="search-status" aria-expanded="false" placeholder="Search a brand or product name" autocomplete="off" maxlength="100" value="${esc(nominationDraft)}"><button type="button" class="picker-clear" id="nomination-clear" aria-label="Clear search" hidden>×</button></div><div class="search-status" id="search-status" aria-live="polite">Search, select, and keep adding favorites.</div><div id="product-results" class="picker-results" role="listbox" aria-multiselectable="true" aria-label="Matching products"></div><button type="button" class="picker-more" id="nomination-more" hidden>See more results</button><div class="picker-tools"><button class="text-button manual-fallback" id="manual-nomination" type="button" hidden>Add this name for review</button><button type="button" class="text-button" id="nomination-another" hidden>Search another brand →</button></div></div><dialog class="nomination-search-dialog" aria-label="Find products to nominate"><div class="nomination-search-header"><span id="nomination-search-count" role="status" aria-live="polite">Find a product</span><button type="button" class="text-button" data-search-done>Done</button></div><div class="nomination-search-body"></div></dialog><div class="picker-selection"><div class="picker-selection-heading"><h3>Your nominations <span id="nomination-count">· 0</span></h3><button type="button" class="text-button" id="nomination-clear-all" hidden>Clear all</button></div><div id="selected-product" class="selection-chips" aria-label="Selected nominations"></div><p id="nomination-empty" class="picker-empty">Products you select will appear here.</p></div><p id="nomination-saved" class="picker-saved" role="status" hidden>Nominations saved.</p><button class="primary nominate-submit" id="nominate-submit" type="submit" hidden>Save nominations</button><p id="nomination-error" role="alert"></p></form></section>`}
 function mountNomination(){
   clearTimeout(searchTimer);searchController?.abort();searchVersion++;nominationPicker?.destroy();
   const form=document.getElementById('nomination-form');if(!form)return;
   if(selectedNominations===null)selectedNominations=(state.nominations||[]).map(n=>({name:n.name,product:n.product}));
   const input=document.getElementById('nomination-name'),results=document.getElementById('product-results'),status=document.getElementById('search-status'),selected=document.getElementById('selected-product'),submit=document.getElementById('nominate-submit'),fallback=document.getElementById('manual-nomination'),error=document.getElementById('nomination-error'),saved=document.getElementById('nomination-saved');
   const continueButton=document.getElementById('nomination-continue');
+  const mobileSearch=mountNominationSearch(form,input);
   let matches=[],saving=false;
   const key=n=>n.product?'catalog:'+n.product.id:'name:'+n.name.trim().toLowerCase();
   const has=p=>selectedNominations.some(n=>n.product?.id===p.id);
@@ -19,6 +20,7 @@ function mountNomination(){
   function selection(){
     selected.innerHTML=selectedNominations.map((n,i)=>{const p=n.product,label=p?nominationLabel(p):n.name;return `<span class="selection-chip" title="${esc(label)}"><span>${esc(label)}${p?'':'<small>For review</small>'}</span><button type="button" data-remove="${i}" aria-label="Remove ${esc(label)}">×</button></span>`}).join('');
     selected.querySelectorAll('[data-remove]').forEach(b=>{b.disabled=saving;b.onclick=()=>{selectedNominations.splice(Number(b.dataset.remove),1);changed();selection();highlight();status.textContent=selectedNominations.length+' selected. Keep searching to add more.';input.focus()}});
+    mobileSearch.updateCount(selectedNominations.length);
     document.getElementById('nomination-count').textContent='· '+selectedNominations.length;document.getElementById('nomination-empty').hidden=!!selectedNominations.length;const clearAll=document.getElementById('nomination-clear-all');clearAll.hidden=!selectedNominations.length;clearAll.disabled=saving;
     const canSave=!!selectedNominations.length||!!(state.nominations||[]).length;
     submit.hidden=!!continueButton||!canSave;
@@ -36,6 +38,7 @@ function mountNomination(){
   function highlight(){nominationPicker.refresh();}
   function clearSearch(){nominationDraft='';searchVersion++;searchController?.abort();clearTimeout(searchTimer);collapse();fallback.hidden=true;status.textContent='Type at least two characters to search.';}
   nominationPicker=window.VouchProductPicker({input,results,more:document.getElementById('nomination-more'),clear:document.getElementById('nomination-clear'),another:document.getElementById('nomination-another'),esc,isSelected:has,onChoose:choose,onClear:clearSearch});
+  const destroyPicker=nominationPicker.destroy;nominationPicker.destroy=()=>{mobileSearch.destroy();destroyPicker();};
   document.getElementById('nomination-clear-all').onclick=()=>{if(saving)return;selectedNominations=[];changed();selection();highlight();status.textContent='All selections removed. Save to clear previously saved nominations.';input.focus();};
   async function runSearch(){
     const q=input.value.trim();nominationDraft=input.value;
@@ -55,4 +58,56 @@ function mountNomination(){
     finally{saving=false;if(form.isConnected){input.disabled=false;fallback.disabled=false;submit.disabled=false;nominationPicker.setDisabled(false);selection()}}
   };
   selection();if(nominationDraft.trim().length>=2)runSearch();
+}
+
+
+// Keep the existing input/results alive when switching into mobile search.
+// VisualViewport follows the usable area as the keyboard and browser chrome move.
+function mountNominationSearch(form,input){
+ const media=matchMedia('(max-width:600px)'),dialog=form.querySelector('.nomination-search-dialog'),content=form.querySelector('#nomination-search-content'),body=dialog.querySelector('.nomination-search-body'),done=dialog.querySelector('[data-search-done]'),count=dialog.querySelector('#nomination-search-count');
+ const marker=document.createComment('nomination search home');content.before(marker);
+ let opened=false,restoring=false,frame=0,scrollY=0;
+ const viewport=window.visualViewport;
+ function fit(){
+  cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>{
+   if(!opened)return;
+   dialog.style.top=(viewport?.offsetTop||0)+'px';
+   dialog.style.left=(viewport?.offsetLeft||0)+'px';
+   dialog.style.width=(viewport?.width||window.innerWidth)+'px';
+   dialog.style.height=(viewport?.height||window.innerHeight)+'px';
+  });
+ }
+ const observer=new MutationObserver(()=>{if(!form.isConnected)destroy();});
+ function stop(){
+  viewport?.removeEventListener('resize',fit);viewport?.removeEventListener('scroll',fit);window.removeEventListener('resize',fit);observer.disconnect();cancelAnimationFrame(frame);
+  document.documentElement.classList.remove('nomination-search-open');
+ }
+ function restore({focus=true}={}){
+  if(!opened)return;opened=false;restoring=true;
+  stop();marker.after(content);dialog.removeAttribute('style');
+  if(form.isConnected){window.scrollTo({top:scrollY,behavior:'instant'});if(focus){const heading=form.closest('.nominate').querySelector('h2');heading.tabIndex=-1;heading.focus({preventScroll:true});}}
+  restoring=false;
+ }
+ function close(){if(dialog.open)dialog.close();restore();}
+ function open(){
+  if(opened||restoring||!media.matches||input.disabled)return;
+  opened=true;scrollY=window.scrollY;body.append(content);
+  document.documentElement.classList.add('nomination-search-open');
+  dialog.showModal();input.focus({preventScroll:true});body.scrollTop=0;fit();
+  viewport?.addEventListener('resize',fit);viewport?.addEventListener('scroll',fit);window.addEventListener('resize',fit);observer.observe(document.getElementById('app'),{childList:true,subtree:true});
+ }
+ function resize(){if(!media.matches)close();}
+ function keydown(e){
+  if(e.key==='Escape'){e.preventDefault();e.stopPropagation();input.blur();close();}
+ }
+ function keepTyping(e){if(document.activeElement===input&&e.target.closest('.product-result,.picker-more,.picker-clear'))e.preventDefault();}
+ function destroy(){
+  if(dialog.open)dialog.close();restore({focus:false});stop();input.removeEventListener('focus',open);input.removeEventListener('click',open);dialog.removeEventListener('keydown',keydown,true);dialog.removeEventListener('pointerdown',keepTyping);media.removeEventListener('change',resize);
+ }
+ input.addEventListener('focus',open);input.addEventListener('click',open);
+ done.onclick=()=>{input.blur();close();};
+ dialog.addEventListener('close',()=>restore());
+ dialog.addEventListener('cancel',e=>{e.preventDefault();input.blur();close();});
+ dialog.addEventListener('pointerdown',keepTyping);dialog.addEventListener('keydown',keydown,true);media.addEventListener('change',resize);
+ return {updateCount(n){count.textContent=n?`${n} selected`:'Find a product';},destroy};
 }

@@ -1,0 +1,66 @@
+// Run against the isolated local lookup preview; PLAYWRIGHT_MODULE can point to a local Playwright install.
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
+import assert from 'node:assert/strict';
+await (await import('node:fs/promises')).mkdir('outputs',{recursive:true});
+const browser=await chromium.launch({headless:true});
+try{
+ const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ let submissions=0;
+ await page.route('**/api/nominations**',route=>{submissions++;return route.fulfill({json:{nominations:[]}})});
+ await page.route('**/api/products/search**',route=>route.fulfill({json:{products:Array.from({length:7},(_,i)=>({id:'fixture-'+i,brand:'Example',name:'Daily sunscreen '+i}))}}));
+ await page.goto('http://127.0.0.1:4174/sunscreen?board=1');
+ await page.locator('#nomination-name').waitFor();
+ await page.locator('#nomination-name').tap();
+ assert.equal(await page.locator('.nomination-search-dialog').evaluate(el=>el.open),true);
+ await page.locator('#nomination-name').fill('daily');
+ await page.locator('#product-results .product-result').first().waitFor();
+ assert.equal(await page.locator('#product-results .product-result').count(),3);
+ await page.locator('#product-results .product-result').first().tap();
+ assert.equal(await page.locator('#nomination-search-count').textContent(),'1 selected');
+ assert.equal(await page.locator('#nomination-name').inputValue(),'daily');
+ await page.locator('#nomination-more').tap();
+ assert.equal(await page.locator('#product-results .product-result').count(),6);
+ // Simulate a keyboard shrinking and panning the visual viewport without resizing layout.
+ await page.evaluate(()=>{Object.defineProperties(window.visualViewport,{height:{configurable:true,value:385},offsetTop:{configurable:true,value:48}});window.visualViewport.dispatchEvent(new Event('resize'));});
+ await page.waitForTimeout(80);
+ const bounds=await page.locator('.nomination-search-dialog').boundingBox();assert.equal(bounds.height,385);assert.equal(bounds.y,48);
+ const inputBounds=await page.locator('#nomination-name').boundingBox();assert.ok(inputBounds.y>=48&&inputBounds.y<150);
+ await page.locator('.nomination-search-body').evaluate(el=>el.scrollTop=200);
+ const stickyBounds=await page.locator('#nomination-name').boundingBox();assert.ok(stickyBounds.y<150);
+ await page.screenshot({path:'outputs/mobile-nomination-keyboard.png'});
+ await page.locator('[data-search-done]').tap();
+ assert.equal(await page.locator('.nomination-search-dialog').evaluate(el=>el.open),false);
+ assert.equal(await page.locator('#selected-product .selection-chip').count(),1);
+ assert.equal(submissions,0);
+ assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('nomination-search-open')),false);
+ await page.locator('#nomination-name').tap();
+ assert.equal(await page.locator('#nomination-name').inputValue(),'daily');
+ await page.keyboard.press('Escape');
+ assert.equal(await page.locator('.nomination-search-dialog').evaluate(el=>el.open),false);
+ await page.locator('#nomination-name').tap();
+ await page.setViewportSize({width:1000,height:800});await page.waitForTimeout(80);
+ assert.equal(await page.locator('.nomination-search-dialog').evaluate(el=>el.open),false);
+ await page.locator('#nomination-name').click();
+ assert.equal(await page.locator('.nomination-search-dialog').evaluate(el=>el.open),false);
+ await page.setViewportSize({width:390,height:844});
+ // Exercise the actual final experiment step and its separate save action.
+ await page.evaluate(()=>{screen='game';index=products.length;render();});
+ await page.locator('#nomination-continue').waitFor();
+ await page.locator('#nomination-name').tap();
+ await page.locator('#nomination-clear').tap();
+ assert.equal(await page.locator('#nomination-name').inputValue(),'');
+ await page.locator('#nomination-name').fill('missing favorite');
+ await page.locator('#manual-nomination').waitFor({state:'visible'});
+ await page.locator('#manual-nomination').tap();
+ assert.equal(await page.locator('#nomination-search-count').textContent(),'2 selected');
+ await page.locator('[data-search-done]').tap();
+ assert.equal(submissions,0);
+ await page.locator('#nomination-continue').click();
+ await page.locator('.board h1').waitFor();assert.equal(submissions,1);
+ await page.locator('#nomination-name').tap();
+ await page.evaluate(()=>document.getElementById('app').innerHTML='<p>Next screen</p>');await page.waitForTimeout(80);
+ assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('nomination-search-open')),false);
+ assert.deepEqual(errors,[]);
+ console.log('PASS: mobile opening, multi-select, pagination, query retention, keyboard viewport/offset, sticky field, Done without saving, Escape, desktop resize, final-step manual nomination/save, and navigation cleanup.');
+}finally{await browser.close();}

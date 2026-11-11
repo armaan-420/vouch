@@ -225,3 +225,9 @@ test('manual creation respects active research leases and malformed order never 
 test('manual save reuses an automatic draft completed while the editor was open',async t=>{
  const s=await setup(t);await s.submit('serving trays');const j=await s.build();const r=await s.auto.handle(req('/api/admin/suggestions/create-manual',{key:j.key,id:'manual-trays',title:'Manual trays',category:'Serving trays',productIds:[],customProducts:[{id:'sku-manual-tray',brand:'Manual brand',name:'Serving tray'}]}));assert.equal(r.status,200);const [next]=await s.listing();assert.equal(next.draft.id,j.draft.id);assert.equal(next.draft.products.length,1);assert.equal(next.creationMode,'manual');
 });
+test('refresh clears stale failures and starts the selected suggestion on demand',async t=>{
+ const s=await setup(t);await s.submit('golf bags');const j=await s.build();await s.submit('serving trays');const scope=await s.store.scope('suggestion-jobs',()=>({jobs:{}}));await scope.transaction(d=>{Object.assign(d.jobs[j.key],{failureCode:'research_validation',lastError:'Old error',diagnostic:{validationError:'Old error'},photoLookup:{added:1}});});
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/retry',{key:j.key}))).status,200);let all=await s.listing(),queued=all.find(x=>x.key===j.key);assert.equal(queued.state,'queued');assert.equal(queued.lastError,null);assert.equal(queued.diagnostic,null);
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/run',{key:j.key}))).status,200);all=await s.listing();assert.equal(all.find(x=>x.key===j.key).state,'matching');assert.equal(all.find(x=>x.key!==j.key).state,'queued');assert.equal(all.find(x=>x.key===j.key).attempts,2);
+ const data=await(await s.auto.handle(req('/api/admin/suggestions'))).json();assert.equal(data.previewResearch,true);
+});

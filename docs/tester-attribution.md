@@ -1,5 +1,13 @@
 # Experiment attribution and early tester recognition
 
+## Simple account creation
+
+`/account` now has a Name/Email form with native autofill, required fields, Skip, and a preview of item vouches. Desktop uses two columns; mobile stacks the preview below the form. Submit uses `/api/account/signup` to save the previewed current-experiment responses and open the profile directly. No code or additional publication checklist interrupts new account creation. An empty or partial collection is supported. Preview tokens bind the browser, experiment and exact response snapshot, so stale/foreign previews cannot be claimed. Existing privacy, email storage and badge rules apply.
+
+`/account?signin=1` and the Already have an account link preserve verification-code sign-in for returning users. Header Sign in links select that mode. Existing accounts can still explicitly review unclaimed picks.
+
+The expanded 218-test suite passed. Browser checks passed at phone and desktop sizes, including simple signup, required/autofill fields, preview contents, failed-save recovery, direct profile landing, no-picks skip and returning code sign-in. The production build is checked before publication; revised publication pending.
+
 ## Implemented behavior
 
 - Flow: product answers → optional nominations → skippable name/email form (both required on submit) → rankings. Existing profiles bypass the form; skipping creates no profile. Results remain open.

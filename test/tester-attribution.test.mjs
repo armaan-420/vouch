@@ -139,3 +139,26 @@ test('ambiguous pending email matches and a different verified inbox do not clai
  await f.signin(a,'different@example.test');assert.equal((await a('/api/account/me')).data.profile,null);
  assert.equal((await b('/api/account/me')).data.profile.displayName,'Pending');
 });
+
+
+test('simple signup saves partial previewed vouches and empty collections with private email and default attribution',async t=>{
+ const f=await fixture(t),a=f.browser(),empty=f.browser(),observer=f.browser();
+ await a('/api/events',{type:'answer',productId:'boj',value:'yes'});await a('/api/events',{type:'answer',productId:'eltamd',value:'no'});
+ const edit=(await a('/api/account/edit?experiment=sunscreen')).data;
+ const body={displayName:'Simple Signup',email:'simple@wharton.upenn.edu',claimToken:edit.claimToken};
+ assert.equal((await a('/api/account/signup',body,{Origin:'https://evil.example'})).status,403);
+ assert.equal((await observer('/api/account/signup',body)).status,409);
+ const signup=await a('/api/account/signup',body);assert.equal(signup.status,200,JSON.stringify(signup.data));assert.equal(signup.data.profile.displayName,'Simple Signup');assert.equal(signup.data.profile.email,'simple@wharton.upenn.edu');assert.equal(signup.data.profile.whartonEarlyTester,true);assert.equal(signup.data.profile.visibility,'public');
+ assert.equal((await observer('/api/products/boj')).data.contributors[0].displayName,'Simple Signup');assert.equal((await observer('/api/products/eltamd')).data.contributors.length,0);
+ const preview=(await empty('/api/account/edit')).data;
+ const blank=await empty('/api/account/signup',{displayName:'New Member',email:'new@example.test',claimToken:preview.claimToken});assert.equal(blank.status,200);assert.equal(blank.data.profile.opinions.length,0);
+});
+
+test('simple signup binds the exact preview and requires both fields',async t=>{
+ const f=await fixture(t),a=f.browser();const edit=(await a('/api/account/edit')).data;
+ const body={displayName:'Tester',email:'tester@example.test',claimToken:edit.claimToken};
+ assert.equal((await a('/api/account/signup',{...body,email:''})).status,400);assert.equal((await a('/api/account/signup',{...body,displayName:''})).status,400);
+ assert.equal((await a('/api/account/signup',{...body,claimToken:'invalid'})).status,409);
+ await a('/api/events',{type:'answer',productId:'boj',value:'yes'});
+ assert.equal((await a('/api/account/signup',body)).status,409,'stale preview cannot silently claim changed answers');assert.equal((await a('/api/account/me')).data.profile,null);
+});

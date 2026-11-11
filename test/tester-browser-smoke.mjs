@@ -63,7 +63,7 @@ try{
   assert.equal((await observer.request.get(origin+'/api/profiles/'+me.profile.handle)).status(),404);
   await observer.close();
   const returning=await browser.newContext(),returnPage=await returning.newPage();
-  await returnPage.goto(origin+'/account');await returnPage.locator('#account-email').fill(`browser${width}@wharton.upenn.edu`);await returnPage.locator('#email-form [type=submit]').click();
+  await returnPage.goto(origin+'/account?signin=1');await returnPage.locator('#account-email').fill(`browser${width}@wharton.upenn.edu`);await returnPage.locator('#email-form [type=submit]').click();
   await returnPage.locator('#account-code').waitFor();const code=await returnPage.locator('#verify-form code').textContent();await returnPage.locator('#account-code').fill(code);await returnPage.locator('#verify-form [type=submit]').click();await returnPage.locator('.profile-details h1').waitFor();
   assert.equal(await returnPage.locator('.profile-details h1').textContent(),'Browser Tester');assert.equal(await returnPage.locator('.profile-private-email').isVisible(),true);
   const recovered=await (await returnPage.request.get(origin+'/api/account/me')).json();assert.equal(recovered.profile.handle,me.profile.handle);assert.equal(recovered.profile.emailVerified,true);
@@ -78,5 +78,22 @@ try{
   if(skip)assert.equal((await (await page.request.get(origin+'/api/account/me')).json()).authenticated,false);
   await context.close();
  }
+
+ for(const width of [390,1280]){
+  const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+  await context.request.post(origin+'/api/events',{headers:{Origin:origin},data:{type:'answer',productId:'boj',value:'yes'}});
+  await context.request.post(origin+'/api/events',{headers:{Origin:origin},data:{type:'answer',productId:'eltamd',value:'no'}});
+  await page.goto(origin+'/account?experiment=sunscreen');await page.locator('#signup-form').waitFor();
+  assert.equal(await page.locator('.signup-preview [data-opinion]').count(),1);assert.equal(await page.locator('#signup-form input[type=checkbox]').count(),0);assert.equal(await noOverflow(page),true);
+  assert.doesNotMatch(await page.locator('#signup-form').innerText(),/Wharton/);
+  assert.equal(await page.locator('#signup-name').getAttribute('autocomplete'),'name');assert.equal(await page.locator('#signup-email').getAttribute('autocomplete'),'email');
+  await page.locator('#signup-form [type=submit]').click();assert.equal(await page.locator('#signup-form').isVisible(),true);
+  await page.screenshot({path:`outputs/tester-attribution/signup-${width}.png`,fullPage:true});
+  await page.locator('#signup-name').fill('Signup Tester');await page.locator('#signup-email').fill(`signup${width}@wharton.upenn.edu`);
+  await page.route('**/api/account/signup**',route=>route.fulfill({status:503,json:{error:'Temporary test failure'}}),{times:1});await page.locator('#signup-form [type=submit]').click();await page.locator('.account-error').waitFor();assert.equal(await page.locator('#signup-name').inputValue(),'Signup Tester');
+  await page.locator('#signup-form [type=submit]').click();await page.locator('.profile-details h1').waitFor();assert.equal(await page.locator('.profile-details h1').textContent(),'Signup Tester');assert.equal(await page.locator('.tester-badge').first().isVisible(),true);assert.equal(await page.locator('#claim-form').count(),0);
+  await context.close();
+ }
+ const emptyContext=await browser.newContext({viewport:{width:320,height:760}}),emptyPage=await emptyContext.newPage();await emptyPage.goto(origin+'/account');await emptyPage.locator('#signup-form').waitFor();assert.equal(await noOverflow(emptyPage),true);await emptyPage.locator('.signup-skip').click();await emptyPage.waitForURL(origin+'/');assert.equal((await (await emptyPage.request.get(origin+'/api/account/me')).json()).profile,null);await emptyContext.close();
  assert.deepEqual(errors,[]);console.log('Browser checks passed: phone/desktop form, autofill attributes and stable values, retry, skip, badges, persistent name privacy, public API filtering, no signup popup, 320px layout.');
 }finally{await browser.close();await new Promise(r=>server.close(r));await fs.rm(directory,{recursive:true,force:true})}

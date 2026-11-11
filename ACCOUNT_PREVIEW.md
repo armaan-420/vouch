@@ -1,5 +1,12 @@
 # Vouch accounts and product profiles — implementation and verification
 
+## Simple account creation — November 11, 2026
+
+The account creation page now uses the same short, autofill-enabled Name and Email form as experiment attribution. Both fields are required unless the participant selects Skip for now. The page keeps an item-vouches preview (passes, brand-only trust and Haven’t tried do not appear as item vouches) alongside the form on desktop and below it on mobile. Submit saves the profile and the current experiment’s previewed responses in one step and opens the profile without a second review/visibility checklist or immediate email code. It supports partial experiments and an empty collection. Names are public for new item vouches, email remains private, and Wharton recognition appears after saving rather than in signup copy. Existing visibility choices are preserved.
+
+Returning participants can choose Sign in for the existing email-code flow; header Sign in links open that mode directly. Explicit review of an existing account’s picks remains available. Signup binds an expiring preview token to the current browser and exact responses; stale or someone else’s previews cannot be claimed. Skip creates no profile. Local validation covers successful creation, failed-save recovery, required fields, preview isolation/staleness, empty and partial collections, code sign-in, and phone/desktop layouts. Publication status is tracked in `docs/tester-attribution.md`.
+
+
 ## Current email capture — November 11, 2026
 
 The pre-rankings form requires name and email on submit, supports native autofill, and offers Skip for now without either field. It contains no Wharton badge invitation or claim that email is discarded. A matching Wharton address still earns the badge on rankings and the profile after submission.

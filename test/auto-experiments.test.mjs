@@ -201,3 +201,8 @@ test('card actions remove and replace in place while preserving private draft an
  assert.equal((await s.auto.handle(req('/api/admin/suggestions/remove-product',{key:j.key,productId:ids[4]}))).status,409);
  assert.equal((await s.api(req('/api/experiment?experiment='+j.draft.id,null,false))).status,404);
 });
+test('failed validation diagnostics explain returned counts without exposing provider text',async()=>{
+ const r=fakeResearch('cutting boards');r.picks[9].brand=r.picks[0].brand;
+ const {responseDiagnostics}=await import('../lib/auto-experiments/research.mjs');const d=responseDiagnostics({status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(r)}]}],usage:{output_tokens:2902},max_output_tokens:16000});
+ assert.equal(d.pickCount,10);assert.equal(d.distinctBrandCount,9);assert.equal(d.duplicateBrandCount,1);assert.match(d.validationError,/ten distinct brands/);assert.equal(d.outputTokens,2902);assert.equal(JSON.stringify(d).includes('Demo Brand'),false);
+});

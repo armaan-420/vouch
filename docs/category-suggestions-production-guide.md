@@ -125,4 +125,4 @@ Server secrets: `SUGGESTION_RUNNER_SECRET`, `SUGGESTION_NOTIFY_EMAIL`, `SUGGESTI
 
 Suggestions shows whether email is configured and the latest successful background run. Check GitHub Actions for runner outages; enable GitHub failed-workflow notifications for independent infrastructure alerts. Re-enable a schedule if GitHub disables it after repository inactivity. Missing source coverage or photos still blocks publication. Approval remains an explicit organizer action.
 
-Validation: 193 automated tests pass, including late-response recovery, transient retry, process restart and duplicate notification claims, refresh notifications, failure alerts, runner authorization and private completion without browser polling. Production deployment and delivery verification are recorded separately after publishing.
+Validation: 195 automated tests pass, including late-response recovery, transient retry, process restart and duplicate notification claims, refresh notifications, failure alerts, runner authorization and private completion without browser polling. Production deployment and delivery verification are recorded separately after publishing.

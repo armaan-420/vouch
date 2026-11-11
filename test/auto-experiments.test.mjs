@@ -185,3 +185,9 @@ test('background runner completes a private draft without admin polling',async t
  assert.equal(await runnerAuthorized(new Request('https://example.com',{headers:{authorization:'Bearer wrong'}}),'secret'),false);
  assert.equal(await runnerAuthorized(new Request('https://example.com',{headers:{authorization:'Bearer secret',origin:'https://evil.example'}}),'secret'),false);
 });
+test('an interrupted job lease expires and processing resumes without duplicate draft',async t=>{
+ let time=Date.now();const s=await setup(t,{now:()=>time});await s.submit('backpacks');const jobs=await s.store.scope('suggestion-jobs',()=>({jobs:{}}));await jobs.transaction(d=>{const j=Object.values(d.jobs)[0];j.lease='crashed';j.lockedUntil=time+120000;});assert.equal((await s.auto.advance()).advanced,false);time+=120001;await s.build();assert.equal((await s.listing())[0].draft.status,'draft');
+});
+test('notification retry stops before provider idempotency expires after an outage',async t=>{
+ let time=Date.now(),calls=0;const s=await setup(t,{now:()=>time,env:{SUGGESTION_NOTIFY_EMAIL:'test@example.com'},notify:async()=>{calls++;throw Error('outage');}});await s.submit('backpacks');await s.build();time+=25*3600000;await s.auto.advance();assert.equal(calls,1);assert.equal((await s.listing())[0].notification.status,'failed');
+});

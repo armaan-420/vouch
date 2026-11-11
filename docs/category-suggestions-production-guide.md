@@ -133,6 +133,8 @@ The corrected GitHub run [42955764767](https://github.com/armaan-420/vouch/actio
 
 ### Manual suggestion entry and attribution
 
-Organizers can use **Suggestions → Add suggestion** to submit a category with an optional name and note. New suggestions enter the existing research queue; a duplicate opens the original suggestion without adding support or replacing its original attribution. This uses the protected `/api/admin/suggestions/add` endpoint.
+Organizers can use **Suggestions → Actions → Add suggestion** to submit a category with an optional name and note. New suggestions enter the existing research queue; a duplicate opens the original suggestion without adding support or replacing its original attribution. This uses the protected `/api/admin/suggestions/add` endpoint.
 
 The table includes **Added by** and **Submitted**, separate from the last updated date. Manual entries use the supplied name (or the signed-in Vouch profile when available); new community entries use the authenticated Vouch profile name. Anonymous and historical entries without saved attribution display **Unknown user**. Existing submission dates are retained. Attribution is visible only in the organizer workspace.
+
+Page-wide actions sit in the **Actions** dropdown beside the Suggestions heading. **Add suggestion** opens a modal form; **Refresh suggestions** refreshes the queue. Search and status filters remain immediately above the table.

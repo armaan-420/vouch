@@ -231,3 +231,20 @@ test('refresh clears stale failures and starts the selected suggestion on demand
  assert.equal((await s.auto.handle(req('/api/admin/suggestions/run',{key:j.key}))).status,200);all=await s.listing();assert.equal(all.find(x=>x.key===j.key).state,'matching');assert.equal(all.find(x=>x.key!==j.key).state,'queued');assert.equal(all.find(x=>x.key===j.key).attempts,2);
  const data=await(await s.auto.handle(req('/api/admin/suggestions'))).json();assert.equal(data.previewResearch,true);
 });
+
+test('organizer adds a dated suggestion with attribution and duplicates preserve its original submitter',async t=>{
+ const at='2026-11-11T15:00:00.000Z',s=await setup(t,{now:()=>Date.parse(at)});
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/add',{category:'Backpacks',addedBy:'Armaan'},false))).status,401);
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/add',{category:'Backpacks',addedBy:'Armaan',note:'For campus'}))).status,202);
+ const [j]=await s.listing();assert.equal(j.submittedBy,'Armaan');assert.equal(j.createdAt,at);assert.equal(j.submissionSource,'organizer');assert.equal(j.support.count,1);
+ const duplicate=await(await s.auto.handle(req('/api/admin/suggestions/add',{category:'Backpack',addedBy:'Someone else'}))).json();assert.equal(duplicate.duplicate,true);assert.equal(duplicate.key,j.key);
+ const [unchanged]=await s.listing();assert.equal(unchanged.submittedBy,'Armaan');assert.equal(unchanged.support.count,1);
+});
+test('anonymous and legacy suggestions remain unknown; trusted account attribution ignores public spoofing',async t=>{
+ const s=await setup(t,{getSubmitter:async r=>r.headers.get('cookie')==='known=yes'?'Known member':null});
+ await s.submit('Backpacks');await s.auto.handle(req('/api/suggestions',{category:'Trays',addedBy:'Spoofed'},false,'known=yes'));
+ const rows=await s.listing();assert.equal(rows.find(j=>j.category==='Backpacks').submittedBy,null);assert.equal(rows.find(j=>j.category==='Trays').submittedBy,'Known member');
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/add',{category:'A'}))).status,400);
+ assert.equal((await s.auto.handle(req('/api/admin/suggestions/add',{category:'New category',addedBy:{}}))).status,400);
+ const jobs=await s.store.scope('suggestion-jobs',()=>({jobs:{},budget:{}}));await jobs.transaction(d=>{for(const j of Object.values(d.jobs))delete j.submittedBy;});assert.ok((await s.listing()).every(j=>!j.submittedBy));
+});

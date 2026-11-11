@@ -12,11 +12,11 @@
 
 ## Validation
 
-- All 210 automated tests passed. Integration coverage: exact-domain badge matching, complete-answer requirement, request-origin checks, no stored email/email hash, public item-only attribution, idempotent retry, isolation/logout, name hiding and public filtering, and email-account promotion.
+- All 213 automated tests passed on the combined publication source. Integration coverage: exact-domain badge matching, complete-answer requirement, request-origin checks, no stored email/email hash, public item-only attribution, idempotent retry, isolation/logout, name hiding and public filtering, and email-account promotion.
 - Photo tests cover hidden-name public photo denial with continued owner access.
 - Local browser smoke passed and covers 320/390/1280px layouts, form fields, failed-save recovery, skip/non-Wharton paths, badge display, persistent profile control, public API privacy, and absence of the old signup popup. Screenshots stay in ignored outputs.
 - The production build passed. No real production participant is created as part of QA.
 
 ## Status
 
-Implemented locally; publication pending. Native browser autofill menus using a real saved personal contact were not exercised. No Notion release-note publication was requested.
+Published November 11, 2026 in Sites version 63 at https://v4ch.app. Implementation commit: `44ddce35519fbf4cf748c8d8f4cbe94baa0d279e`; published combined source: `fb70eb6c6f7ff2c3701723b6a52455a0de06d65c`. Native deployment succeeded. Read-only production checks passed for the experiment page, new form script, profile controls, styles, and anonymous account status. Native browser autofill menus using a real saved personal contact were not exercised. No Notion release-note publication was requested.

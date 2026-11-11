@@ -301,8 +301,10 @@ html.nomination-search-open,html.nomination-search-open body{overflow:hidden;ove
 .nomination-selection>summary::-webkit-details-marker{display:none}
 .nomination-selection>summary:focus-visible{outline:2px solid #123C2E;outline-offset:3px;border-radius:3px}
 .nomination-selection #nomination-count{font-weight:400;color:#657052}
-.nomination-disclosure{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:400;color:#546042}
-.nomination-chevron{font-size:20px;line-height:1;transform:translateY(-2px)}
+.nomination-disclosure{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#123C2E}
+.nomination-chevron{display:flex;align-items:center;justify-content:center;width:12px;height:12px;flex:0 0 12px}
+.nomination-chevron svg{display:block;width:12px;height:12px}
+.nomination-expand,.nomination-collapse{text-decoration:underline;text-underline-offset:3px}
 .nomination-selection .nomination-collapse{display:none}
 .nomination-selection[open] .nomination-expand{display:none}
 .nomination-selection[open] .nomination-collapse{display:inline}

@@ -19,4 +19,6 @@
 
 ## Status
 
-Published November 11, 2026 in Sites version 63 at https://v4ch.app. Implementation commit: `44ddce35519fbf4cf748c8d8f4cbe94baa0d279e`; published combined source: `fb70eb6c6f7ff2c3701723b6a52455a0de06d65c`. Native deployment succeeded. Read-only production checks passed for the experiment page, new form script, profile controls, styles, and anonymous account status. Email-retention revision implemented and checked after version 63; revised publication pending. Local browser checks also passed for code sign-in from a fresh browser and private email display. Previously discarded addresses cannot be recovered. Native browser autofill menus using a real saved personal contact were not exercised. No Notion release-note publication was requested.
+Published November 11, 2026 in Sites version 64 at https://v4ch.app. Source: `1834331b29de5ce6786a379a2f0d4283b9a7699c`. Native deployment succeeded; read-only live checks confirmed the form copy, required fields, private profile email UI and updated privacy explanation. All 216 automated tests, local phone/desktop browser checks (including fresh-browser code sign-in), and the production build passed. Actual production email delivery was not exercised, and native autofill menus using a saved personal contact were not exercised.
+
+Version 63 introduced the initial browser-only attribution flow; version 64 supersedes its email-discard behavior. Previously discarded addresses cannot be recovered. No Notion release-note publication was requested.

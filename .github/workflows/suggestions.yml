@@ -25,7 +25,7 @@ jobs:
           deadline = time.monotonic() + 210
           failures = 0
           while time.monotonic() < deadline:
-              request = urllib.request.Request('https://v4ch.app/api/internal/suggestions/run', data=b'{}', headers={'Authorization': 'Bearer ' + secret, 'Content-Type': 'application/json'})
+              request = urllib.request.Request('https://v4ch.app/api/internal/suggestions/run', data=b'{}', headers={'Authorization': 'Bearer ' + secret, 'Content-Type': 'application/json', 'User-Agent': 'Vouch-Background-Runner/1.0'})
               try:
                   with urllib.request.urlopen(request, timeout=90) as response:
                       result = json.load(response)

@@ -14,7 +14,13 @@ const req=(route,payload,admin=true,cookie='')=>new Request('http://localhost'+r
 async function setup(t,options={}){const dir=await fs.mkdtemp(path.join(os.tmpdir(),'vouch-auto-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));const store=await createFileStore(dir),search={search:async()=>({products:[]}),find:async()=>null,...options.search},authorizeAdmin=r=>r.headers.get('x-admin')==='yes';const auto=createSuggestions({store,search,authorizeAdmin,development:true,...options}),api=createApplicationApi({store,search,authorizeAdmin,autoOptions:{development:true,...options}});const submit=(category,cookie='',note)=>auto.handle(req('/api/suggestions',{category,...(note?{note}:{})},false,cookie));const listing=async()=> (await(await auto.handle(req('/api/admin/suggestions'))).json()).jobs;const build=async()=>{for(let i=0;i<12;i++)await auto.advance();return (await listing())[0];};return {store,auto,api,submit,listing,build};}
 async function attachPhotos(s,j){return s.auto.handle(req('/api/admin/suggestions/edit',{key:j.key,id:j.draft.id,title:j.draft.title,category:j.draft.category,productIds:[],customProducts:j.draft.products.map(p=>({...p,image:'https://example.com/photo.jpg'}))}));}
 test('category normalization folds accents punctuation plurals and spacing',()=>{assert.equal(categoryKey(' Wáter bottles!! '),categoryKey('water bottle'));assert.equal(categoryKey('Running SHOES'),categoryKey('running shoe'));assert.equal(blocked('vapes'),true);});
-test('schema rejects short lineups duplicate brands and unsafe source URLs',()=>{const good=fakeResearch('running shoes');assert.equal(good.picks.length,10);for(const change of [r=>r.picks.pop(),r=>r.picks[1].brand=r.picks[0].brand,r=>r.picks[0].sourceUrls=['javascript:alert(1)']]){const r=structuredClone(good);change(r);assert.throws(()=>validateResearch(r));}assert.throws(()=>validateResearch({}));});
+test('research accepts five or more distinct sourced products and preserves valid partial picks',()=>{
+ const good=fakeResearch('running shoes');
+ for(const count of [5,7,9,10])assert.equal(validateResearch({...structuredClone(good),picks:good.picks.slice(0,count)}).picks.length,count);
+ assert.throws(()=>validateResearch({...structuredClone(good),picks:good.picks.slice(0,4)}),/at least five/);
+ const partial=structuredClone(good);partial.picks[1].brand=partial.picks[0].brand;partial.picks[2].sourceUrls=['javascript:alert(1)'];partial.picks.push(null);
+ const result=validateResearch(partial);assert.equal(result.picks.length,8);assert.equal(result.pickIssues.length,3);assert.equal(validateResearch(result).pickIssues.length,3);assert.throws(()=>validateResearch({}));
+});
 test('matching requires exact normalized brand and meaningful model overlap and prefers photos',()=>{const pick={brand:'Nike',productName:'Pegasus 41'};const a={brand:'NIKE',name:'Pegasus 41',id:'a'},b={...a,id:'b',image:'https://example.com/p.png'};assert.equal(chooseMatch(pick,[{...b,brand:'Other'},a,b]).id,'b');assert.equal(chooseMatch(pick,[{brand:'Nike',name:'Air Max'}]),null);assert.equal(matchState(Array.from({length:10},(_,i)=>({product:{brand:'brand'+i},hasPhoto:i<10}))), 'ready');assert.equal(matchState(Array.from({length:10},(_,i)=>({product:{brand:'brand'+i},hasPhoto:i<7}))), 'needs_attention');assert.equal(matchState([{product:{brand:'a'}}]),'rejected');});
 test('repeat browser updates note and distinct browsers add support without another job',async t=>{const s=await setup(t),r=await s.submit('running shoes'),cookie=r.headers.get('set-cookie').split(';')[0];await s.submit('Running shoe',cookie,'A second note');await s.submit('running shoes','vouch_visitor='+crypto.randomUUID());const [j]=await s.listing();assert.equal((await s.listing()).length,1);assert.equal(j.support.count,2);assert.equal(j.support.entries[cookie.split('=')[1]].note,'A second note');});
 test('rolling rate limit allows five new categories and repeat updates',async t=>{const s=await setup(t);const first=await s.submit('category zero'),cookie=first.headers.get('set-cookie').split(';')[0];for(let i=1;i<5;i++)assert.equal((await s.submit('category '+i,cookie)).status,202);assert.equal((await s.submit('category six',cookie)).status,429);assert.equal((await s.submit('category zero',cookie,'updated')).status,202);});
@@ -30,7 +36,7 @@ test('fake build creates full private draft and blocks anonymous page read votes
  assert.equal((await s.api(req('/api/experiment?experiment=running-shoes&preview=1',null,false))).status,404);
  const reg=await s.store.scope('experiment-registry',initialRegistry);await reg.transaction(d=>d.experiments['running-shoes'].includeInOverall=true);assert.equal((await(await s.api(req('/api/overall',null,false))).json()).includedExperiments,0);
 });
-test('organizer edits title path and lineup then approves and anonymous vote succeeds',async t=>{const s=await setup(t);await s.submit('running shoes');const j=await s.build(),products=j.draft.products.slice(0,9);products[8]={...products[8],name:'Local test replacement'};for(const p of products)p.image='https://example.com/photo.jpg';const edited=await s.auto.handle(req('/api/admin/suggestions/edit',{key:j.key,id:'shoe-edit',title:'My shoe Edit',category:'Running Shoes',productIds:[],customProducts:products}));assert.equal(edited.status,200);assert.equal((await s.api(req('/api/experiment?experiment=running-shoes',null,false))).status,404);assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,200);const e=await(await s.api(req('/api/experiment?experiment=shoe-edit',null,false))).json();assert.equal(e.experiment.products.length,9);assert.equal(e.experiment.products[8].name,'Local test replacement');assert.equal((await s.api(req('/api/events?experiment=shoe-edit',{type:'answer',productId:products[0].id,value:'yes'},false))).status,200);});
+test('organizer edits title path and lineup then approves and anonymous vote succeeds',async t=>{const s=await setup(t);await s.submit('running shoes');const j=await s.build(),products=j.draft.products.slice(0,9);products[8]={...products[8],name:'Local test replacement'};for(const p of products)p.image='https://example.com/photo.jpg';const edited=await s.auto.handle(req('/api/admin/suggestions/edit',{key:j.key,id:'shoe-edit',title:'My shoe Edit',category:'Running Shoes',productIds:[],customProducts:products}));assert.equal(edited.status,200);assert.equal((await s.api(req('/api/experiment?experiment=running-shoes',null,false))).status,404);assert.equal((await s.auto.handle(req('/api/admin/suggestions/evidence',{key:j.key,evidence:{channel:'manufacturer',brand:products[8].brand,productName:products[8].name,url:'https://example.com/replacement',searchUrl:null,query:'replacement model',rank:null,note:'Organizer checked exact replacement.'}}))).status,200);assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,200);const e=await(await s.api(req('/api/experiment?experiment=shoe-edit',null,false))).json();assert.equal(e.experiment.products.length,9);assert.equal(e.experiment.products[8].name,'Local test replacement');assert.equal((await s.api(req('/api/events?experiment=shoe-edit',{type:'answer',productId:products[0].id,value:'yes'},false))).status,200);});
 test('dismiss removes draft but retains organizer research history',async t=>{const s=await setup(t);await s.submit('backpacks');const j=await s.build();assert.equal((await s.auto.handle(req('/api/admin/suggestions/dismiss',{key:j.key}))).status,200);const [done]=await s.listing();assert.equal(done.draft,null);assert.equal(done.state,'dismissed');assert.equal(done.research.picks.length,10);});
 test('rejected jobs can be dismissed without a draft',async t=>{const s=await setup(t);await s.submit('guns');const [j]=await s.listing();assert.equal((await s.auto.handle(req('/api/admin/suggestions/dismiss',{key:j.key}))).status,200);});
 test('automatic off saves suggestions and manual build advances',async t=>{const s=await setup(t,{env:{EXPERIMENT_AUTO_BUILD:'off'}});await s.submit('backpacks');assert.equal((await s.auto.advance()).advanced,false);const [j]=await s.listing();await s.auto.handle(req('/api/admin/suggestions/build',{key:j.key}));assert.equal((await s.build()).state,'needs_attention');});
@@ -77,19 +83,19 @@ test('every product needs a photo; research and photos remain private',async t=>
 });
 test('legacy research and unverified channels cannot pass the research gate',async t=>{
  const s=await setup(t);await s.submit('backpacks');const j=await s.build();await attachPhotos(s,j);
- const jobs=await s.store.scope('suggestion-jobs',()=>({jobs:{}}));await jobs.transaction(d=>{delete d.jobs[j.key].research.evidence;});
+ const jobs=await s.store.scope('suggestion-jobs',()=>({jobs:{}}));await jobs.transaction(d=>{delete d.jobs[j.key].research.evidence;for(const p of d.jobs[j.key].research.picks)delete p.verifiedSourceUrls;});
  assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,409);
- for(const evidence of fakeResearch('backpacks').evidence){assert.equal((await s.auto.handle(req('/api/admin/suggestions/evidence',{key:j.key,evidence}))).status,200);}
+ for(const p of fakeResearch('backpacks').picks){const evidence={channel:'editorial',brand:p.brand,productName:p.productName,url:'https://example.com/review',searchUrl:null,query:'best backpacks',rank:null,note:'Checked exact product recommendation.'};assert.equal((await s.auto.handle(req('/api/admin/suggestions/evidence',{key:j.key,evidence}))).status,200);}
  assert.equal((await s.listing())[0].readiness.canApprove,true);
  assert.equal((await s.auto.handle(req('/api/admin/suggestions/evidence',{key:j.key,evidence:{...fakeResearch('backpacks').evidence[0],productName:'Another product'}}))).status,400);
- const r=fakeResearch('backpacks');r.evidence[0].verified=false;assert.equal(researchCoverage(r).complete,false);
+ const r=fakeResearch('backpacks');r.evidence[0].verified=false;assert.equal(researchCoverage(r).complete,true);
 });
 test('source host spoofing and unsupported Google ranks are rejected',()=>{
  const r=fakeResearch('backpacks');for(const patch of [{...r.evidence[0],url:'https://tiktok.com.evil.example/video'},{...r.evidence[1],url:'https://www.nytimes.com/other/'},{...r.evidence[2],rank:2},{...r.evidence[2],searchUrl:null}])assert.throws(()=>validateEvidence(patch));
  const products=r.picks.filter(p=>p.brand!==r.evidence[1].brand);assert.equal(researchCoverage(r,products).counts.wirecutter,0);
 });
 test('provider source metadata grounds evidence and never fabricates Google verification',async()=>{
- const r=fakeResearch('backpacks');const provider=createResearch({env:{OPENAI_API_KEY:'test-key'},fetcher:async()=>Response.json({status:'completed',output:[{type:'web_search_call',action:{sources:[{url:r.evidence[0].url},{url:r.evidence[1].url},{url:r.evidence[2].url}]}},{content:[{type:'output_text',text:JSON.stringify(r)}]}]})});
+ const r=fakeResearch('backpacks');r.picks.forEach((p,i)=>p.sourceUrls=['https://example.com/product-'+i]);const provider=createResearch({env:{OPENAI_API_KEY:'test-key'},fetcher:async()=>Response.json({status:'completed',output:[{type:'web_search_call',action:{sources:[{url:r.evidence[0].url},{url:r.evidence[1].url},{url:r.evidence[2].url}]}},{content:[{type:'output_text',text:JSON.stringify(r)}]}]})});
  const {result}=await provider.start('backpacks','test');assert.equal(result.evidence[0].verified,true);assert.equal(result.evidence[1].verified,true);assert.equal(result.evidence[2].verified,false);assert.equal(researchCoverage(result).complete,false);
 });
 test('catalog photos are rechecked and organizer photo overrides survive draft save',async t=>{
@@ -109,7 +115,7 @@ test('manual draft additions remain visible and need their own photos before app
  const s=await setup(t);await s.submit('backpacks');const j=await s.build(),manual={id:'sku-manual-fixture',brand:'Manual brand',name:'Manual product',url:'https://example.com/product'};
  const save=products=>s.auto.handle(req('/api/admin/suggestions/edit',{key:j.key,id:j.draft.id,title:j.draft.title,category:j.draft.category,productIds:[],customProducts:products}));
  const original=j.draft.products.map(p=>({...p,image:'https://example.com/photo.jpg'}));assert.equal((await save([...original,manual])).status,200);assert.equal((await s.listing())[0].draft.products.length,11);assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,409);
- assert.equal((await save([...original,{...manual,image:'https://example.com/manual.jpg'}])).status,200);assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,200);
+ assert.equal((await save([...original,{...manual,image:'https://example.com/manual.jpg'}])).status,200);assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,409);await s.auto.handle(req('/api/admin/suggestions/evidence',{key:j.key,evidence:{channel:'manufacturer',brand:manual.brand,productName:manual.name,url:manual.url,searchUrl:null,query:'manual product',rank:null,note:'Checked exact product.'}}));assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,200);
 });
 
 test('research diagnostics identify incomplete and invalid output without leaking provider error payloads',async()=>{
@@ -126,7 +132,7 @@ test('diagnostics are organizer-only, read-only, and tied to a saved research re
 });
 
 test('invalid channel evidence preserves valid picks but cannot count toward publication',()=>{
- const r=fakeResearch('backpacks');r.evidence[0].url='https://editorial.example.com/tiktok-trend';const result=validateResearch(r);assert.equal(result.picks.length,10);assert.equal(result.evidence.length,3);assert.equal(result.sourceIssues[0].channel,'tiktok');assert.equal(result.sourceIssues[0].reason,'TikTok evidence needs a TikTok URL.');assert.equal(researchCoverage(result).counts.tiktok,0);assert.equal(researchCoverage(result).complete,false);assert.equal(validateResearch(result).sourceIssues.length,1);
+ const r=fakeResearch('backpacks');r.evidence[0].url='https://editorial.example.com/tiktok-trend';const result=validateResearch(r);assert.equal(result.picks.length,10);assert.equal(result.evidence.length,3);assert.equal(result.sourceIssues[0].channel,'tiktok');assert.equal(result.sourceIssues[0].reason,'TikTok evidence needs a TikTok URL.');assert.equal(researchCoverage(result).counts.tiktok,0);assert.equal(researchCoverage(result).complete,true);assert.equal(validateResearch(result).sourceIssues.length,1);
 });
 test('failed research recovers its saved response without a new request or budget start',async t=>{
  let starts=0,polls=0,time=Date.now(),recover=false;const result=fakeResearch('backpacks');result.evidence[0].url='https://editorial.example.com/tiktok-trend';
@@ -204,7 +210,7 @@ test('card actions remove and replace in place while preserving private draft an
 test('failed validation diagnostics explain returned counts without exposing provider text',async()=>{
  const r=fakeResearch('cutting boards');r.picks[9].brand=r.picks[0].brand;
  const {responseDiagnostics}=await import('../lib/auto-experiments/research.mjs');const d=responseDiagnostics({status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(r)}]}],usage:{output_tokens:2902},max_output_tokens:16000});
- assert.equal(d.pickCount,10);assert.equal(d.distinctBrandCount,9);assert.equal(d.duplicateBrandCount,1);assert.match(d.validationError,/ten distinct brands/);assert.equal(d.outputTokens,2902);assert.equal(JSON.stringify(d).includes('Demo Brand'),false);
+ assert.equal(d.pickCount,10);assert.equal(d.distinctBrandCount,9);assert.equal(d.duplicateBrandCount,1);assert.equal(d.validationError,null);assert.equal(d.outputTokens,2902);assert.equal(JSON.stringify(d).includes('Demo Brand'),false);
 });
 test('manual suggestion draft needs no research and stays private with editable ordered products',async t=>{
  const s=await setup(t);await s.submit('cutting boards');const [job]=await s.listing();const products=[{id:'sku-manual-board-a',brand:'Brand A',name:'Board A'},{id:'sku-manual-board-b',brand:'Brand B',name:'Board B'}],payload={key:job.key,id:'manual-cutting-boards',title:'Cutting boards',category:'Cutting boards',productIds:[],customProducts:products,productOrder:products.map(p=>p.id).reverse()};
@@ -247,4 +253,33 @@ test('anonymous and legacy suggestions remain unknown; trusted account attributi
  assert.equal((await s.auto.handle(req('/api/admin/suggestions/add',{category:'A'}))).status,400);
  assert.equal((await s.auto.handle(req('/api/admin/suggestions/add',{category:'New category',addedBy:{}}))).status,400);
  const jobs=await s.store.scope('suggestion-jobs',()=>({jobs:{},budget:{}}));await jobs.transaction(d=>{for(const j of Object.values(d.jobs))delete j.submittedBy;});assert.ok((await s.listing()).every(j=>!j.submittedBy));
+});
+
+
+test('five sourced products can be reviewed and approved without mandatory channels; four cannot',async t=>{
+ const r=fakeResearch('backpacks');r.picks=r.picks.slice(0,5);r.evidence=[];
+ const s=await setup(t,{research:{fake:true,start:async()=>({result:r})}});await s.submit('backpacks');const j=await s.build();
+ assert.equal(j.draft.products.length,5);assert.equal(j.draft.status,'draft');assert.equal(j.readiness.coverage.complete,true);assert.equal(j.readiness.canApprove,false);
+ await attachPhotos(s,j);assert.equal((await s.listing())[0].readiness.canApprove,true);
+ const edit=products=>s.auto.handle(req('/api/admin/suggestions/edit',{key:j.key,id:j.draft.id,title:j.draft.title,category:j.draft.category,productIds:[],customProducts:products}));
+ const products=j.draft.products.map(p=>({...p,image:'https://example.com/photo.jpg'}));await edit(products.slice(0,4));
+ assert.equal((await s.listing())[0].readiness.coverage.enoughProducts,false);assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,409);
+ await edit(products);assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,200);
+});
+test('per-product sources require provenance and exact identity; AI alone is insufficient',()=>{
+ const r=fakeResearch('backpacks');r.picks=r.picks.slice(0,5);r.evidence=[];
+ assert.equal(researchCoverage(r).complete,true);delete r.picks[4].verifiedSourceUrls;
+ assert.equal(researchCoverage(r).supportedCount,4);assert.equal(researchCoverage(r).complete,false);
+ const e={brand:r.picks[4].brand,productName:r.picks[4].productName,url:null,searchUrl:null,rank:null,query:'best backpacks',note:'AI synthesis',channel:'ai',verified:true};r.evidence.push(e);
+ assert.equal(researchCoverage(r).complete,false);
+ Object.assign(e,{channel:'editorial',url:'https://example.com/review'});assert.equal(researchCoverage(r).complete,true);
+ const products=r.picks.map(p=>({...p}));products[4].productName='Different model';assert.equal(researchCoverage(r,products).complete,false);
+ e.verified=false;assert.equal(researchCoverage(r).complete,false);
+});
+test('provider keeps a valid partial lineup and ignores ungrounded source claims',async()=>{
+ const r=fakeResearch('backpacks');r.picks=r.picks.slice(0,7);r.picks[6].brand=r.picks[0].brand;r.evidence=[];
+ const source=r.picks[0].sourceUrls[0];const provider=createResearch({env:{OPENAI_API_KEY:'test-key'},fetcher:async()=>Response.json({status:'incomplete',incomplete_details:{reason:'max_output_tokens'},output:[{type:'web_search_call',action:{sources:[{url:source}]}},{content:[{type:'output_text',text:JSON.stringify(r)}]}]})});
+ const {result}=await provider.start('backpacks','test');assert.equal(result.picks.length,6);assert.equal(result.pickIssues.length,1);assert.match(result.researchNotes,/stopped early/);assert.equal(researchCoverage(result).complete,true);
+ const ungrounded=createResearch({env:{OPENAI_API_KEY:'test-key'},fetcher:async()=>Response.json({status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(r)}]}]})});
+ assert.equal(researchCoverage((await ungrounded.start('backpacks','test')).result).complete,false);
 });

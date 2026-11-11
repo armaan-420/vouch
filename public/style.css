@@ -289,3 +289,8 @@ html.nomination-search-open,html.nomination-search-open body{overflow:hidden;ove
 .nomination-search-dialog .product-result:focus-visible,.nomination-search-dialog button:focus-visible{outline:2px solid #123C2E;outline-offset:-2px}
 
 .nomination-search-dialog .picker-results .search-photo-placeholder{flex:0 0 43px}
+
+.nomination-search-header .has-selections{background:#123C2E;color:#F5F0E8;border-radius:99px;text-decoration:none;padding:10px 16px;font-weight:600}
+.nomination-search-header button:disabled{opacity:.65;cursor:wait}
+.nomination-search-dialog #nomination-error:empty{display:none}
+.nomination-search-dialog #nomination-error{font-size:13px;line-height:1.5;color:#954526}

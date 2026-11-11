@@ -26,7 +26,7 @@ window.VouchProductPicker=function({input,results,more,clear,another,esc,isSelec
  });
  const resize=()=>{limit=pageSize();active=-1;if(rows().length)render();};media.addEventListener('change',resize);updateClear();
  if(enhance)window.VouchCatalog.config().then(config=>{if(config.linkPaste&&input.isConnected){input.placeholder='Search by name or paste a product link.';input.maxLength=2048;}});
- if(enhance)window.VouchCatalog.tools(input,items=>{products=items;limit=pageSize();active=-1;render();});
+ // Barcode and photo search are deferred; keep the current picker focused on name/link search.
  return {setProducts(items){products=items;limit=pageSize();active=-1;render();},clear(){products=[];collapse();updateClear();},refresh:highlight,setDisabled(value){disabled=value;clear.disabled=another.disabled=more.disabled=value;rows().forEach(row=>row.disabled=value);},destroy(){media.removeEventListener('change',resize);}};
 };
 

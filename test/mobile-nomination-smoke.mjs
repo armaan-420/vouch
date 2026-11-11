@@ -6,8 +6,15 @@ const browser=await chromium.launch({headless:true});
 try{
  const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
- let submissions=0;
- await page.route('**/api/nominations**',route=>{submissions++;return route.fulfill({json:{nominations:[]}})});
+ let submissions=0,saved=[],failNext=false,holdSave=false,finishSave;
+ await page.route('**/api/catalog/config**',route=>route.fulfill({json:{barcode:true,photo:true,linkPaste:true}}));
+ await page.route('**/api/nominations**',async route=>{
+  submissions++;if(holdSave)await new Promise(resolve=>{finishSave=resolve;});
+  if(failNext){failNext=false;return route.fulfill({status:503,json:{error:'Could not save. Please try again.'}});}
+  saved=route.request().postDataJSON().nominations.map(n=>n.productId?{name:'Daily sunscreen',product:{id:n.productId,brand:'Example',name:'Daily sunscreen'}}:n);
+  return route.fulfill({json:{nominations:saved}});
+ });
+ await page.route('**/api/me**',async route=>{const response=await route.fetch();const data=await response.json();await route.fulfill({json:{...data,nominations:saved,nomination:saved[0]||null}});});
  await page.route('**/api/products/search**',route=>route.fulfill({json:{products:Array.from({length:7},(_,i)=>({id:'fixture-'+i,brand:'Example',name:'Daily sunscreen '+i}))}}));
  await page.goto('http://127.0.0.1:4174/sunscreen?board=1');
  await page.locator('#nomination-name').waitFor();
@@ -29,13 +36,23 @@ try{
  await page.locator('.nomination-search-body').evaluate(el=>el.scrollTop=200);
  const stickyBounds=await page.locator('#nomination-name').boundingBox();assert.ok(stickyBounds.y<150);
  await page.screenshot({path:'outputs/mobile-nomination-keyboard.png'});
- await page.locator('[data-search-done]').tap();
+ assert.equal(await page.locator('[data-search-done]').textContent(),'Save & finish');
+ assert.equal(await page.getByRole('button',{name:'Scan barcode',exact:true}).count(),0);
+ assert.equal(await page.getByRole('button',{name:'Find by photo',exact:true}).count(),0);
+ holdSave=true;await page.locator('[data-search-done]').tap();
+ await page.getByRole('button',{name:'Saving…',exact:true}).waitFor();
+ assert.equal(await page.locator('[data-search-done]').isDisabled(),true);
+ finishSave();holdSave=false;
+ await page.locator('.nomination-search-dialog').waitFor({state:'hidden'});
  assert.equal(await page.locator('.nomination-search-dialog').evaluate(el=>el.open),false);
  assert.equal(await page.locator('#selected-product .selection-chip').count(),1);
- assert.equal(submissions,0);
+ assert.equal(submissions,1);
+ assert.equal(saved.length,1);
+ assert.equal(await page.locator('#nomination-saved').isVisible(),true);
+ assert.equal(await page.locator('#nominate-submit').isVisible(),false);
  assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('nomination-search-open')),false);
  await page.locator('#nomination-name').tap();
- assert.equal(await page.locator('#nomination-name').inputValue(),'daily');
+ await page.locator('#nomination-name').fill('daily');
  await page.keyboard.press('Escape');
  assert.equal(await page.locator('.nomination-search-dialog').evaluate(el=>el.open),false);
  await page.locator('#nomination-name').tap();
@@ -44,23 +61,35 @@ try{
  await page.locator('#nomination-name').click();
  assert.equal(await page.locator('.nomination-search-dialog').evaluate(el=>el.open),false);
  await page.setViewportSize({width:390,height:844});
- // Exercise the actual final experiment step and its separate save action.
+ // Exercise one-tap saving from the actual final experiment step, including retry.
  await page.evaluate(()=>{screen='game';index=products.length;render();});
  await page.locator('#nomination-continue').waitFor();
  await page.locator('#nomination-name').tap();
- await page.locator('#nomination-clear').tap();
+ if(await page.locator('#nomination-clear').isVisible())await page.locator('#nomination-clear').tap();
  assert.equal(await page.locator('#nomination-name').inputValue(),'');
  await page.locator('#nomination-name').fill('missing favorite');
  await page.locator('#manual-nomination').waitFor({state:'visible'});
  await page.locator('#manual-nomination').tap();
  assert.equal(await page.locator('#nomination-search-count').textContent(),'2 selected');
+ failNext=true;await page.locator('[data-search-done]').tap();
+ await page.locator('#nomination-error').filter({hasText:'Could not save'}).waitFor();
+ assert.equal(await page.locator('.nomination-search-dialog').evaluate(el=>el.open),true);
+ assert.equal(await page.locator('#nomination-search-count').textContent(),'2 selected');
+ assert.equal(await page.locator('[data-search-done]').isEnabled(),true);
  await page.locator('[data-search-done]').tap();
- assert.equal(submissions,0);
- await page.locator('#nomination-continue').click();
- await page.locator('.board h1').waitFor();assert.equal(submissions,1);
+ await page.locator('.board h1').waitFor();assert.equal(submissions,3);assert.equal(saved.length,2);
+ // Saving an empty selection clears previous nominations; empty initial Done just closes.
+ await page.locator('#nomination-clear-all').click();
+ assert.equal(await page.locator('[data-search-done]').textContent(),'Save changes');
+ await page.locator('[data-search-done]').tap();
+ await page.locator('.nomination-search-dialog').waitFor({state:'hidden'});
+ assert.equal(submissions,4);assert.equal(saved.length,0);
+ await page.locator('#nomination-name').tap();
+ assert.equal(await page.locator('[data-search-done]').textContent(),'Done');
+ await page.locator('[data-search-done]').tap();assert.equal(submissions,4);
  await page.locator('#nomination-name').tap();
  await page.evaluate(()=>document.getElementById('app').innerHTML='<p>Next screen</p>');await page.waitForTimeout(80);
  assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('nomination-search-open')),false);
  assert.deepEqual(errors,[]);
- console.log('PASS: mobile opening, multi-select, pagination, query retention, keyboard viewport/offset, sticky field, Done without saving, Escape, desktop resize, final-step manual nomination/save, and navigation cleanup.');
+ console.log('PASS: mobile opening, multi-select, pagination, query retention, keyboard viewport/offset, sticky field, one-tap saving with duplicate prevention and retry, removed barcode/photo controls, Escape, desktop resize, final-step manual nomination/save, clearing saved nominations, and navigation cleanup.');
 }finally{await browser.close();}

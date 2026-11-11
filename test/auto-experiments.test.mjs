@@ -161,3 +161,27 @@ test('photo repair counts only photos that resolve after the identity is saved',
  const report=await(await auto.handle(req('/api/admin/suggestions/photos',{key:j.key}))).json();
  assert.equal(report.added,0);assert.equal(report.missing,10);assert.equal(report.results.every(r=>r.outcome==='saved_photo_unavailable'),true);assert.equal(report.results.every(r=>r.productId.startsWith('c3-lost-')),true);
 });
+
+test('late completed provider response is recovered before deadline rejection',async t=>{
+ let time=Date.now(),starts=0;const s=await setup(t,{now:()=>time,research:{fake:true,start:async()=>{starts++;return {pending:true,responseId:'saved'};},poll:async()=>({result:fakeResearch('backpacks')})}});
+ await s.submit('backpacks');await s.auto.advance();time+=3600000;await s.auto.advance();assert.equal((await s.listing())[0].state,'matching');assert.equal(starts,1);
+});
+test('temporary provider errors retry and preserve response without another research start',async t=>{
+ let time=Date.now(),polls=0,starts=0;const s=await setup(t,{now:()=>time,research:{fake:true,start:async()=>{starts++;return {pending:true,responseId:'saved'};},poll:async()=>{if(++polls<5)throw Object.assign(Error('private'),{code:'provider_http',providerStatus:503});return {result:fakeResearch('backpacks')};}}});
+ await s.submit('backpacks');await s.auto.advance();for(let i=0;i<5;i++){time+=900000;await s.auto.advance();}assert.equal((await s.listing())[0].state,'matching');assert.equal(starts,1);
+});
+test('notification failure survives a new process and retries with the same idempotency key',async t=>{
+ let time=Date.now(),calls=[];const notify=async m=>{calls.push(m);if(calls.length===1)throw Error('email outage');return {id:'delivery'};};
+ const s=await setup(t,{now:()=>time,env:{SUGGESTION_NOTIFY_EMAIL:'test@example.com'},notify});await s.submit('backpacks');await s.build();let [j]=await s.listing();assert.equal(j.notification.status,'pending');assert.equal(j.notifiedAt,undefined);
+ time+=60000;const restarted=createSuggestions({store:s.store,search:{},development:true,now:()=>time,env:{SUGGESTION_NOTIFY_EMAIL:'test@example.com'},notify});await Promise.all([restarted.advance(),restarted.advance()]);[j]=await s.listing();assert.equal(j.notification.status,'sent');assert.equal(calls.length,2);assert.equal(calls[0].idempotencyKey,calls[1].idempotencyKey);assert.equal(j.notification.deliveryId,'delivery');
+});
+test('refresh sends a new completion notification and failed research sends an action alert',async t=>{
+ const messages=[];const s=await setup(t,{env:{SUGGESTION_NOTIFY_EMAIL:'test@example.com'},notify:async m=>messages.push(m)});await s.submit('backpacks');const j=await s.build();await s.auto.handle(req('/api/admin/suggestions/retry',{key:j.key}));await s.build();assert.equal(messages.length,2);assert.notEqual(messages[0].idempotencyKey,messages[1].idempotencyKey);
+ const failed=await setup(t,{env:{SUGGESTION_NOTIFY_EMAIL:'test@example.com'},notify:async m=>messages.push(m),research:{fake:true,start:async()=>{throw Object.assign(Error('private'),{code:'research_validation'});}}});await failed.submit('backpacks');await failed.auto.advance();assert.equal(messages.at(-1).state,'failed');
+});
+test('background runner completes a private draft without admin polling',async t=>{
+ const {runSuggestions,runnerAuthorized}=await import('../lib/auto-experiments/runner.mjs');const s=await setup(t);await s.submit('backpacks');const r=await runSuggestions({store:s.store,auto:s.auto});assert.equal(r.active,0);assert.equal((await s.listing())[0].draft.status,'draft');assert.equal((await s.api(req('/api/experiment?experiment=backpacks',null,false))).status,404);
+ assert.equal(await runnerAuthorized(new Request('https://example.com',{headers:{authorization:'Bearer secret'}}),'secret'),true);
+ assert.equal(await runnerAuthorized(new Request('https://example.com',{headers:{authorization:'Bearer wrong'}}),'secret'),false);
+ assert.equal(await runnerAuthorized(new Request('https://example.com',{headers:{authorization:'Bearer secret',origin:'https://evil.example'}}),'secret'),false);
+});

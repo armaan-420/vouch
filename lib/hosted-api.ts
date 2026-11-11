@@ -1,3 +1,4 @@
+import {runnerAuthorized,runSuggestions} from './auto-experiments/runner.mjs';
 import {createAdminAuth} from './admin-auth.mjs';
 import {createSuggestions} from './auto-experiments/api.mjs';
 import {createCatalogRuntime} from './catalog/runtime.mjs';
@@ -19,6 +20,16 @@ export async function isOrganizer(request:Request){
 }
 export async function hostedApi(request:Request){
   if(!env.DB)return Response.json({error:'Database unavailable.'},{status:503});
+  if(['/api/internal/suggestions/run','/api/internal/suggestions/notification-test'].includes(new URL(request.url).pathname)){
+   if(request.method!=='POST'||!await runnerAuthorized(request,env.SUGGESTION_RUNNER_SECRET))return Response.json({error:'Unauthorized'},{status:401});
+   if(new URL(request.url).pathname.endsWith('/notification-test')){
+    const send=createSuggestionDelivery({apiKey:env.RESEND_API_KEY,from:env.VOUCH_EMAIL_FROM,adminUrl:env.SUGGESTION_ADMIN_URL});
+    if(!send||!env.SUGGESTION_NOTIFY_EMAIL)return Response.json({error:'Notifications not configured'},{status:503});
+    await send({email:env.SUGGESTION_NOTIFY_EMAIL,category:'Notification setup test',state:'ready',key:'',idempotencyKey:'vouch-notification-setup-v1'});
+    return Response.json({ok:true,accepted:true},{headers:{'Cache-Control':'no-store'}});
+   }
+   return Response.json(await advanceHostedSuggestions(),{headers:{'Cache-Control':'no-store'}});
+  }
   const adminAuth=hostedAdminAuth();
   const authResponse=await adminAuth.handle(request);
   if(authResponse)return authResponse;
@@ -37,5 +48,5 @@ export async function advanceHostedSuggestions(){
  const store=createD1Store(env.DB);
  searchPromise??=initializeSearch(store).catch(error=>{searchPromise=undefined;throw error});
  const search=await searchPromise;
- await createSuggestions({store,search,env,development:import.meta.env.DEV,notify:createSuggestionDelivery({apiKey:env.RESEND_API_KEY,from:env.VOUCH_EMAIL_FROM,adminUrl:env.SUGGESTION_ADMIN_URL})}).advance();
+ return runSuggestions({store,auto:createSuggestions({store,search,env,development:import.meta.env.DEV,notify:createSuggestionDelivery({apiKey:env.RESEND_API_KEY,from:env.VOUCH_EMAIL_FROM,adminUrl:env.SUGGESTION_ADMIN_URL})})});
 }

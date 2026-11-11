@@ -1,0 +1,44 @@
+name: Process Vouch suggestions
+on:
+  schedule:
+    - cron: '2-59/5 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: suggestion-runner
+  cancel-in-progress: false
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Advance saved research and deliver review notifications
+        env:
+          RUNNER_SECRET: ${{ secrets.VOUCH_SUGGESTION_RUNNER_SECRET }}
+        run: |
+          python3 - <<'PY'
+          import json, os, time, urllib.request
+          secret = os.environ['RUNNER_SECRET']
+          if not secret:
+              raise SystemExit('Runner secret is missing')
+          deadline = time.monotonic() + 210
+          failures = 0
+          while time.monotonic() < deadline:
+              request = urllib.request.Request('https://v4ch.app/api/internal/suggestions/run', data=b'{}', headers={'Authorization': 'Bearer ' + secret, 'Content-Type': 'application/json'})
+              try:
+                  with urllib.request.urlopen(request, timeout=90) as response:
+                      result = json.load(response)
+                  print(json.dumps(result))
+                  failures = 0
+                  if result.get('notificationFailures'):
+                      raise SystemExit('A notification needs attention in Vouch admin')
+                  if not result.get('active'):
+                      break
+              except Exception:
+                  failures += 1
+                  print('Runner request failed; retrying without exposing request details')
+                  if failures >= 3:
+                      raise SystemExit('Background runner unavailable after three attempts')
+              time.sleep(10)
+          PY

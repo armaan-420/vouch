@@ -28,7 +28,7 @@ test('Wharton badge accepts only the exact email domain, regardless of case',()=
  for(const email of ['x@wharton.upenn.edu.evil.test','x@sub.wharton.upenn.edu','x@upenn.edu','x@y@wharton.upenn.edu','@wharton.upenn.edu'])assert.equal(isWhartonEmail(email),false,email);
 });
 
-test('completed attribution publishes item vouches, discards email entirely and creates an isolated browser profile',async t=>{
+test('completed attribution publishes item vouches, retains email privately and creates an isolated browser profile',async t=>{
  const f=await fixture(t),a=f.browser(),observer=f.browser(),products=await f.finish(a);
  const historical=(await a('/api/admin/export')).data.data;
  const r=await a('/api/account/participate',{displayName:'Early Tester',email:'tester@wharton.upenn.edu'});
@@ -43,7 +43,9 @@ test('completed attribution publishes item vouches, discards email entirely and 
  assert.ok(publicProfile.opinions.every(o=>o.verdict==='yes'&&o.visibility==='public'));
  assert.deepEqual((await a('/api/admin/export')).data.data,historical,'identity attachment never rewrites votes');
  const all=(await Promise.all((await fs.readdir(f.directory)).filter(n=>n.endsWith('.json')).map(n=>fs.readFile(path.join(f.directory,n),'utf8')))).join('\n');
- assert.doesNotMatch(all,/tester@wharton|emailHash|email"/i,'attribution stores no address or derived email identifier');
+ assert.match(all,/tester@wharton.upenn.edu/,'email is retained for later sign-in');
+ assert.equal(me.profile.email,'tester@wharton.upenn.edu');assert.equal(me.profile.emailVerified,false);
+ assert.equal(publicProfile.email,undefined);assert.doesNotMatch(JSON.stringify(contributors),/tester@wharton|emailVerified/);
  const retry=await a('/api/account/participate',{displayName:'Early Tester',email:'tester@wharton.upenn.edu'});assert.equal(retry.status,200);assert.equal(retry.data.profile.handle,r.data.profile.handle);
  assert.equal((await observer('/api/products/'+products[0].id)).data.contributors.length,1);
 });
@@ -66,7 +68,7 @@ test('profile name control removes identity, badge, public profile and photo acc
 
 test('onboarding rejects incomplete answers, hostile origins and malformed fields without creating profiles',async t=>{
  const f=await fixture(t),a=f.browser();
- const body={displayName:'Tester',email:'tester@example.test'};
+ const body={displayName:'Tester',email:'tester@wharton.upenn.edu'};
  assert.equal((await a('/api/account/participate',body)).status,409);
  await a('/api/events',{type:'answer',productId:'boj',value:'yes'});
  assert.equal((await a('/api/account/participate',body)).status,409);
@@ -95,11 +97,45 @@ test('ordinary email gets no badge, future answers sync and logout cannot expose
 
 test('email signup grants the badge and safely upgrades the same browser profile without duplicate contributors',async t=>{
  const f=await fixture(t),a=f.browser(),observer=f.browser();await f.finish(a);
- const first=await a('/api/account/participate',{displayName:'Tester',email:'tester@example.test'});
+ const first=await a('/api/account/participate',{displayName:'Tester',email:'tester@wharton.upenn.edu'});
  await f.signin(a,'tester@wharton.upenn.edu');
  const me=(await a('/api/account/me')).data;
  assert.equal(me.browserProfile,false);assert.equal(me.profile.browserProfile,false);assert.equal(me.profile.handle,first.data.profile.handle);assert.equal(me.profile.whartonEarlyTester,true);
  assert.equal((await observer('/api/products/boj')).data.contributors.length,1);
  await a('/api/auth/logout',{});
  f.advanceAuth();const b=f.browser();await f.signin(b,'tester@wharton.upenn.edu');assert.equal((await b('/api/account/me')).data.profile.handle,first.data.profile.handle);
+});
+
+
+test('a saved email recovers the same profile from a fresh browser only after code verification',async t=>{
+ const f=await fixture(t),a=f.browser(),b=f.browser(),observer=f.browser();await f.finish(a);
+ const first=await a('/api/account/participate',{displayName:'Returning Tester',email:' Returning@Example.Test '});
+ assert.equal(first.data.profile.email,'returning@example.test');
+ const start=await b('/api/auth/start',{email:'returning@example.test'});assert.equal(start.status,200);
+ assert.equal((await b('/api/account/me')).data.profile,null,'requesting a code never grants access');
+ assert.equal((await b('/api/auth/verify',{challengeId:start.data.challengeId,code:'wrong'})).status,400);
+ await b('/api/auth/verify',{challengeId:start.data.challengeId,code:start.data.previewCode});
+ const me=(await b('/api/account/me')).data;
+ assert.equal(me.profile.handle,first.data.profile.handle);assert.equal(me.profile.email,'returning@example.test');assert.equal(me.profile.emailVerified,true);assert.equal(me.browserProfile,false);
+ assert.equal((await observer('/api/profiles/'+me.profile.handle)).data.profile.email,undefined);
+ assert.equal((await observer('/api/products/boj')).data.contributors.length,1);
+});
+
+test('matching unverified submissions cannot overwrite or attach themselves to an established account',async t=>{
+ const f=await fixture(t),owner=f.browser(),other=f.browser(),returning=f.browser();await f.finish(owner);
+ const first=await owner('/api/account/participate',{displayName:'Original',email:'owner@example.test'});await f.signin(owner,'owner@example.test');await owner('/api/account/me');
+ await f.finish(other);await other('/api/account/participate',{displayName:'Unverified submission',email:'owner@example.test'});
+ f.advanceAuth();await f.signin(returning,'owner@example.test');
+ const profile=(await returning('/api/account/me')).data.profile;
+ assert.equal(profile.handle,first.data.profile.handle);assert.equal(profile.displayName,'Original');
+ assert.equal((await other('/api/account/me')).data.profile.displayName,'Unverified submission');
+});
+
+
+test('ambiguous pending email matches and a different verified inbox do not claim another browser profile',async t=>{
+ const f=await fixture(t),a=f.browser(),b=f.browser(),c=f.browser();
+ for(const client of [a,b]){await f.finish(client);await client('/api/account/participate',{displayName:'Pending',email:'duplicate@example.test'})}
+ await f.signin(c,'duplicate@example.test');assert.equal((await c('/api/account/me')).data.profile,null);
+ await f.signin(a,'different@example.test');assert.equal((await a('/api/account/me')).data.profile,null);
+ assert.equal((await b('/api/account/me')).data.profile.displayName,'Pending');
 });

@@ -24,7 +24,9 @@ test('local email-code flow binds browser, hashes secrets and preserves stable r
  const verified=await a.call('/api/auth/verify',{challengeId:start.data.challengeId,code:start.data.previewCode});assert.equal(verified.status,200);
  const id=verified.data.identity.id;assert.equal((await f.auth.getIdentity(a.request('/'))).id,id);
  assert.equal((await a.call('/api/auth/verify',{challengeId:start.data.challengeId,code:start.data.previewCode})).status,400);
- assert.ok(!JSON.stringify(f.state).includes('member@example.com'));
+ assert.equal(Object.values(f.state.accounts)[0].email,'member@example.com');
+ assert.equal(verified.data.identity.email,'member@example.com');
+ assert.equal(Object.keys(f.state.challenges).length,0);
  assert.ok(!JSON.stringify(f.state).includes(a.jar.vouch_account_session));
  const logout=await a.call('/api/auth/logout',{});assert.equal(logout.status,200);assert.equal(await f.auth.getIdentity(a.request('/')),null);
  f.advance(60001);assert.equal((await signIn(a)).id,id);

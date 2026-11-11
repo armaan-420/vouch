@@ -1,6 +1,13 @@
 # Vouch accounts and product profiles — implementation and verification
 
-## Current attribution flow — November 11, 2026
+## Current email capture — November 11, 2026
+
+The pre-rankings form requires name and email on submit, supports native autofill, and offers Skip for now without either field. It contains no Wharton badge invitation or claim that email is discarded. A matching Wharton address still earns the badge on rankings and the profile after submission.
+
+The normalized email is now saved privately with the profile and shown only to its owner, including in Edit profile. It is excluded from public profiles, product contributors and photo responses. Later email-code sign-in can recover the same new browser profile from another browser after inbox verification. A matching unverified submission cannot overwrite or automatically attach to an established email account; ambiguous duplicate pending profiles require explicit browser ownership rather than an automatic merge. Existing account visibility settings are preserved. No verification code is required during the initial form submission, and no previously discarded email can be recovered retroactively.
+
+
+## Initial attribution flow — November 11, 2026 (superseded email handling)
 
 After all selected products and optional nominations, signed-out participants without a saved browser profile see “Who’s behind these vouches?” before rankings. The optional form uses native `autocomplete="name"` and `autocomplete="email"` inputs in an autofill-enabled form. Submit creates a browser profile without a password or email code; Skip for now goes directly to rankings and stays dismissed for that experiment. The old scroll-triggered Save my picks modal is no longer loaded. Existing participants with profiles proceed directly to rankings.
 

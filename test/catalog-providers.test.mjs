@@ -57,3 +57,9 @@ test('combo and quantity bundles stay out of product lookup while single variant
  for(const title of ['Example Shampoo & Conditioner Combo','Example Bottle Multipack','Example Shampoo Twin','Example Shampoo 2 x 250ml']){assert.equal(isBundle({title}),true);assert.equal(mapChannel3({...c3,title}),null);assert.equal(mapShopify({...shop,title}),null);}
  assert.equal(isBundle({title:'Example 2-in-1 Shampoo 250ml'}),false);
 });
+
+test('Channel3 URL lookup allows slow extraction within its twelve-second deadline',async()=>{
+ let deadline;const provider=createChannel3({apiKey:'fixture',fetcher:async(_url,{signal})=>{deadline=signal;return Response.json({product:c3})}});
+ const original=AbortSignal.timeout,deadlines=[];AbortSignal.timeout=ms=>{deadlines.push(ms);return original(ms)};
+ try{const r=await provider.lookupUrl('https://merchant.example.com/p');assert.equal(r.products[0].id,'c3-fixture-bottle');assert.equal(deadlines[0],12000);assert.equal(deadline.aborted,false);}finally{AbortSignal.timeout=original;}
+});

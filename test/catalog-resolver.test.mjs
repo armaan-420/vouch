@@ -46,3 +46,22 @@ test('cached photo searches refresh missing product snapshots and survive a phot
  assert.equal((await r.search('Bottle',options)).live.cached,true);
  assert.equal((await r.find(a.id)).image,a.image);assert.equal((await r.hydrate([a]))[0].image,a.image);
 });
+
+test('Amazon URLs normalize tracking, coalesce requests, cache success and accept headphone taxonomy',async()=>{
+ let calls=0,release;const gate=new Promise(resolve=>release=resolve),headphones={...product,id:'c3-headphones',providerId:'headphones',name:'T4 Wired In-Ear Monitor',category:'Musical Instruments'};
+ const r=createProductResolver({local,enabled:true,providers:[{name:'channel3',lookupUrl:async url=>{calls++;assert.equal(url,'https://www.amazon.com/dp/B0F487KL8G');await gate;return {status:'ok',products:[headphones]}}}]});
+ const a=r.lookupUrl('https://www.amazon.com/dp/B0F487KL8G?lv=shuffle&ref=fixture',{category:'headphone'}),b=r.lookupUrl('https://www.amazon.com/dp/B0F487KL8G/ref=fixture',{category:'headphone'});release();
+ assert.equal((await a).id,headphones.id);assert.equal((await b).id,headphones.id);assert.equal(calls,1);
+ assert.equal((await r.lookupUrl('https://www.amazon.com/dp/B0F487KL8G',{category:'headphone'})).id,headphones.id);assert.equal(calls,1);
+ await assert.rejects(r.lookupUrl('https://www.amazon.com/dp/B0F487KL8G',{category:'Sunscreen'}),{status:422});assert.equal(calls,2);
+});
+test('concurrent identical searches share one provider request and retain caller local products',async()=>{
+ let calls=0,release;const gate=new Promise(resolve=>release=resolve);
+ const r=createProductResolver({local,enabled:true,providers:[{name:'channel3',search:async()=>{calls++;await gate;return {status:'ok',products:[product]}}}]});
+ const a=r.search('Bottle',options),b=r.search('Bottle',{...options,localProducts:[{id:'own',brand:'Mine',name:'Bottle',category:'Water bottles'}]});release();
+ assert.equal((await a).products.length,1);assert.equal((await b).products.length,2);assert.equal(calls,1);
+});
+
+test('URL lookup distinguishes timeouts and usage limits from missing products',async()=>{
+ for(const [status,code] of [['timeout',503],['limited',429],['auth_error',503]]){const r=createProductResolver({local,enabled:true,providers:[{name:'channel3',lookupUrl:async()=>({status,products:[]})}]});await assert.rejects(r.lookupUrl('https://merchant.example.com/p'),{status:code});}
+});

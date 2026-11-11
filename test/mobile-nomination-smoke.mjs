@@ -50,6 +50,12 @@ try{
  assert.equal(saved.length,1);
  assert.equal(await page.locator('#nomination-saved').isVisible(),true);
  assert.equal(await page.locator('#nominate-submit').isVisible(),false);
+ assert.equal(await page.locator('.nomination-selection').evaluate(el=>el.open),false);
+ assert.equal(await page.locator('#selected-product .selection-chip').first().isVisible(),false);
+ await page.locator('.nomination-selection>summary').click();
+ assert.equal(await page.locator('#selected-product .selection-chip').first().isVisible(),true);
+ await page.locator('.nomination-selection>summary').press('Enter');
+ assert.equal(await page.locator('.nomination-selection').evaluate(el=>el.open),false);
  assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('nomination-search-open')),false);
  await page.locator('#nomination-name').tap();
  await page.locator('#nomination-name').fill('daily');
@@ -79,6 +85,7 @@ try{
  await page.locator('[data-search-done]').tap();
  await page.locator('.board h1').waitFor();assert.equal(submissions,3);assert.equal(saved.length,2);
  // Saving an empty selection clears previous nominations; empty initial Done just closes.
+ await page.locator('.nomination-selection>summary').click();
  await page.locator('#nomination-clear-all').click();
  assert.equal(await page.locator('[data-search-done]').textContent(),'Save changes');
  await page.locator('[data-search-done]').tap();

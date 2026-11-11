@@ -6,6 +6,8 @@ The dialog reuses the existing input and results, preserves the query and select
 
 Once products are selected, the prominent Save & finish button saves nominations in one tap. From the experiment’s last step it also takes the participant to the Board; from the Board it returns to the page with a saved confirmation. While saving, the button is disabled and says Saving…. Failed saves keep the dialog open with an error and preserve selections for retry. When all previously saved nominations are removed, Save changes clears them. With no current or previous selections, Done just closes search. Barcode scanning and photo search are deferred and their controls are not attached to product pickers. Keyboard Escape closes search. Changing to desktop width or navigating away releases the modal and scroll lock.
 
+The nomination list is collapsed by default into a compact Your nominations · count row. View expands the selected products and removal controls; Hide collapses them. The disclosure uses native details/summary behavior for touch and keyboard access.
+
 ## Verification
 
 - `npm test` and `npm run build`.

@@ -6,7 +6,7 @@
 
 `/account?signin=1` and the Already have an account link preserve verification-code sign-in for returning users. Header Sign in links select that mode. Existing accounts can still explicitly review unclaimed picks.
 
-The expanded 218-test suite passed. Browser checks passed at phone and desktop sizes, including simple signup, required/autofill fields, preview contents, failed-save recovery, direct profile landing, no-picks skip and returning code sign-in. The production build is checked before publication; revised publication pending.
+The expanded 218-test suite passed. Browser checks passed at phone and desktop sizes, including simple signup, required/autofill fields, preview contents, failed-save recovery, direct profile landing, no-picks skip and returning code sign-in. The production build passed. Published November 11, 2026 in Sites version 65 from `0f62155a04c53bcfb98f6b99f53b9e7551916aea`. Native deployment succeeded, and read-only checks confirmed the live account page, signup and preview script, responsive styles and separate Sign in links.
 
 ## Implemented behavior
 

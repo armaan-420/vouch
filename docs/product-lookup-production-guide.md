@@ -1,3 +1,13 @@
+## Lookup reliability and speed — November 11, 2026, version 67
+
+Deployed source `dfa61b92d3aade4c25dcb2bc4ceda8ca37d5e847`, Sites version 67, deployment `appgdep_6af4d5279f1481918d9a2c551e266065` succeeded. Earlier dated sections below retain their historical scope.
+
+Search snapshots now write in D1 batches (up to 50 per batch), and unchanged snapshots in the runtime front cache avoid redundant database writes. Concurrent identical searches share a provider call. The organizer adder cancels superseded browser requests, prevents its debounce and Find button from launching duplicate simultaneous lookups, and waits 300 ms after typing. Successful URL lookups cache for ten minutes by category and URL; Amazon ASIN links normalize tracking parameters and ref suffixes. Headphone category matching accepts earphones, earbuds and in-ear monitors, including products categorized under musical instruments. Channel3 URL extraction has a twelve-second deadline instead of four; this improves tolerance for extraction delays and does not make cold URL extraction faster. Provider errors, usage limits and category mismatches have separate messages. Failed provider URL lookups log status and mapping counts without submitted URLs or product/visitor data.
+
+All 223 automated tests and the production build passed. A bounded live organizer check found Bose results in approximately 2.8 seconds and a repeat in 1.0 second (browser action-to-result timings, not a controlled before/after benchmark). No lineup was saved or published. The exact Amazon ASIN link reported in this task remained unresolved: Channel3 returned HTTP 422 with no product. A name search for that model also returned no matches. The daily allowance was not exhausted. This is an outstanding provider coverage/extraction limitation; do not describe that specific URL as fixed. Generic URL success across retailers and performance under load remain unverified.
+
+---
+
 ## Current production — November 8, 2026, version 50
 
 Sites version 50 is deployed at [Vouch](https://v4ch.app), source `cd5ba45f12d0fa29da0df441209efa6a0d05fb33`, deployment `appgdep_6af00aae41948191a294a21a3d8708d0`, environment revision 6. It succeeded on November 8, 2026 at 12:37 AM America/New_York. This documentation update covers deployed versions 42–50 since version 41.

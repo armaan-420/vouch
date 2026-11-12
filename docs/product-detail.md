@@ -15,3 +15,7 @@ Selections persist in the existing D1 record system under `product-tag-votes`, g
 The organizer Product Library shows a Tags column and supports tag search. Item detail lists Organizer tags and Community counts separately; the existing Category & tags form continues to manage organizer assignments. Community endorsements never overwrite those assignments.
 
 Validation: 253 automated tests and production build passed. Local browser checks covered board-to-product navigation, saved tag selections after reload, organizer assignment persistence, community counts in admin, desktop/mobile layout, and no browser errors. Production write testing is intentionally left to normal user activity.
+
+## Compact navigation
+
+The product page uses a scoped navigation row directly below the shared header: a forest-green Board/home link with a circular arrow and a quiet category breadcrumb. Product-shell top padding is 12px on desktop and 10px on phones, followed by a 44px link target and an 8px gap before the image. Desktop header-to-image spacing is reduced from 124px to 64px. Account/profile navigation and the shared header remain independent.

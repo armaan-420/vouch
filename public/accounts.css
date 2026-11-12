@@ -128,3 +128,15 @@
 @media(min-width:701px) and (max-width:950px){.item-detail{gap:26px;grid-template-columns:minmax(0,.9fr) minmax(0,1.2fr)}.item-purchase{grid-template-columns:1fr}.item-purchase .item-buy{grid-row:auto;width:100%}.item-purchase>.account-help,.item-purchase #where-to-buy{grid-column:1}.item-title-row h1{font-size:32px}}
 
 .item-tag-count{font-size:10px;opacity:.8;margin-left:2px;font-variant-numeric:tabular-nums}
+
+/* Compact product navigation below the shared site header. */
+.account-shell:has(.item-detail){padding-top:12px}
+.item-navigation{display:flex;align-items:center;gap:16px;min-width:0;margin-bottom:8px;min-height:44px;color:#123c2e}
+.item-back{display:inline-flex;align-items:center;gap:8px;min-height:44px;flex-shrink:0;color:#123c2e;text-decoration:none;font-size:12px;font-weight:600;border-radius:24px;padding:0 9px 0 0}
+.item-back-icon{display:grid;place-items:center;width:26px;height:26px;background:#e9ecdf;border:1px solid #d9dfce;border-radius:50%;transition:background .15s,border-color .15s}
+.item-back-icon svg{width:16px;height:16px}.item-back:hover .item-back-icon{background:#dce4c5;border-color:#a4b28b}.item-back:hover>span:last-child{text-decoration:underline;text-underline-offset:4px}
+.item-back:focus-visible{outline:3px solid #828e31;outline-offset:3px}
+.item-nav-category{border-left:1px solid #d9dbcf;padding-left:16px;font-size:10px;color:#6c7165;letter-spacing:.7px;line-height:1.5;overflow-wrap:anywhere}
+.item-navigation+.item-detail{margin-top:0}
+@media(max-width:600px){.account-shell:has(.item-detail){padding-top:10px}.item-navigation{gap:12px;margin-bottom:8px}.item-nav-category{padding-left:12px;font-size:9px}}
+@media(prefers-reduced-motion:reduce){.item-back-icon{transition:none}}

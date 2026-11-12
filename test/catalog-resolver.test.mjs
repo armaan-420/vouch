@@ -65,3 +65,12 @@ test('concurrent identical searches share one provider request and retain caller
 test('URL lookup distinguishes timeouts and usage limits from missing products',async()=>{
  for(const [status,code] of [['timeout',503],['limited',429],['auth_error',503]]){const r=createProductResolver({local,enabled:true,providers:[{name:'channel3',lookupUrl:async()=>({status,products:[]})}]});await assert.rejects(r.lookupUrl('https://merchant.example.com/p'),{status:code});}
 });
+
+test('cached photo reads resolve aliases and never fetch absent products or refresh the local catalog',async()=>{
+ const cache=memoryCache();let calls=0;
+ const resolver=createProductResolver({cache,enabled:true,local:{find:()=>{calls++;return new Promise(()=>{});}},providers:[{name:'channel3',get:()=>{calls++;return new Promise(()=>{});}},{name:'shopify',lookupBatch:()=>{calls++;return new Promise(()=>{});}}]});
+ await cache.set('product:'+product.id,product,600);await cache.set('alias:channel3:alias',{...product,image:undefined},600);
+ assert.equal((await resolver.findCached('c3-alias')).image,product.image);assert.equal(await resolver.findCached('c3-missing'),null);assert.equal(await resolver.findCached('local-missing'),null);
+ const rows=await resolver.hydrate([product,{...product,id:'c3-missing',providerId:'missing'},{...product,id:'shop-missing',provider:'shopify',providerId:'missing'}],{cachedOnly:true});
+ assert.equal(rows[0].image,product.image);assert.equal(rows[1].image,null);assert.equal(rows[2].image,null);assert.equal(calls,0);
+});

@@ -138,3 +138,7 @@ Organizers can use **Suggestions → Actions → Add suggestion** to submit a ca
 The table includes **Added by** and **Submitted**, separate from the last updated date. Manual entries use the supplied name (or the signed-in Vouch profile when available); new community entries use the authenticated Vouch profile name. Anonymous and historical entries without saved attribution display **Unknown user**. Existing submission dates are retained. Attribution is visible only in the organizer workspace.
 
 Page-wide actions sit in the **Actions** dropdown beside the Suggestions heading. **Add suggestion** opens a modal form; **Refresh suggestions** refreshes the queue. Search and status filters remain immediately above the table.
+
+### Suggestions page loading
+
+The Suggestions list and its nested draft/history photos use saved catalog snapshots only; opening or refreshing the page never waits for live provider lookups or a local catalog refresh. Find missing photos and approval still check current catalog identities. Organizer review bypasses participant identity migration. The browser coalesces overlapping list loads and reports a timeout after twenty seconds. Missing or expired snapshots can show a photo as missing until an explicit lookup refreshes it.

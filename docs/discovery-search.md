@@ -13,3 +13,5 @@ Private responses use `Cache-Control: private, no-store` and `Vary: Cookie`. Res
 Validation: 248 tests passed including phrase matching, exclusions, unsupported constraints, cold start, positive/negative fit, brand-trust separation, pagination, collection visibility, latest-vote deduplication and response privacy. Production build passed. Browser verification and deployment recorded in the task completion report.
 
 Scaling limit: this prototype scans public collection records and computes fit at request time. Before a large catalog, migrate discovery to a dedicated indexed product/search store with cached public aggregates and per-request private reranking. Richer semantic retrieval, typo tolerance and price filtering require additional implementation and grounded product data.
+
+Live verification exposed a pre-existing browser-identity rotation failure: Cloudflare could not clone the framework Request wrapper. Rotation now constructs a native Request from its URL, method, headers and body, retaining the privacy boundary and supporting expired/switched accounts.

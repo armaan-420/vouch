@@ -12,7 +12,7 @@ const created=await call('/api/admin/experiments',{id:'bottles',title:'Water bot
 const results=await call('/api/products/search?experiment=bottles&q=water%20bottle',undefined,false);assert.equal(results.data.products.length,9);assert.equal((await call('/api/products/search?experiment=bottles&q=sunscreen',undefined,false)).data.products.length,0);
 assert.equal((await call('/api/nominations?experiment=sunscreen',{productId:WATER_BOTTLES[0].id},false)).status,400);
 });
-test('global and category tags persist across experiments and support any catalog SKU',async t=>{const {call}=await fixture(t);const tags=(await call('/api/admin/tags')).data;assert.equal(Object.keys(tags.definitions).length,28);const id=WATER_BOTTLES[0].id;
+test('global and category tags persist across experiments and support any catalog SKU',async t=>{const {call}=await fixture(t);const tags=(await call('/api/admin/tags')).data;assert.equal(Object.keys(tags.definitions).length,32);const id=WATER_BOTTLES[0].id;
 assert.equal((await call('/api/admin/product-tags',{productId:id,category:'Water bottles',tagIds:['value','water-bottles-leak-proof']})).status,200);
 assert.equal((await call('/api/admin/product-tags',{productId:'boj',category:'Sunscreen',tagIds:['water-bottles-leak-proof']})).status,400);
 assert.equal((await call('/api/admin/product-tags',{productId:id,tagIds:['fake']})).status,400);
@@ -28,7 +28,7 @@ test('new sunscreen definitions merge into an existing taxonomy without replacin
  const {store,call}=await fixture(t);const tagStore=await store.scope('product-tags');
  await tagStore.transaction(d=>{d.definitions={value:{id:'value',label:'Value',category:null},existing:{id:'existing',label:'Lightweight',category:'Sunscreen'}};d.products={boj:{category:'Sunscreen',tagIds:['value','existing'],source:'organizer'}}});
  const first=(await call('/api/admin/tags')).data;
- assert.equal(first.seedVersion,2);assert.equal(Object.values(first.definitions).filter(t=>t.category==='Sunscreen').length,14);assert.ok(first.definitions.existing);assert.equal(first.definitions['sunscreen-lightweight'],undefined);
+ assert.equal(first.seedVersion,3);assert.equal(Object.values(first.definitions).filter(t=>t.category==='Sunscreen').length,14);assert.ok(first.definitions.existing);assert.equal(first.definitions['sunscreen-lightweight'],undefined);
  assert.deepEqual(first.products.boj.tagIds,['value','existing']);
  assert.deepEqual((await call('/api/admin/tags')).data,first);
 });

@@ -1,5 +1,7 @@
 # Vouch
 
+Product detail layout, circular scores, quick tags, and organizer tag visibility are described in [Product details and quick tags](docs/product-detail.md).
+
 ## Source repository
 
 The source is maintained at [armaan-420/vouch on GitHub](https://github.com/armaan-420/vouch), on `main`. In this checkout, completed commits to `main` automatically push to the `github` remote through `.githooks/post-commit`. Unsaved/uncommitted edits stay local. A failed push prints a warning and preserves the local commit; retry with `git push github main` after resolving the cause.

@@ -139,3 +139,21 @@ test('verification delivery failure cleans up the token without exposing provide
  assert.equal(Object.keys(f.states.get('account-auth-v1').verifications).length,0);
  assert.equal((await person('/api/auth/verify-email',{token:verificationToken(f)})).status,400);
 });
+test('add email to a browser profile confirms the new address and preserves its collection through verification',async()=>{
+ const f=fixture(),admin=f.client(true),person=f.client(),id=await accountKey('tester:no-email'),db=await f.store.scope('accounts-v1',initialAccounts);
+ const opinions={'p:example':{productId:'example',verdict:'yes',visibility:'public',updatedAt:new Date().toISOString()}};
+ await db.transaction(d=>{d.accounts[id]={displayName:'No email member',handle:'v-no-email',browserProfile:true,visibility:'public',opinions,history:[],milestones:[]};});
+ assert.equal((await admin('/api/admin/accounts',{id,action:'add-email',email:'member@example.test',confirm:'different@example.test'})).status,400);
+ const saved=await admin('/api/admin/accounts',{id,action:'add-email',email:' Member@Example.test ',confirm:'member@example.test'});assert.equal(saved.status,200);
+ let row=(await admin('/api/admin/accounts')).data.accounts.find(a=>a.id===id);assert.equal(row.email,'member@example.test');assert.equal(row.verified,false);assert.equal(row.vouches,1);
+ assert.equal((await admin('/api/admin/accounts',{id,action:'add-email',email:'second@example.test',confirm:'second@example.test'})).status,409);
+ assert.equal((await admin('/api/admin/accounts',{id,action:'send-verification'})).status,200);
+ assert.equal((await person('/api/auth/verify-email',{token:verificationToken(f)})).status,200);
+ const me=(await person('/api/account/me')).data;assert.equal(me.profile.handle,'v-no-email');assert.equal(me.profile.emailVerified,true);assert.equal(me.profile.opinions.length,1);
+});
+test('adding email rejects another account address and old change-email clients can confirm a new address when none exists',async()=>{
+ const f=fixture(),admin=f.client(true),person=f.client();await signin(f,person);const id=await accountKey('tester:legacy-no-email'),db=await f.store.scope('accounts-v1',initialAccounts);
+ await db.transaction(d=>{d.accounts[id]={displayName:'Legacy',handle:'v-legacy',browserProfile:true,visibility:'private',opinions:{},history:[],milestones:[]};});
+ assert.equal((await admin('/api/admin/accounts',{id,action:'add-email',email:'member@example.test',confirm:'member@example.test'})).status,409);
+ assert.equal((await admin('/api/admin/accounts',{id,action:'change-email',email:'new@example.test',confirm:'new@example.test'})).status,200);
+});

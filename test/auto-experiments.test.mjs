@@ -283,3 +283,15 @@ test('provider keeps a valid partial lineup and ignores ungrounded source claims
  const ungrounded=createResearch({env:{OPENAI_API_KEY:'test-key'},fetcher:async()=>Response.json({status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(r)}]}]})});
  assert.equal(researchCoverage((await ungrounded.start('backpacks','test')).result).complete,false);
 });
+
+test('photo repair times out a stalled catalog without starting more lookups',async()=>{
+ let calls=0;const result=await findProductPhoto({brand:'Brand',name:'Board',url:'https://example.com/board'},{category:'Boards',visitorKey:'test',timeoutMs:10,search:{search:()=>{calls++;return new Promise(()=>{});},lookupUrl:()=>{calls++;return new Promise(()=>{});}}});
+ assert.equal(result.reason,'catalog_unavailable');assert.equal(calls,1);
+});
+test('photo batches save progress and only search requested missing products',async t=>{
+ const s=await setup(t);await s.submit('backpacks');const j=await s.build(),matched=j.draft.products.map((p,i)=>({...p,id:'c3-batch-'+i,provider:'channel3',providerId:'batch-'+i,image:'https://example.com/photo.jpg'})),calls=[];
+ const auto=createSuggestions({store:s.store,authorizeAdmin:()=>true,development:true,search:{search:async q=>{calls.push(q);return {products:matched.filter(p=>q===p.brand+' '+p.name)};},find:async id=>matched.find(p=>p.id===id)}});
+ for(const ids of [[],j.draft.products.slice(0,4).map(p=>p.id),['missing'],[j.draft.products[0].id,j.draft.products[0].id]])assert.equal((await auto.handle(req('/api/admin/suggestions/photos',{key:j.key,productIds:ids}))).status,400);
+ for(let i=0;i<6;i+=3){const report=await(await auto.handle(req('/api/admin/suggestions/photos',{key:j.key,productIds:j.draft.products.slice(i,i+3).map(p=>p.id)}))).json();assert.equal(report.added,3);assert.equal(report.photoCount,i+3);assert.equal(report.missing,7-i);}
+ assert.equal(calls.length,6);const [after]=await s.listing();assert.equal(after.photoLookup.results.length,6);assert.equal(after.draft.status,'draft');assert.deepEqual(after.draft.products.map(p=>p.brand),j.draft.products.map(p=>p.brand));
+});

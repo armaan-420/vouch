@@ -3,6 +3,8 @@
  const header=document.querySelector('[data-site-nav]');if(!header)return;
  const menu=header.querySelector('.site-menu'),menuToggle=header.querySelector('.site-menu-toggle'),search=header.querySelector('.site-search'),input=header.querySelector('#site-search-input'),searchToggle=header.querySelector('.site-search-toggle'),searchClose=header.querySelector('.site-search-close'),popover=header.querySelector('.site-search-popover'),results=header.querySelector('#site-search-results'),status=header.querySelector('#site-search-status'),nominate=header.querySelector('.site-search-nominate');
  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const discover=document.createElement('a');discover.href='/search';discover.textContent='Discover products';menu.prepend(discover);
+ const desktopDiscover=document.createElement('a');desktopDiscover.href='/search';desktopDiscover.className='site-text-link';desktopDiscover.textContent='Discover';header.querySelector('.site-desktop-links')?.prepend(desktopDiscover);
  const menuIcon=menuToggle.innerHTML,closeIcon=searchClose.innerHTML;
  let context=null,picker=null,menuOpen=false,searchOpen=false,scrollBefore=null,scrim=null,controller=null,timer=null,version=0,feedbackDialog=null,feedbackFocus=null;
  function lock(){if(scrollBefore===null){scrollBefore=document.body.style.overflow;document.body.style.overflow='hidden';}}

@@ -104,3 +104,8 @@ test('session reads coalesce activity writes, still check revocation and enforce
  f.advance(30000);assert.ok(await f.auth.getIdentity(a.request('/')));assert.equal(session().lastAt,initial+60000);
  const stolen=a.request('/');await a.call('/api/auth/logout',{});assert.equal(await f.auth.getIdentity(stolen),null);
 });
+test('Resend verification email contains the confirmation link and no undefined code',async()=>{
+ let payload;const send=createResendDelivery({apiKey:'test',from:'test@example.test',fetcher:async(url,options)=>{payload=JSON.parse(options.body);return new Response('{}');}});
+ await send({email:'member@example.test',verificationUrl:'https://v4ch.app/account#verify-email=test-token',expiresIn:600});
+ assert.equal(payload.subject,'Verify your Vouch email');assert.ok(payload.text.includes('https://v4ch.app/account#verify-email=test-token'));assert.ok(!payload.text.includes('undefined'));
+});

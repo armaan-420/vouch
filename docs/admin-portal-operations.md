@@ -1,13 +1,16 @@
-## People management — implemented November 11, 2026
+## People management — updated November 11, 2026
 
 Open `/admin#accounts` (People) using the existing organizer PIN. The table combines email accounts, pending email sign-in attempts, and browser-only profiles. Search name/email/handle, filter Active/Unverified/Disabled, sort by joined date/name/last sign-in, and page through 25 rows at a time. It shows verification, profile visibility, vouch count and current email-session count. Older accounts without recorded sign-in dates show a dash.
 
+- **Account actions:** each row groups its actions under an accessible three-dot popover. Escape and outside-click dismiss it.
+- **Send verification email:** sends a single-use link without requiring an existing browser sign-in attempt. The link expires after ten minutes; opening the page does not consume it. The recipient explicitly chooses “Verify email and sign in.” Existing cooldown and hourly email limits apply. Disabling, deleting, changing email or signing out all devices invalidates outstanding links.
+- **Change email:** requires the current email/handle confirmation and a valid, unused new address. Preserves the email account subject and collection, revokes email sessions and outstanding codes/links, removes the old Wharton badge, and marks the new address unverified. Send verification email separately to verify the new inbox. Existing browser-only profile credentials remain browser-bound.
 - **Resend verification code:** available for an active pending sign-in attempt. Preserves the original challenge and browser binding, rotates the code, and uses the existing delivery provider. Existing cooldown and hourly email limits apply. Users without a current attempt must first start sign-in in their own browser. No code is returned to the organizer.
 - **Sign out all devices:** revokes email sessions and pending codes. The account remains enabled; email users can sign in again.
 - **Disable / re-enable:** disables email sign-in, revokes sessions/codes, prevents account access and hides public profiles, photos and account contributors. Re-enable restores the existing profile visibility. Browser-only profiles resume with their original browser credential; email sessions must sign in again. This does not ban anonymous browsing or remove historical experiment votes.
 - **Delete:** requires typing the shown email or handle. Removes email auth, profile data, saved opinions/history, and profile photo. An opaque profile-key tombstone and ownership bindings prevent old browser credentials from reclaiming deleted history. Historical experiment results remain. The email can register a fresh account later.
 
-Account actions use admin authorization, same-origin JSON requests and private, noncached responses. They do not grant organizer privileges, expose sign-in codes, or change people's email addresses or verification claims. Current storage remains a shared pilot transaction record; this page is not evidence of broad-scale load validation. Production mutation checks must use explicit authorization; automated verification uses isolated synthetic data.
+Account actions use admin authorization, same-origin JSON requests and private, noncached responses. They do not grant organizer privileges or expose sign-in codes or verification links to the organizer. An email change does not verify the new address. Current storage remains a shared pilot transaction record; this page is not evidence of broad-scale load validation. Production mutation checks must use explicit authorization; automated verification uses isolated synthetic data.
 
 ## Current production — November 8, 2026, version 50
 

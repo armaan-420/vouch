@@ -1,6 +1,6 @@
-# Vouch scoring — dynamic community model
+# Vouch scoring — community response average
 
-## Current production — November 8, 2026, version 50
+## Historical deployment verification — November 8, 2026, version 50
 
 Sites version 50 is deployed at [Vouch](https://v4ch.app), source `cd5ba45f12d0fa29da0df441209efa6a0d05fb33`, deployment `appgdep_6af00aae41948191a294a21a3d8708d0`, environment revision 6. It succeeded on November 8, 2026 at 12:37 AM America/New_York. This documentation update covers deployed versions 42–50 since version 41.
 
@@ -14,37 +14,41 @@ The score formula is unchanged by versions 42–50. Product totals in the new Pr
 
 ---
 
-Founder approved November 1, 2026. This replaces the raw approval-percentage score across original products, community nominations and the overall leaderboard.
+## Current scoring model — approved November 11, 2026
 
-Updated November 2, 2026: item vouches (`yes`) carry weight 1; brand vouches (`brand`) carry weight 0.5; passes (`no`) carry weight 1. Brand trust is recorded against the displayed item only, never propagated across a brand. Existing `yes` votes retain full weight because their intent cannot be inferred retrospectively.
+Each active Vouch (`yes`) contributes 10 points, Soft-Vouch (`brand`) 7, and Pass (`no`) 0. Each is one response in the denominator. One neutral response worth 5 tempers sparse scores:
 
-Weighted support = item vouches + 0.5 × brand vouches.
+**Score = (10 × Vouches + 7 × Soft-Vouches + 5) / (Vouches + Soft-Vouches + Passes + 1)**
 
-Score = 10 × (weighted support + 0.25) / (weighted support + passes + 0.5).
+Display one decimal place with ordinary rounding; there is no separate 100-verdict threshold or 9.9 cap. A displayed 10.0 is rounded, not necessarily unanimous. No valid responses returns `null` in the API and Unrated in the UI. Haven’t tried (`skip`) and unknown values are excluded from both numerator and denominator.
 
-If there are fewer than 100 weighted verdicts, cap the result at 9.9 before rounding. Otherwise use the calculated result. Display one decimal place. A displayed 10.0 therefore requires at least 100 weighted verdicts and an adjusted score that rounds to 10.0 (at least 9.95).
+| Vouches | Soft-Vouches | Passes | Score |
+| --- | --- | --- | --- |
+| 1 | 0 | 0 | 7.5 |
+| 0 | 1 | 0 | 6.0 |
+| 0 | 0 | 1 | 2.5 |
+| 2 | 0 | 0 | 8.3 |
+| 0 | 2 | 0 | 6.3 |
+| 700 | 200 | 100 | 8.4 |
+| 500 | 500 | 0 | 8.5 |
+| 0 | 1000 | 0 | 7.0 |
 
-| Item vouches | Passes | Displayed score |
-| --- | --- | --- |
-| 1 | 0 | 8.3 |
-| 2 | 0 | 9.0 |
-| 5 | 0 | 9.5 |
-| 10 | 0 | 9.8 |
-| 20 | 0 | 9.9 |
-| 99 | 0 | 9.9 |
-| 100 | 0 | 10.0 |
-| 2 | 1 | 6.4 |
-| 12 | 3 | 7.9 |
-| 90 | 10 | 9.0 |
-| 100 | 1 | 9.9 |
-| 0 | 1 | 1.7 |
+Soft-Vouches alone approach 7. A Soft-Vouch can raise a score below 7 or lower a score above 7. Vouches never lower a score; Passes never raise one. Brand trust is recorded against the displayed item only and never propagated across the brand. Existing verdict meanings are preserved.
 
-No valid verdicts returns null in the API and Unrated in the UI. Haven’t tried is excluded. A changed vote replaces the prior verdict; changing to Haven’t tried removes that browser’s previous contribution. The overall board first chooses each browser’s latest verdict per SKU across included experiments, then applies this same formula. The 100-weighted-verdict rule uses the sum of weights of those deduplicated verdicts per product, not visits or nominations.
+### Existing database records and score surfaces
 
-The 0.25 / 0.5 adjustment is a light neutral prior: sparse unanimous votes approach the extremes as supporting evidence grows. Balanced votes stay at 5.0. This is a product scoring choice, not a statistically calibrated confidence estimate or a personalized fit score. Anonymous browsers are not verified people. Small samples can still move sharply. A new pass can lower a score, including a previously earned 10.0.
+D1 stores raw verdicts in `app_records`, not materialized community scores. All scores are computed when read using `voteScore` in `lib/vouch-api.mjs`. Deploying this model therefore recalculates all existing original-product, community-nominated, per-experiment, overall, organizer product-library, and public/private profile-history scores without rewriting records or resetting votes. Profile history shows the current community score in the originating experiment, rather than a score captured on the vouch date. Previously exported files remain historical snapshots.
 
-All scores are computed from retained votes when read; no migration or vote reset is needed. Updated November 5, 2026: a clickable total-vote chip appears beneath each rated score on collection, community-nominated and overall boards. The chip sums Yes (item vouch), Maybe (Soft-Vouch / brand trust) and Pass as unweighted active votes. Unrated items show no chip. The popover contains only “The community says,” the total number of votes, and the three Yes / Maybe / Pass counts. The visual chip is 16px tall with 9px type; the mobile hit area expands to 44px without enlarging the visible pill. Skips and invalid values are excluded; changed votes replace the old contribution. Overall counts use the same latest-per-browser, per-SKU deduplication as scores. Counts represent anonymous browser verdicts, not verified unique people, and expose no visitor identifiers. The /10 suffix remains hidden. A visible statement at the top of each rankings page explains that scores reflect the collective pool of community votes: the current experiment on category boards, or included experiments on the overall board. Prototype information and this document describe the model; the vote popover intentionally omits formula and explanatory copy.
+Changed votes replace prior verdicts; changing to Haven’t tried removes the browser’s previous contribution. Overall and organizer aggregates retain their existing latest-per-browser, per-product deduplication and experiment inclusion rules before applying the formula. Vote totals and the Yes / Maybe / Pass breakdown remain raw counts; skips and invalid verdicts are excluded. Already-open pages receive new scores on their next data refresh.
 
-Implementation: lib/vouch-api.mjs, shared voteScore function. Regression coverage: test/scoring.test.mjs plus server and experiment API tests.
+### Meaning and limitations
 
-Two brand vouches with no passes earn 8.3, equivalent to one item vouch. One brand vouch plus one pass earns 3.8, versus 5.0 for one item vouch plus one pass. Two hundred brand vouches reach the same evidence threshold as 100 item vouches. Skips and unknown values contribute no weight.
+The neutral response is a product scoring choice, not a calibrated confidence estimate or personalized fit score. Small samples can move sharply. Votes represent anonymous browsers, not verified unique people or verified product experience. A Pass does not establish firsthand use. Scores above 7 require item Vouches; a high score still needs the vote count for context.
+
+The participant Prototype info explains the point values and neutral adjustment. Vote popovers retain their compact counts without formula copy, and the /10 suffix remains hidden.
+
+### Previous model (historical)
+
+Approved November 1 and amended November 2, 2026: weighted support was Vouches + 0.5 × Soft-Vouches; score was `10 × (support + 0.25) / (support + Passes + 0.5)`, capped at 9.9 below 100 weighted verdicts. That model treated Soft-Vouches as weaker positive evidence and allowed brand trust alone to approach 10. It is superseded by the November 11 model above. Prior release artifacts retain their original descriptions and verification scope.
+
+Implementation: `lib/vouch-api.mjs`. Regression coverage: `test/scoring.test.mjs`, server persistence/API tests, experiments and profile-history tests.

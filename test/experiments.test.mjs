@@ -48,9 +48,9 @@ test('experiments isolate votes, completion, nominations and exports; overall ex
   await a('/api/events?experiment=test-b',{type:'answer',productId:'boj',value:'no'});
   assert.equal((await a('/api/overall')).data.products.length,0);
   for(const id of ['test-a','test-b'])await admin('/api/admin/experiment-settings',{id,closed:false,includeInOverall:true});
-  assert.equal((await a('/api/overall')).data.products[0].score,'1.0');
-  await a('/api/events?experiment=test-b',{type:'answer',productId:'boj',value:'skip'});
   assert.equal((await a('/api/overall')).data.products[0].score,'1.7');
+  await a('/api/events?experiment=test-b',{type:'answer',productId:'boj',value:'skip'});
+  assert.equal((await a('/api/overall')).data.products[0].score,'2.5');
   await admin('/api/admin/experiment-settings',{id:'test-b',closed:true,includeInOverall:false});
   assert.equal((await a('/api/events?experiment=test-b',{type:'answer',productId:'boj',value:'yes'})).status,409);
   assert.equal((await a('/api/overall')).data.products[0].score,'5.0');

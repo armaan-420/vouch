@@ -1,5 +1,13 @@
 # Experiment management
 
+## Product photo galleries — November 12, 2026
+
+In Organizer → Experiments → Products, choose **Set photos**. Enter one to four public HTTPS image URLs, one per line; their order determines the carousel order and the first is the cover. Saving replaces the previous selection. Duplicate URLs are collapsed. Check that each photo shows the exact product and loads publicly. Existing bundled photos can be replaced with hosted HTTPS photos.
+
+Voting cards and public product pages show up to four available images, with previous/next buttons, an image count, left/right keyboard navigation and horizontal swipe support. There is no auto-rotation. Single-photo products have no carousel controls; failed photos show an unavailable message while navigation remains usable. Catalog galleries are used when available; organizer photo selections persist independently of provider availability. Existing single-photo records remain supported, and no additional photos are fabricated or added to production records automatically.
+
+Validation: 250 automated tests; local browser checks at phone and desktop sizes cover navigation, simulated swipes, organizer save, refreshed product details and failed-image recovery. Physical-device and screen-reader testing remain unverified.
+
 ## Current production — November 8, 2026, version 50
 
 Sites version 50 is deployed at [Vouch](https://v4ch.app), source `cd5ba45f12d0fa29da0df441209efa6a0d05fb33`, deployment `appgdep_6af00aae41948191a294a21a3d8708d0`, environment revision 6. It succeeded on November 8, 2026 at 12:37 AM America/New_York. This documentation update covers deployed versions 42–50 since version 41.

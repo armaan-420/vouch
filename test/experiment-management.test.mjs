@@ -6,6 +6,7 @@ import {createFileStore} from '../lib/file-store.mjs';
 import {createApplicationApi} from '../lib/application-api.mjs';
 import {initialRegistry} from '../lib/experiment-api.mjs';
 import {experimentPage} from '../lib/experiment-pages.mjs';
+import {initialAccounts} from '../lib/accounts.mjs';
 import {fresh} from '../lib/vouch-api.mjs';
 const product={id:'sku-management-a',brand:'Brand A',name:'Model A',image:'https://example.com/a.jpg'},second={id:'sku-management-b',brand:'Brand B',name:'Model B',image:'https://example.com/b.jpg'};
 async function setup(t){await fs.mkdir(path.resolve('.data'),{recursive:true});const dir=await fs.mkdtemp(path.resolve('.data/management-tests-'));t.after(()=>fs.rm(dir,{recursive:true,force:true}));const store=await createFileStore(dir),registry=await store.scope('experiment-registry',initialRegistry);await registry.transaction(d=>{d.experiments.edit={id:'edit',title:'Management test',category:'Bags',products:[product,second],includeInOverall:true,status:'live'};});const search={find:async id=>[product,second].find(p=>p.id===id)||null,search:async()=>({products:[product,second]}),lookupUrl:async url=>url==='https://example.com/product'?second:null};const api=createApplicationApi({store,search,authorizeAdmin:r=>r.headers.get('x-admin')==='yes',autoOptions:{development:true}});const req=async(route,data,admin=true)=>api(new Request('http://localhost'+route,{method:data?'POST':'GET',headers:{...(admin?{'x-admin':'yes'}:{}),...(data?{'Content-Type':'application/json'}:{})},...(data?{body:JSON.stringify(data)}:{})}));return {dir,store,registry,api,req};}
@@ -18,3 +19,18 @@ test('lifecycle writes require organizer access and same-origin JSON',async t=>{
 
 test('interrupted deletion remains offline and can be retried from its admin row',async t=>{const f=await setup(t),state=await f.store.scope('experiment:edit',fresh),destroy=state.destroy;state.destroy=async()=>{throw Error('simulated storage outage');};assert.equal((await f.req('/api/admin/experiment-lifecycle',{id:'edit',action:'delete',confirmation:'edit'})).status,500);assert.equal((await f.registry.read()).experiments.edit.deleting,true);assert.equal((await f.req('/api/experiment?experiment=edit',null,false)).status,404);assert.equal((await f.req('/api/admin/experiment-lifecycle',{id:'edit',action:'reactivate'})).status,409);state.destroy=destroy;assert.equal((await f.req('/api/admin/experiment-lifecycle',{id:'edit',action:'delete',confirmation:'edit'})).status,200);assert.equal((await f.registry.read()).experiments.edit,undefined);});
 test('new live products and reactivation require photos',async t=>{const f=await setup(t),extra={id:'sku-no-photo',brand:'No photo brand',name:'No photo product'};assert.equal((await f.req('/api/admin/experiment-products',{id:'edit',revision:0,action:'add',customProduct:extra})).status,400);await f.req('/api/admin/experiment-lifecycle',{id:'edit',action:'disable'});assert.equal((await f.req('/api/admin/experiment-products',{id:'edit',revision:0,action:'add',customProduct:extra})).status,200);assert.equal((await f.req('/api/admin/experiment-lifecycle',{id:'edit',action:'reactivate'})).status,409);});
+
+test('photo galleries persist in order across organizer, voting and product pages with current metadata',async t=>{
+ const f=await setup(t),urls=Array.from({length:4},(_,i)=>`https://example.com/photo-${i}.jpg`);
+ const accounts=await f.store.scope('accounts-v1',initialAccounts);
+ // The product page must use current lineup photos even when an older account snapshot exists.
+ await accounts.transaction(d=>{d.products??={};d.products['p:'+product.id]={...product,image:'https://example.com/old.jpg'};});
+ const change=urls=>f.req('/api/admin/experiment-products',{id:'edit',revision:0,action:'photo',productId:product.id,urls});
+ for(const invalid of [[],[...urls,urls[0]],['http://localhost/a'],['https://example.com/a','javascript:alert(1)'],'not an array'])assert.equal((await change(invalid)).status,400);
+ const saved=await change(urls);assert.equal(saved.status,200);assert.deepEqual((await saved.json()).products[0].images,urls);
+ assert.deepEqual((await f.registry.read()).experiments.edit.products[0].photoOverrides,urls);
+ const voting=await(await f.req('/api/experiment?experiment=edit',null,false)).json();assert.deepEqual(voting.experiment.products[0].images,urls);
+ const detail=await(await f.req('/api/products/'+product.id,null,false)).json();assert.deepEqual(detail.product.images,urls);assert.equal(detail.product.image,urls[0]);
+ assert.equal((await change(urls.slice(1))).status,409);
+ const single=await f.req('/api/admin/experiment-products',{id:'edit',revision:1,action:'photo',productId:product.id,url:urls[2]});assert.equal(single.status,200);assert.deepEqual((await single.json()).products[0].images,[urls[2]]);
+});

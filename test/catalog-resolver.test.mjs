@@ -74,3 +74,10 @@ test('cached photo reads resolve aliases and never fetch absent products or refr
  const rows=await resolver.hydrate([product,{...product,id:'c3-missing',providerId:'missing'},{...product,id:'shop-missing',provider:'shopify',providerId:'missing'}],{cachedOnly:true});
  assert.equal(rows[0].image,product.image);assert.equal(rows[1].image,null);assert.equal(rows[2].image,null);assert.equal(calls,0);
 });
+
+test('four organizer photos survive identity storage and provider outages',async()=>{
+ const {identity}=await import('../lib/catalog/normalize.mjs');
+ const photos=Array.from({length:4},(_,i)=>`https://example.com/photo-${i}.jpg`),r=createProductResolver({local,enabled:false});
+ const saved=identity({...product,photoOverride:photos[0],photoOverrides:photos,images:['https://example.com/temporary.jpg']});assert.equal(saved.images,undefined);
+ const [hydrated]=await r.hydrate([saved]);assert.deepEqual(hydrated.images,photos);assert.equal(hydrated.image,photos[0]);
+});

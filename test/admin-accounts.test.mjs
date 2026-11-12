@@ -89,3 +89,11 @@ test('disabling an unverified browser email also blocks email sign-in and verifi
  await admin('/api/admin/accounts',{id,action:'enable'});
  assert.equal((await person('/api/auth/start',{email:'member@example.test'})).status,200);
 });
+test('an unverified duplicate email profile cannot cause actions on the verified account',async()=>{
+ const f=fixture(),admin=f.client(true),person=f.client(),identity=await signin(f,person),verifiedKey=await profile(f,identity.id),db=await f.store.scope('accounts-v1',initialAccounts),duplicate=await accountKey('tester:duplicate');
+ await db.transaction(d=>{d.accounts[duplicate]={displayName:'Unverified duplicate',handle:'v-duplicate',email:'member@example.test',browserProfile:true,visibility:'public',opinions:{},history:[],milestones:[]};});
+ assert.equal((await admin('/api/admin/accounts')).data.accounts.length,2);
+ await admin('/api/admin/accounts',{id:duplicate,action:'delete',confirm:'member@example.test'});
+ assert.equal((await person('/api/auth/status')).data.identity.id,identity.id);
+ assert.equal((await admin('/api/admin/accounts')).data.accounts[0].id,verifiedKey);
+});

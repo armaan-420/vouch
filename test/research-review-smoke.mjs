@@ -25,7 +25,7 @@ try{
  await page.getByText('Record a source you have checked',{exact:true}).click();
  const form=page.locator('[data-evidence]');await form.locator('[name=channel]').selectOption('editorial');await form.locator('[name=productId]').selectOption(products[4].id);
  await form.locator('[name=url]').fill('https://example.com/review');await form.locator('[name=query]').fill('best backpacks');await form.locator('[name=note]').fill('Synthetic fixture: exact model checked.');await form.getByRole('checkbox').check();await form.getByRole('button',{name:'Save checked research'}).click();
- await page.getByRole('button',{name:'Approve Edit',exact:true}).waitFor();await page.waitForFunction(()=>!document.querySelector('[data-action=approve]').disabled);
+ await page.getByRole('button',{name:'Approve Edit',exact:true}).waitFor();await page.waitForFunction(()=>/5\s*\/ 5 products sourced/.test(document.querySelector('.review-progress').innerText));
  assert.match(await page.locator('.review-progress').innerText(),/5\s*\/ 5 products sourced/);
  await fs.mkdir('outputs',{recursive:true});await page.screenshot({path:'outputs/research-review-desktop.png',fullPage:true});
  await page.setViewportSize({width:390,height:844});await page.screenshot({path:'outputs/research-review-mobile.png',fullPage:true});

@@ -173,3 +173,7 @@ Sites version 18 is live at https://v4ch.app/sunscreen, application source `964e
 
 ### Community listings (November 5, 2026)
 Qualified community nominations appear alongside the original lineup in score order, with matching rank, image, product name and score layout. A small Community Nominated chip sits beside the brand; direct voting remains available in one left-aligned row, including a compact outlined “I haven’t tried this” button. Voting buttons retain at least 44px touch targets. The overall board includes qualified nominations from organizer-included collections; reviewed name-only products remain separate per collection when no shared SKU exists.
+
+## Homepage preview
+
+`/homepage` serves the editorial homepage preview, with isolated assets under `/homepage-assets/`. The main `/` route retains the current landing page. Scores and recommendations in the preview are illustrative; perks and expertise remain future concepts. When approved, this page can be promoted to the root route separately.

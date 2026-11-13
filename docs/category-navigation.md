@@ -1,6 +1,6 @@
 # Explore categories
 
-Implemented November 13, 2026. Participants can move from a category board into another open experiment. The board has an Explore categories link and a What else have you tried? section after the rankings, before suggestions and nominations. It shows up to three other categories and links to `/categories` for the full list.
+Implemented November 13, 2026. Participants can move from a category board into another open experiment. The board has a What else have you tried? section after the rankings, before suggestions and nominations. The redundant Explore categories link beneath the board title was removed on November 13 at Armaan’s request. It shows up to three other categories and links to `/categories` for the full list.
 
 The directory and cards use `GET /api/categories`, which returns only minimal public lineup metadata for experiments currently open for voting. Draft, disabled, deleting, upcoming and ended/closed experiments are excluded. No participant records, progress, identity or organizer research are returned. The list is alphabetical and reflects organizer-created experiments rather than inferred personal eligibility.
 

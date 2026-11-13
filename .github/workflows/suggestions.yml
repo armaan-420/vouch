@@ -11,7 +11,7 @@ concurrency:
 jobs:
   process:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
       - name: Advance saved research and deliver review notifications
         env:
@@ -22,7 +22,7 @@ jobs:
           secret = os.environ['RUNNER_SECRET']
           if not secret:
               raise SystemExit('Runner secret is missing')
-          deadline = time.monotonic() + 210
+          deadline = time.monotonic() + 1050
           failures = 0
           while time.monotonic() < deadline:
               request = urllib.request.Request('https://v4ch.app/api/internal/suggestions/run', data=b'{}', headers={'Authorization': 'Bearer ' + secret, 'Content-Type': 'application/json', 'User-Agent': 'Vouch-Background-Runner/1.0'})

@@ -81,10 +81,10 @@ test('every product needs a photo; research and photos remain private',async t=>
  const publicData=await(await s.api(req('/api/experiment?experiment='+j.draft.id,null,false))).json();
  assert.equal(publicData.experiment.products.every(p=>p.image),true);assert.doesNotMatch(JSON.stringify(publicData),/sourceUrls|researchNotes|verifiedBy|consultedUrls/);
 });
-test('legacy research and unverified channels cannot pass the research gate',async t=>{
+test('legacy research gaps are advisory and checked sources can still be recorded',async t=>{
  const s=await setup(t);await s.submit('backpacks');const j=await s.build();await attachPhotos(s,j);
  const jobs=await s.store.scope('suggestion-jobs',()=>({jobs:{}}));await jobs.transaction(d=>{delete d.jobs[j.key].research.evidence;for(const p of d.jobs[j.key].research.picks)delete p.verifiedSourceUrls;});
- assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,409);
+ assert.equal((await s.listing())[0].readiness.coverage.complete,false);assert.equal((await s.listing())[0].readiness.canApprove,true);
  for(const p of fakeResearch('backpacks').picks){const evidence={channel:'editorial',brand:p.brand,productName:p.productName,url:'https://example.com/review',searchUrl:null,query:'best backpacks',rank:null,note:'Checked exact product recommendation.'};assert.equal((await s.auto.handle(req('/api/admin/suggestions/evidence',{key:j.key,evidence}))).status,200);}
  assert.equal((await s.listing())[0].readiness.canApprove,true);
  assert.equal((await s.auto.handle(req('/api/admin/suggestions/evidence',{key:j.key,evidence:{...fakeResearch('backpacks').evidence[0],productName:'Another product'}}))).status,400);
@@ -115,7 +115,7 @@ test('manual draft additions remain visible and need their own photos before app
  const s=await setup(t);await s.submit('backpacks');const j=await s.build(),manual={id:'sku-manual-fixture',brand:'Manual brand',name:'Manual product',url:'https://example.com/product'};
  const save=products=>s.auto.handle(req('/api/admin/suggestions/edit',{key:j.key,id:j.draft.id,title:j.draft.title,category:j.draft.category,productIds:[],customProducts:products}));
  const original=j.draft.products.map(p=>({...p,image:'https://example.com/photo.jpg'}));assert.equal((await save([...original,manual])).status,200);assert.equal((await s.listing())[0].draft.products.length,11);assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,409);
- assert.equal((await save([...original,{...manual,image:'https://example.com/manual.jpg'}])).status,200);assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,409);await s.auto.handle(req('/api/admin/suggestions/evidence',{key:j.key,evidence:{channel:'manufacturer',brand:manual.brand,productName:manual.name,url:manual.url,searchUrl:null,query:'manual product',rank:null,note:'Checked exact product.'}}));assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,200);
+ assert.equal((await save([...original,{...manual,image:'https://example.com/manual.jpg'}])).status,200);assert.equal((await s.listing())[0].readiness.canApprove,true);await s.auto.handle(req('/api/admin/suggestions/evidence',{key:j.key,evidence:{channel:'manufacturer',brand:manual.brand,productName:manual.name,url:manual.url,searchUrl:null,query:'manual product',rank:null,note:'Checked exact product.'}}));assert.equal((await s.auto.handle(req('/api/admin/suggestions/approve',{key:j.key}))).status,200);
 });
 
 test('research diagnostics identify incomplete and invalid output without leaking provider error payloads',async()=>{

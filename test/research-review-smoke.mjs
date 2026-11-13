@@ -18,10 +18,10 @@ try{
  browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));await page.route('https://example.com/**',route=>route.fulfill({status:200,contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#ddd"/></svg>'}));
  await page.goto(origin+'/admin#suggestions-panel/backpack');await page.getByRole('heading',{name:'Backpacks',exact:true}).waitFor();
- assert.equal(await page.getByRole('button',{name:'Approve Edit',exact:true}).isDisabled(),true);
+ assert.equal(await page.getByRole('button',{name:'Approve Edit',exact:true}).isDisabled(),false);
  assert.match(await page.locator('.review-progress').innerText(),/4\s*\/ 5 products sourced/);
  await page.getByRole('tab',{name:'Research & sources',exact:true}).click();
- assert.match(await page.locator('#review-pane-research').innerText(),/Named channels are optional/);
+ assert.match(await page.locator('#review-pane-research').innerText(),/Source gaps are advisory/);
  await page.getByText('Record a source you have checked',{exact:true}).click();
  const form=page.locator('[data-evidence]');await form.locator('[name=channel]').selectOption('editorial');await form.locator('[name=productId]').selectOption(products[4].id);
  await form.locator('[name=url]').fill('https://example.com/review');await form.locator('[name=query]').fill('best backpacks');await form.locator('[name=note]').fill('Synthetic fixture: exact model checked.');await form.getByRole('checkbox').check();await form.getByRole('button',{name:'Save checked research'}).click();
@@ -30,5 +30,5 @@ try{
  await fs.mkdir('outputs',{recursive:true});await page.screenshot({path:'outputs/research-review-desktop.png',fullPage:true});
  await page.setViewportSize({width:390,height:844});await page.screenshot({path:'outputs/research-review-mobile.png',fullPage:true});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);assert.deepEqual(errors,[]);
- console.log('Browser review passed: five products, per-product source gap, checked editorial source, optional channels, desktop and mobile.');
+ console.log('Browser review passed: five products, advisory product-source gap, checked editorial source, source-gap approval, desktop and mobile.');
 }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));await fs.rm(directory,{recursive:true,force:true});}

@@ -1,5 +1,10 @@
 ## Current production — November 8, 2026, version 50
 
+## Interactive research policy — November 13, 2026
+
+The new source-task workspace and advisory-only source checks supersede the source-gating descriptions below. Missing source coverage never fails a draft or blocks approval. Five distinct brands, every photo, and explicit organizer approval remain required for publication. See [Interactive category research](interactive-category-research.md) for source progress, independent content checks, targeted retries, scope changes, candidate controls, metrics and unattended maintenance. Historical deployment and validation notes below are retained as dated evidence.
+
+
 Sites version 50 is deployed at [Vouch](https://v4ch.app), source `cd5ba45f12d0fa29da0df441209efa6a0d05fb33`, deployment `appgdep_6af00aae41948191a294a21a3d8708d0`, environment revision 6. It succeeded on November 8, 2026 at 12:37 AM America/New_York. This documentation update covers deployed versions 42–50 since version 41.
 
 All 188 automated tests and a fresh production build pass. Read-only production GET checks return 200 for the root, sunscreen, water bottles, admin login and health; anonymous inventory, suggestions and feedback return 401. Eight current admin assets exactly match source. No production records were changed during this documentation update. Lint was not rerun; version 41 recorded four errors and nine warnings, so this update makes no clean-lint claim.

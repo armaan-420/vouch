@@ -7,6 +7,8 @@ declare namespace Cloudflare {
     EXPERIMENT_AUTO_BUILD?: string;
     SUGGESTION_NOTIFY_EMAIL?: string;
     SUGGESTION_ADMIN_URL?: string;
+    SUGGESTION_RUNNER_SECRET?: string;
+    SERPAPI_API_KEY?: string;
     CHANNEL3_API_KEY?: string;
     SHOPIFY_CATALOG_CLIENT_ID?: string;
     SHOPIFY_CATALOG_CLIENT_SECRET?: string;

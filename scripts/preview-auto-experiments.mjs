@@ -6,6 +6,6 @@ import {WATER_BOTTLES} from '../lib/water-bottles.mjs';
 const directory=path.resolve('.data/auto-experiments-preview');
 const store=await createFileStore(directory),registry=await store.scope('experiment-registry',initialRegistry);
 await registry.transaction(d=>{d.experiments.waterbottle??={id:'waterbottle',title:'The Wharton Water Bottle Edit',category:'Water bottles',products:WATER_BOTTLES,closed:false,includeInOverall:false,startsAt:null,endsAt:null,createdAt:new Date().toISOString()};});
-const server=await createVouchServer({directory,autoOptions:{env:{...process.env,CATALOG_LIVE_PROVIDERS:'',EXPERIMENT_RESEARCH_PROVIDER:'fake',EXPERIMENT_AUTO_BUILD:'on',SUGGESTION_NOTIFY_EMAIL:'local-preview@example.com'}}});
+const server=await createVouchServer({directory,autoOptions:{env:{...process.env,CATALOG_LIVE_PROVIDERS:'',EXPERIMENT_RESEARCH_PROVIDER:'fake',EXPERIMENT_RESEARCH_WORKSPACE:'on',EXPERIMENT_AUTO_BUILD:'on',SUGGESTION_NOTIFY_EMAIL:'local-preview@example.com'}}});
 const port=Number(process.env.PORT||4188);
 server.listen(port,'127.0.0.1',()=>console.log(`Local fixture preview: http://127.0.0.1:${port}\nOrganizer: http://127.0.0.1:${port}/admin#suggestions-panel\nData is isolated in .data/auto-experiments-preview. No research calls or email are sent.`));

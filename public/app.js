@@ -123,16 +123,8 @@ function flowProgress(){const total=products.length,current=Math.min(index+1,tot
 function nominationCard(){app.innerHTML=`<section class="game nomination-step">${flowProgress()}${nominationView({inFlow:true})}<div class="nomination-actions"><button class="primary nomination-continue" id="nomination-continue" type="submit" form="nomination-form">See the board →</button></div></section>`;mountNomination();watchEnd();const announcement=document.getElementById('voting-announcement');if(announcement)announcement.textContent=`All ${products.length} products answered. Nominations are optional.`;}
 
 function attribution(){
- app.innerHTML=`<section class="attribution-step"><p class="eyebrow">YOUR PICKS, YOUR NAME</p><h1>Who’s behind<br>these vouches?</h1><p class="attribution-intro">Add your name to get credit for the products you recommend.</p><form id="attribution-form" autocomplete="on" method="post"><label for="tester-name">Name</label><input id="tester-name" name="name" type="text" autocomplete="name" autocapitalize="words" minlength="2" maxlength="60" required><label for="tester-email">Email</label><input id="tester-email" name="email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" maxlength="254" required><p class="attribution-privacy">Your name appears with your vouches. Change this anytime in your profile.</p><p class="attribution-error" role="alert" hidden></p><button class="primary" type="submit">See the rankings →</button><button class="text-button" type="button" data-skip-attribution>Skip for now</button></form></section>`;
- const form=app.querySelector('form'),button=form.querySelector('[type=submit]'),skip=form.querySelector('[data-skip-attribution]');
- skip.onclick=()=>{state.attributionDismissed=true;save();go('board')};
- form.onsubmit=async event=>{
-  event.preventDefault();button.disabled=true;skip.disabled=true;button.textContent='Saving…';const error=form.querySelector('[role=alert]');error.hidden=true;
-  try{
-   const fields=new FormData(form),result=await api('/api/account/participate',{displayName:String(fields.get('name')).trim(),email:String(fields.get('email')).trim()});
-   accountProfile=result.profile;accountSignedIn=true;accountStatusKnown=true;profileSyncState='saved';state.attributionDismissed=true;save();form.reset();go('board');
-  }catch(err){error.hidden=false;error.textContent=err.message;button.disabled=false;skip.disabled=false;button.textContent='See the rankings →';}
- };
+ app.innerHTML=`<section class="attribution-step"><p class="eyebrow">YOUR PICKS, YOUR NAME</p><h1>Make these<br>vouches yours.</h1><p class="attribution-intro">Save your picks with an email code. No password needed. You’ll add your name after verifying your email.</p><a class="primary" href="/account?experiment=${encodeURIComponent(experimentId)}">Continue with email</a><button class="text-button" type="button" data-skip-attribution>See the rankings for now</button><p class="attribution-privacy">Your responses are already saved. Creating an account is optional.</p></section>`;
+ app.querySelector('[data-skip-attribution]').onclick=()=>{state.attributionDismissed=true;save();go('board')};
 }
 
 function personalOpinions(){return [...products.map(p=>({...p,myVote:state.votes[p.id]})),...communityProducts].filter(p=>['yes','no','brand'].includes(p.myVote))}

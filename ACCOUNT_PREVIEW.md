@@ -1,5 +1,10 @@
 # Vouch accounts and product profiles — implementation and verification
 
+## Email-first workflow — November 13, 2026
+
+New and returning members now share email → six-digit code. New members add their name after verification, keep the item-vouches preview, and save directly to their profile. The pre-rankings account prompt links to this same flow; rankings remain accessible without creating an account. Existing browser profiles can verify their email from their profile without losing their collection. The organizer People view includes a verified Wharton email count and filter, separate from the historical early tester badge. Codes support paste/autofill, automatic submission, refresh recovery, resend cooldown and change-email recovery. Earlier entries below describe historical behavior and are superseded by this update. See AUTH_SETUP.md for configuration and verification limits.
+
+
 ## Simple account creation — November 11, 2026
 
 The account creation page now uses the same short, autofill-enabled Name and Email form as experiment attribution. Both fields are required unless the participant selects Skip for now. The page keeps an item-vouches preview (passes, brand-only trust and Haven’t tried do not appear as item vouches) alongside the form on desktop and below it on mobile. Submit saves the profile and the current experiment’s previewed responses in one step and opens the profile without a second review/visibility checklist or immediate email code. It supports partial experiments and an empty collection. Names are public for new item vouches, email remains private, and Wharton recognition appears after saving rather than in signup copy. Existing visibility choices are preserved.

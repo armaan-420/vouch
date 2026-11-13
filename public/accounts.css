@@ -140,3 +140,6 @@
 .item-navigation+.item-detail{margin-top:0}
 @media(max-width:600px){.account-shell:has(.item-detail){padding-top:10px}.item-navigation{gap:12px;margin-bottom:8px}.item-nav-category{padding-left:12px;font-size:9px}}
 @media(prefers-reduced-motion:reduce){.item-back-icon{transition:none}}
+
+/* Email-first authentication: generous mobile targets and a paste-friendly code. */
+.auth-recovery{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-top:16px}.auth-recovery button{min-height:44px}.signup-main #account-code{font-size:28px;letter-spacing:.3em;font-variant-numeric:tabular-nums}.signup-main #account-code[aria-invalid=true]{border-color:#a62d24}.account-auth strong{overflow-wrap:anywhere}.auth-recovery button:disabled{opacity:.6;cursor:default}

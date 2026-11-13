@@ -72,3 +72,11 @@ Production version 18 deployed successfully with environment revision 3. Post-re
 ## November 3 code optimization
 
 Session validity is checked from storage on each request. Repeated checks within one request share a result; activity timestamps are written at most once per minute (or one quarter of a shorter configured idle lifetime). Idle expiration can therefore occur up to one minute earlier than the last request; absolute lifetime and logout revocation remain enforced.
+
+## Email-first account entry — November 13, 2026
+
+`/account` and `/account?signin=1` now share one email-code flow for new and returning members. New members verify their email before entering a display name and saving the previewed collection; returning verified members recover their profile. The code screen supports paste, one-time-code autofill, automatic submission at six digits, separate resend/change-email controls, a server-backed 60-second resend cooldown and ten-minute expiry. The pending attempt survives refresh in tab session storage; local preview codes do not persist. Existing browser profiles remain accessible and offer a verification prompt; their existing recovery/migration safeguards remain in place. Legacy participation APIs are retained for compatibility.
+
+The private owner profile and organizer People API expose `whartonEmailVerified`, derived from verified email ownership and the exact `@wharton.upenn.edu` domain. People includes a verified-Wharton count/filter. The historical Wharton early tester badge remains separate and is not proof of current enrollment, degree, or other demographics. Public profile responses omit email and verification evidence.
+
+Phone sign-in is deferred in the Notion future enhancements list. Email remains primary, and non-Wharton emails are accepted. Production delivery configuration exists; actual receipt in a Wharton inbox is not established by local tests or the auth availability endpoint.

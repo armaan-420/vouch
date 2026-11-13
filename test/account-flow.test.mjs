@@ -84,3 +84,24 @@ test('previously missed water bottle picks can be reviewed and recovered without
  const after=(await admin('/api/admin/export?experiment=waterbottle')).data.data;assert.deepEqual(after,before);
  assert.equal((await a('/api/account/me')).data.profile.counts.yes,9);
 });
+
+test('email-first signup verifies Wharton cohort, preserves picks and keeps email evidence private',async t=>{
+ const {browser,advanceAuth}=await fixture(t),a=browser(),observer=browser(),admin=browser();
+ await a('/api/events',{type:'answer',productId:'boj',value:'yes'});
+ const before=(await admin('/api/admin/export')).data.data;
+ await signin(a,'cohort@wharton.upenn.edu');
+ const edit=(await a('/api/account/edit')).data;
+ const signup=await a('/api/account/signup',{displayName:'Verified Member',email:'cohort@wharton.upenn.edu',claimToken:edit.claimToken});
+ assert.equal(signup.status,200);const p=signup.data.profile;
+ assert.equal(p.emailVerified,true);assert.equal(p.whartonEmailVerified,true);assert.equal(p.counts.yes,1);
+ const people=(await admin('/api/admin/accounts')).data.accounts;
+ assert.equal(people.find(row=>row.email==='cohort@wharton.upenn.edu').whartonEmailVerified,true);
+ const publicProfile=(await observer('/api/profiles/'+p.handle)).data.profile;
+ assert.equal(publicProfile.email,undefined);assert.equal(publicProfile.emailVerified,undefined);assert.equal(publicProfile.whartonEmailVerified,undefined);
+ assert.deepEqual((await admin('/api/admin/export')).data.data,before,'signup does not recast votes');
+ advanceAuth();const returning=browser();await signin(returning,'cohort@wharton.upenn.edu');
+ assert.equal((await returning('/api/account/me')).data.profile.handle,p.handle);
+ await signin(observer,'outsider@wharton.upenn.edu.example.test');
+ const rows=(await admin('/api/admin/accounts')).data.accounts;
+ assert.equal(rows.find(row=>row.email==='outsider@wharton.upenn.edu.example.test').whartonEmailVerified,false);
+});

@@ -1,5 +1,10 @@
 # Experiment attribution and early tester recognition
 
+## Email-first workflow — November 13, 2026
+
+New and returning members now share email → six-digit code. New members add their name after verification, keep the item-vouches preview, and save directly to their profile. The pre-rankings account prompt links to this same flow; rankings remain accessible without creating an account. Existing browser profiles can verify their email from their profile without losing their collection. The organizer People view includes a verified Wharton email count and filter, separate from the historical early tester badge. Codes support paste/autofill, automatic submission, refresh recovery, resend cooldown and change-email recovery. Earlier entries below describe historical behavior and are superseded by this update. See AUTH_SETUP.md for configuration and verification limits.
+
+
 ## Simple account creation
 
 `/account` now has a Name/Email form with native autofill, required fields, Skip, and a preview of item vouches. Desktop uses two columns; mobile stacks the preview below the form. Submit uses `/api/account/signup` to save the previewed current-experiment responses and open the profile directly. No code or additional publication checklist interrupts new account creation. An empty or partial collection is supported. Preview tokens bind the browser, experiment and exact response snapshot, so stale/foreign previews cannot be claimed. Existing privacy, email storage and badge rules apply.

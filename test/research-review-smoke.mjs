@@ -8,7 +8,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
 const directory=path.resolve('.data/research-review-smoke-'+Date.now());
 const research=fakeResearch('backpacks');research.picks=research.picks.slice(0,5);research.evidence=[];delete research.picks[4].verifiedSourceUrls;
 const products=research.picks.map((p,i)=>({id:'c3-review-'+i,provider:'channel3',providerId:'review-'+i,brand:p.brand,name:p.productName,image:'https://example.com/photo.jpg'}));
-const server=await createVouchServer({directory,productSearch:{search:async()=>({products}),find:async id=>products.find(p=>p.id===id),refresh:async()=>{}},autoOptions:{env:{EXPERIMENT_AUTO_BUILD:'on'},research:{fake:true,start:async()=>({result:research})}}});
+const server=await createVouchServer({directory,productSearch:{search:async()=>({products}),find:async id=>products.find(p=>p.id===id),findCached:async id=>products.find(p=>p.id===id),refresh:async()=>{}},autoOptions:{env:{EXPERIMENT_AUTO_BUILD:'on'},research:{fake:true,start:async()=>({result:research})}}});
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const origin='http://127.0.0.1:'+server.address().port;
 const post=async(route,body)=>{const response=await fetch(origin+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});assert.equal(response.ok,true);return response.json();};

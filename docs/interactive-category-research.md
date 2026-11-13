@@ -43,3 +43,11 @@ The Site exposes two organizer-only MCP maintenance tools, `vouch_research_statu
 ## Validation
 
 Automated coverage includes missing-source approval, partial lineups, explicit attempts for each source, provider retries with the same idempotency key, saved response handling, source-only repairs, preservation of organizer edits/photos, pins/exclusions, pause/resume, exact-model checks, provenance-only/TikTok-only support limits, optional Google capture and maintenance authorization. `test/research-workspace-smoke.mjs` exercises the local organizer at desktop and phone widths with labeled fixtures. Live provider and real-category quality measurement must be reported separately from these checks.
+
+## Deployment and operational verification — November 13, 2026
+
+Sites version 84 deployed successfully from `4bcf1cb8063804d37c9b133b57120eeff11f109a`, environment revision 7. GitHub main was synchronized. All 270 tests, the production build, lint for changed research files and two synthetic desktop/phone research-review browser checks pass. Public research JavaScript/CSS match the deployed source; unauthenticated organizer suggestions and metrics return 401. The platform MCP URL returns 401 without platform authentication; the custom domain does not expose that MCP route.
+
+The hourly Sites cloud recovery schedule is enabled. Sites rejected a five-minute cloud task because its minimum interval is hourly; GitHub's existing five-minute cron remains the fallback's configured cadence, without a timing guarantee. First execution of the hourly task and authenticated MCP tool invocation remain unverified: the private plugin is installed but its new tools were not exposed in the authoring chat. Existing saved jobs remain executable through the configured runner and organizer page.
+
+`SERPAPI_API_KEY` is not configured, so actual Google positions are unavailable and explicitly flagged. Wirecutter/TikTok retrieval depends on source accessibility. The revised API-backed source tasks and real category accuracy were not benchmarked live in this pass; the existing production API key is masked by the environment manager and was not copied or exposed. No new production category was created or approved for verification.

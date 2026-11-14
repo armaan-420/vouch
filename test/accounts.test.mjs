@@ -219,3 +219,14 @@ test('history scores resolve community additions by stable SKU instead of a base
  f.states.first.nominations=[browser,otherBrowser].map(visitorId=>({key,name:'Community item',visitorId,createdAt:when,product}));f.states.first.reviews[key]={canonicalKey:key,canonicalName:'Community item',product};f.states.first.communityVotes[communityId]={[browser]:'yes',[otherBrowser]:'yes'};
  const preview=await f.preview();assert.ok(preview.opinions.some(o=>o.productId==='sku-community'));const result=await f.claim(preview,'alice',[{productId:'sku-community'}]);assert.equal(result.status,200);assert.equal(result.data.profile.opinions[0].score,'8.3');
 });
+
+test('starter product purchase URLs backfill older metadata and preserve explicit merchant links',async t=>{
+ const f=await setup(t);
+ const ids=['boj','eltamd','skin1004','supergoop','roundlab','medicube','mixsoon','innisfree'];
+ const registry=await f.store.scope('experiment-registry',()=>({experiments:{},skus:{}}));
+ await registry.transaction(d=>{d.experiments={sunscreen:{id:'sunscreen',category:'Sunscreen',products:ids.map(id=>({id,name:id,brand:id}))}}});
+ for(const id of ids){const result=await f.call('/api/products/'+id);assert.equal(result.status,200);assert.match(result.data.product.url,/^https:\/\//);assert.notEqual(new URL(result.data.product.url).pathname,'/');}
+ await registry.transaction(d=>{d.experiments.sunscreen.products[0].url='https://shop.example.com/alternate-relief-sun'});
+ assert.equal((await f.call('/api/products/boj')).data.product.url,'https://shop.example.com/alternate-relief-sun');
+ assert.equal((await f.call('/api/products/not-a-product')).status,404);
+});

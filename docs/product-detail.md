@@ -19,3 +19,9 @@ Validation: 253 automated tests and production build passed. Local browser check
 ## Compact navigation
 
 The product page uses a scoped navigation row directly below the shared header: a forest-green Board/home link with a circular arrow and a quiet category breadcrumb. Product-shell top padding is 12px on desktop and 10px on phones, followed by a 44px link target and an 8px gap before the image. Desktop header-to-image spacing is reduced from 124px to 64px. Account/profile navigation and the shared header remain independent.
+
+## Purchase-link coverage — November 14, 2026
+
+The eight starter sunscreens now include exact manufacturer or retailer purchase URLs from the checked-in catalog. Product API responses also supply those destinations for older saved experiment metadata that predates shopping links. Explicit product URLs take precedence; provider-backed products continue through catalog hydration. The existing Buy now action opens the merchant in a new tab without changing the voting state. Pricing and stock are determined by the merchant. Products without an identified merchant destination still do not get an invented purchase link.
+
+Beauty of Joseon’s original manufacturer URL redirects to its home page from the US, so Relief Sun uses the matching [YesStyle product listing](https://www.yesstyle.com/en/beauty-of-joseon-relief-sun-rice-probiotics-50ml/info.html/pid.1137908658), checked November 14. No price or stock promise is shown.

@@ -328,3 +328,13 @@ html.nomination-search-open,html.nomination-search-open body{overflow:hidden;ove
 .product-page-gallery .gallery-image{width:100%;height:100%;mix-blend-mode:multiply}
 .product-gallery:focus-visible{outline:3px solid #828e31;outline-offset:3px}
 @media(max-width:600px){.account-product-hero:has(.product-page-gallery){flex-direction:column;align-items:stretch}.product-page-gallery{width:100%;height:280px;flex-basis:auto}}
+
+/* Explicit verdict labels with compact, aligned supporting text. */
+.vote-actions button{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;min-width:0}
+.vote-actions button>span{display:flex;align-items:center;justify-content:center;min-height:2.7em;white-space:normal;text-wrap:balance}
+.vote-actions button small{width:100%;font-size:10px;line-height:1.35;min-height:2.7em;text-wrap:balance}
+.collection-flow[data-screen="rating"] .vote-actions button small{font-size:10px;line-height:1.35;letter-spacing:0}
+.verdict-chip dt{flex-wrap:wrap;text-wrap:balance;line-height:1.3}
+.verdict-chip dt>span{font-size:15px}
+.community-row .community-actions{flex-wrap:wrap}
+@media(max-width:359px){.collection-flow[data-screen="rating"] .vote-actions button small{font-size:9px}}

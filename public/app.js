@@ -64,7 +64,7 @@ function updateHeader(){
  const profileName=accountProfile?.displayName||'Vouch member';
  const photo=accountProfile?.photo;
  const safePhoto=typeof photo==='string'&&photo.startsWith('/api/account/photos/');
- const headerContent=voting?'The Board':accountSignedIn?(safePhoto?'<img src="'+esc(photo)+'" alt="">':'<span aria-hidden="true">'+esc(profileName.trim().charAt(0).toUpperCase()||'V')+'</span>'):'Sign in';
+ const headerContent=voting?'The Board':accountProfile?.verificationRequired?'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg>':accountSignedIn?(safePhoto?'<img src="'+esc(photo)+'" alt="">':'<span aria-hidden="true">'+esc(profileName.trim().charAt(0).toUpperCase()||'V')+'</span>'):'Sign in';
  if(button.innerHTML!==headerContent)button.innerHTML=headerContent;
  button.setAttribute('aria-label',voting?'The Board':accountSignedIn?'My profile':'Sign in');
  const footerLink=document.getElementById('landing-standings');
@@ -124,18 +124,16 @@ function flowProgress(){const total=products.length,current=Math.min(index+1,tot
 function nominationCard(){app.innerHTML=`<section class="game nomination-step">${flowProgress()}${nominationView({inFlow:true})}<div class="nomination-actions"><button class="primary nomination-continue" id="nomination-continue" type="submit" form="nomination-form">See the board →</button></div></section>`;mountNomination();watchEnd();const announcement=document.getElementById('voting-announcement');if(announcement)announcement.textContent=`All ${products.length} products answered. Nominations are optional.`;}
 
 function attribution(){
- app.innerHTML=`<section class="attribution-step"><p class="eyebrow">YOUR PICKS, YOUR NAME</p><h1>Make these<br>vouches yours.</h1><p class="attribution-intro">Save your picks with an email code. No password needed. You’ll add your name after verifying your email.</p><form id="attribution-email-form" autocomplete="on"><label for="attribution-email">Email address</label><input id="attribution-email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" maxlength="254" required aria-describedby="attribution-email-help"><p id="attribution-email-help" class="attribution-help">At Wharton? Use your @wharton.upenn.edu email. Your email stays private.</p><button class="primary" type="submit">Send me a code</button><p class="attribution-error" role="alert" data-email-error hidden></p></form><button class="attribution-rankings" type="button" data-skip-attribution>See the rankings</button><p class="attribution-privacy">Your responses are already saved. Creating an account is optional.</p></section>`;
+ app.innerHTML=`<section class="attribution-step"><p class="eyebrow">YOUR PICKS, YOUR NAME</p><h1>Make these<br>vouches yours.</h1><p class="attribution-intro">Save your picks with your email, then see the rankings. You can verify your account later to open your profile and history.</p><form id="attribution-email-form" autocomplete="on"><label for="attribution-email">Email address</label><input id="attribution-email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" maxlength="254" required aria-describedby="attribution-email-help"><p id="attribution-email-help" class="attribution-help">At Wharton? Use your @wharton.upenn.edu email. Your email stays private.</p><button class="primary" type="submit">Save and see rankings</button><p class="attribution-error" role="alert" data-email-error hidden></p></form><button class="attribution-rankings" type="button" data-skip-attribution>See the rankings</button><p class="attribution-privacy">Your responses are already saved. Creating an account is optional.</p></section>`;
  app.querySelector('#attribution-email-form').onsubmit=async event=>{
   event.preventDefault();const form=event.target,button=form.querySelector('[type=submit]'),errorMessage=form.querySelector('[data-email-error]');
   if(button.disabled)return;
-  button.disabled=true;button.textContent='Sending code…';errorMessage.hidden=true;
+  button.disabled=true;button.textContent='Saving…';errorMessage.hidden=true;
   try{
-   // Use the same challenge handoff as the account page; keep email out of the URL.
-   sessionStorage.setItem('vouch-email-handoff','1');sessionStorage.removeItem('vouch-email-handoff');
-   const email=form.elements.email.value.trim(),result=await api('/api/auth/start',{email});
-   sessionStorage.setItem('vouch-email-attempt',JSON.stringify({id:result.challengeId,email:email.toLowerCase(),resendAt:Date.now()+(result.resendAfter||60)*1000,expiresAt:Date.now()+result.expiresIn*1000}));
-   location.assign('/account?experiment='+encodeURIComponent(experimentId));
-  }catch(error){button.disabled=false;button.textContent='Send me a code';errorMessage.textContent=error.message;errorMessage.hidden=false;}
+   await api('/api/account/save-email',{email:form.elements.email.value.trim()});
+   try{sessionStorage.removeItem('vouch-email-attempt')}catch{}
+   await refreshAccountStatus();state.attributionDismissed=true;save();await go('board');
+  }catch(error){button.disabled=false;button.textContent='Save and see rankings';errorMessage.textContent=error.message;errorMessage.hidden=false;}
  };
  app.querySelector('[data-skip-attribution]').onclick=()=>{state.attributionDismissed=true;save();go('board')};
 }

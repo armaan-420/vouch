@@ -105,3 +105,31 @@ test('email-first signup verifies Wharton cohort, preserves picks and keeps emai
  const rows=(await admin('/api/admin/accounts')).data.accounts;
  assert.equal(rows.find(row=>row.email==='outsider@wharton.upenn.edu.example.test').whartonEmailVerified,false);
 });
+
+
+test('email-only save keeps a provisional account private until name and inbox verification, preserving picks',async t=>{
+ const {browser,advanceAuth}=await fixture(t),a=browser(),observer=browser();
+ const products=(await a('/api/experiment')).data.experiment.products;
+ assert.equal((await a('/api/account/save-email',{email:'pending@example.test'})).status,409,'completion required');
+ for(const p of products)await a('/api/events',{type:'answer',productId:p.id,value:'yes'});
+ const saved=await a('/api/account/save-email',{email:'pending@example.test'});assert.equal(saved.status,200,JSON.stringify(saved.data));
+ const pending=(await a('/api/account/me')).data;
+ assert.equal(pending.authenticated,true);assert.equal(pending.profile.emailVerified,false);assert.equal(pending.profile.verificationRequired,true);assert.equal(pending.profile.opinions,undefined);
+ assert.equal((await a('/api/auth/status')).data.identity,null,'saving an email does not authenticate the inbox');
+ assert.equal((await observer('/api/profiles/'+pending.profile.handle)).status,404);
+ assert.equal((await a('/api/account/profile',{visibility:'public'})).status,403,'cannot bypass verification by publishing');
+ assert.equal((await a('/api/account/signup',{displayName:'Bypass',email:'pending@example.test'})).status,403);
+ assert.equal((await a('/api/account/prepare-verification',{displayName:'P'})).status,400);
+ const prepared=await a('/api/account/prepare-verification',{displayName:'Pending Member',email:'different@example.test'});
+ assert.equal(prepared.data.email,'pending@example.test','uses email on file');
+ await signin(a,prepared.data.email);
+ const verified=(await a('/api/account/me')).data.profile;
+ assert.equal(verified.handle,pending.profile.handle);assert.equal(verified.displayName,'Pending Member');assert.equal(verified.emailVerified,true);assert.equal(verified.verificationRequired,undefined);assert.equal(verified.opinions.length,products.length);assert.equal(verified.visibility,'public');
+ assert.equal((await observer('/api/profiles/'+verified.handle)).status,200,'named attribution starts after verification');
+ advanceAuth();const fresh=browser();await signin(fresh,'pending@example.test');assert.equal((await fresh('/api/account/me')).data.profile.handle,verified.handle);
+ // A matching email alone grants no access to this account or its history.
+ const impostor=browser();for(const p of products)await impostor('/api/events',{type:'answer',productId:p.id,value:'skip'});
+ const other=await impostor('/api/account/save-email',{email:'pending@example.test'});
+ assert.notEqual(other.data.profile.handle,verified.handle);assert.equal(other.data.profile.opinions,undefined);
+ assert.equal((await a('/api/account/me')).data.profile.displayName,'Pending Member');
+});

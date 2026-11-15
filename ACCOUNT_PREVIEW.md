@@ -1,5 +1,14 @@
 # Vouch accounts and product profiles — implementation and verification
 
+## Email save and deferred verification — November 15, 2026
+
+After completing a collection, participants can save an email directly on the optional attribution screen, with native email autofill, and continue straight to rankings. This creates a provisional browser account and saves their picks without requesting a code. The full-width rankings button skips account creation.
+
+Opening the profile icon asks for a full name and shows the saved email read-only. Submit requests an email code and replaces the name form with the six-digit verification screen. Successful verification opens the existing profile and history without a second signup form. Code paste/autofill, refresh recovery, error retry and resend cooldown remain supported. Provisional profiles stay private and profile changes/history are gated until verification. New members then receive the existing named-attribution defaults; merging into an existing verified account preserves its privacy choices. Merely entering someone else's email cannot expose or modify their verified account. Returning sign-in on another browser still requires inbox proof.
+
+Local unit/integration and phone/desktop browser checks cover email-only save, verification deferred until the profile icon is opened, stored-email use, name persistence, wrong codes, refresh, retries, history preservation and returning sign-in. Production inbox delivery remains unverified. This workflow supersedes the pre-rankings/email-first behavior below.
+
+
 ## Email-first workflow — November 13, 2026
 
 New and returning members now share email → six-digit code. New members add their name after verification, keep the item-vouches preview, and save directly to their profile. The pre-rankings account prompt links to this same flow; rankings remain accessible without creating an account. Existing browser profiles can verify their email from their profile without losing their collection. The organizer People view includes a verified Wharton email count and filter, separate from the historical early tester badge. Codes support paste/autofill, automatic submission, refresh recovery, resend cooldown and change-email recovery. Earlier entries below describe historical behavior and are superseded by this update. See AUTH_SETUP.md for configuration and verification limits.

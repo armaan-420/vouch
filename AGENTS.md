@@ -25,6 +25,16 @@ These rules apply to every scheduled or automated review run (code review, QA sm
 - **Respect settled decisions.** Read `/Users/armaannathani/Documents/Wharton/Fall '26/OIDD 6140/Vouch/Codex Reviews/DECISIONS.md` before suggesting product or UX changes. Never re-propose something listed there as rejected.
 - **Release notes are not scheduled.** The Notion release-notes workflow runs only when Armaan asks. Scheduled runs must not touch `docs/release-notes-state.json`, the Notion changelog, or `Release Notes/`.
 
+## Daily category creation and completion tasks
+
+Armaan explicitly authorized these two tasks on November 14, 2026. They are distinct from the report-only scheduled reviews above. Read `docs/daily-category-automation.md` on every run.
+
+- **Create three Vouch category suggestions** (3 PM): use the connected Vouch tools to check inventory and today's Eastern-day batch, select genuinely new consumer-product categories, and create only missing daily slots. This task is authorized to write private suggestions and advance their research through the scoped Vouch tools.
+- **Review daily research batch** (10 PM): read today's batch and advance existing recoverable research through `vouch_process_research`, at most twelve invocations. This task is authorized to advance saved private research; do not create more suggestions, reset failed jobs, override pauses or start new research revisions.
+- Neither task may publish/approve categories, deploy, push source, change configuration, access secrets, or use a browser/production database as a fallback. If a required connected tool or organizer authorization is unavailable, report the exact blocker. Do not infer that local code is deployed.
+- The server owns the three-per-Eastern-day cap. Failed, paused, deleted, or merged entries still consume their slots; report them rather than replacing them. Do not manufacture community support or invent products, sources, or completion.
+- Keep the existing review automation rules unchanged for all other scheduled reviews.
+
 ## Useful commands
 
 - Unit and integration tests: `npm test`

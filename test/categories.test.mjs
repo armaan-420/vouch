@@ -24,3 +24,11 @@ test('category directory exposes only open public lineups and no participant or 
  const reserved=await fetch(origin+'/api/admin/experiments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:'categories',title:'Test category',category:'Test',productIds:['boj'],customProducts:[]})});
  assert.equal(reserved.status,400);
 });
+
+test('category directory sorts mixed case names and supplies bundled images when product photos are missing',async t=>{
+ const directory=await fs.mkdtemp(path.resolve('.data/category-covers-test-'));const product={id:'sku-test',brand:'Sample',name:'Item',image:null};
+ const experiments=Object.fromEntries([['zebra','zebra'],['alpha','Alpha'],['beta','beta'],['air','Air purifiers']].map(([id,category])=>[id,{...DEFAULT_EXPERIMENT,id,category,products:[product]}]));
+ await fs.writeFile(path.join(directory,'experiment-registry.json'),JSON.stringify({experiments,skus:{}}));const server=await createVouchServer({directory,productSearch:{find:async()=>null,search:async()=>({products:[]})}});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));t.after(async()=>{await new Promise(resolve=>server.close(resolve));await fs.rm(directory,{recursive:true,force:true});});
+ const origin='http://127.0.0.1:'+server.address().port,categories=(await(await fetch(origin+'/api/categories')).json()).categories;
+ assert.deepEqual(categories.map(c=>c.id),['air','alpha','beta','zebra']);for(const c of categories){assert.match(c.image,/^\/category-covers\/.+\.svg$/);const image=await fetch(origin+c.image);assert.equal(image.status,200);assert.match(await image.text(),/<svg/);}
+});

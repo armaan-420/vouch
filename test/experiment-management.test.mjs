@@ -34,3 +34,14 @@ test('photo galleries persist in order across organizer, voting and product page
  assert.equal((await change(urls.slice(1))).status,409);
  const single=await f.req('/api/admin/experiment-products',{id:'edit',revision:1,action:'photo',productId:product.id,url:urls[2]});assert.equal(single.status,200);assert.deepEqual((await single.json()).products[0].images,[urls[2]]);
 });
+
+test('organizers can rename a live experiment and set its directory cover without changing its path or votes',async t=>{
+ const f=await setup(t),state=await f.store.scope('experiment:edit',fresh);await state.transaction(d=>{d.baseVotes={[product.id]:{v:'yes'}};});
+ const settings={id:'edit',title:'Everyday bags',category:'Bags and totes',coverImage:'https://example.com/cover.jpg',includeInOverall:true,closed:false};
+ assert.equal((await f.req('/api/admin/experiment-settings',settings,false)).status,401);
+ for(const bad of [{title:''},{category:'x'},{coverImage:'http://localhost/image'},{coverImage:'javascript:alert(1)'}])assert.equal((await f.req('/api/admin/experiment-settings',{...settings,...bad})).status,400);
+ assert.equal((await f.req('/api/admin/experiment-settings',settings)).status,200);
+ const e=(await(await f.req('/api/experiment?experiment=edit',null,false)).json()).experiment;assert.equal(e.title,settings.title);assert.equal(e.category,settings.category);assert.equal(e.coverImage,settings.coverImage);assert.equal(e.id,'edit');assert.equal((await state.read()).baseVotes[product.id].v,'yes');
+ const category=(await(await f.req('/api/categories',null,false)).json()).categories.find(c=>c.id==='edit');assert.equal(category.image,settings.coverImage);assert.equal(category.category,settings.category);
+ assert.equal((await f.req('/api/admin/experiment-settings',{...settings,coverImage:''})).status,200);assert.equal((await f.registry.read()).experiments.edit.coverImage,null);
+});

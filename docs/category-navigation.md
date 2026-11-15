@@ -9,3 +9,7 @@ Start vouching links to `/:experiment?start=1`, records the existing visit/start
 Explore categories is available in the shared navigation and on the product discovery page. Empty lists offer category suggestions; errors offer retry. Product Library remains the organizer tool. This update adds no new voting data model, ranking logic or progress tracking.
 
 Validation: integration coverage for public/open filtering, response field boundaries, directory routes, and the reserved category path; browser coverage should exercise board → another category → votes → board → directory on desktop and phone. Production checks use page views and read-only API requests.
+
+November 15, 2026: category cards sort by their visible category name using case-insensitive English A–Z ordering, with title and path as tie breakers. Cards prefer a saved cover URL, then a product image (including resolved provider images), then bundled category artwork. Failed remote images switch to bundled artwork. The directory intro includes a Suggest a category button and View board is an outlined pill with a ranking icon.
+
+Organizers can set a public HTTPS cover URL with a preview during experiment creation, in Suggestions → Edit lineup → Name, cover & page address before approval, and in Experiments → Settings and Participation. The same settings form edits the full experiment name and card category name for live experiments while preserving the path, products, schedule and votes. Clearing a cover restores automatic imagery.

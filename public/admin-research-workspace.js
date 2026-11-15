@@ -1,6 +1,6 @@
 (()=>{
  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const names={editorial:'Independent editorial',wirecutter:'Wirecutter',google:'Google discovery',tiktok:'TikTok & trends',manufacturer:'Manufacturer checks'};
+ const names={reddit:'Reddit discussions',editorial:'Independent editorial',wirecutter:'Wirecutter',google:'Google discovery',tiktok:'TikTok & trends',manufacturer:'Manufacturer checks'};
  const states={queued:'Queued',searching:'Searching',complete:'Completed',no_coverage:'No relevant coverage',inaccessible:'Inaccessible',needs_review:'Needs review',failed:'Could not complete',limited:'Budget/time limit'};
  const button=(action,label,data='',disabled=false)=>'<button type="button" data-research-action="'+action+'" '+data+' '+(disabled?'disabled':'')+'>'+esc(label)+'</button>';
  const sourceOptions=()=>Object.entries(names).map(([id,name])=>'<option value="'+id+'">'+name+'</option>').join('');

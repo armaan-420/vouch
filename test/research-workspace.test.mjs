@@ -24,7 +24,7 @@ async function setup(t,overrides={}){
 }
 
 test('every requested source is attempted; inaccessible coverage never fails a private draft',async t=>{
- const s=await setup(t),j=await s.run();assert.deepEqual(s.calls.map(c=>c.id),['editorial','wirecutter','google','tiktok','manufacturer']);
+ const s=await setup(t),j=await s.run();assert.deepEqual(s.calls.map(c=>c.id),['editorial','wirecutter','google','tiktok','reddit','manufacturer']);
  assert.equal(j.draft.status,'draft');assert.equal(j.draft.products.length,6);assert.equal(j.workspace.tasks[3].status,'inaccessible');assert.equal(j.state,'needs_attention');assert.equal(j.readiness.quality.advisory,true);assert.equal(j.readiness.quality.recommendationCount,0);
 });
 test('source-only gaps allow approval once product count and photos are ready',async t=>{
@@ -64,7 +64,7 @@ test('pin and exclusion affect the proposal only until the organizer applies it'
 });
 test('workspace actions and metrics require organizer access',async t=>{
  const s=await setup(t),j=await s.run();for(const action of ['retry-source','candidate-exclude','research-plan','pause-research','add-source'])assert.equal((await s.auto.handle(req('/'+action,{key:j.key},false))).status,401);
- assert.equal((await s.auto.handle(req('/metrics',null,false))).status,401);const metrics=await(await s.auto.handle(req('/metrics'))).json();assert.equal(metrics.jobs[0].metrics.sourceTasks,5);assert.doesNotMatch(JSON.stringify(metrics),/submittedBy|entries|visitor/);
+ assert.equal((await s.auto.handle(req('/metrics',null,false))).status,401);const metrics=await(await s.auto.handle(req('/metrics'))).json();assert.equal(metrics.jobs[0].metrics.sourceTasks,6);assert.doesNotMatch(JSON.stringify(metrics),/submittedBy|entries|visitor/);
 });
 test('a discovered link alone never becomes an AI content check',()=>{
  const w=createWorkspace('Backpacks'),task=w.tasks[0],e={brand:'A Brand',productName:'Exact Model',url:'https://review.example/model',role:'recommendation',claim:'Recommended for everyday use',passage:'A short supporting passage',query:'best backpack',publishedAt:null};
@@ -79,4 +79,20 @@ test('source adapter uses dedicated domain filtering and independent verificatio
  const bodies=[];const provider=createResearch({env:{OPENAI_API_KEY:'test'},fetcher:async(url,options)=>{bodies.push(JSON.parse(options.body));return Response.json({id:'response-1',status:'in_progress'});}}),w=createWorkspace('Backpacks');
  await provider.startSource('Backpacks',w.tasks[1],w,'key');assert.deepEqual(bodies[0].tools[0].filters.allowed_domains,['nytimes.com','thewirecutter.com']);assert.match(bodies[0].instructions,/Explicitly search Wirecutter/);
  await provider.startSource('Backpacks',w.tasks[3],w,'key2');assert.deepEqual(bodies[1].tools[0].filters.allowed_domains,['tiktok.com']);
+});
+
+test('Reddit searches original discussions with a one-result preference and optional coverage',async()=>{
+ const bodies=[],provider=createResearch({env:{OPENAI_API_KEY:'test'},fetcher:async(url,options)=>{bodies.push(JSON.parse(options.body));return Response.json({id:'reddit-1',status:'in_progress'});}}),w=createWorkspace('Backpacks');
+ await provider.startSource('Backpacks',w.tasks.find(t=>t.id==='reddit'),w,'reddit-key');
+ assert.deepEqual(bodies[0].tools[0].filters.allowed_domains,['reddit.com']);assert.match(bodies[0].instructions,/Prefer one/);assert.match(bodies[0].instructions,/Zero is acceptable/);
+ const empty=normalizeSourceResult({result:{...result(),status:'inaccessible',candidates:[],evidence:[]}},w.tasks.find(t=>t.id==='reddit'));
+ assert.equal(empty.status,'inaccessible');assert.deepEqual(empty.candidates,[]);
+});
+test('Reddit normalization caps recommendations at two and rejects non-thread links',()=>{
+ const w=createWorkspace('Backpacks'),task=w.tasks.find(t=>t.id==='reddit');
+ const records=candidates.map((p,i)=>({...p,url:'https://www.reddit.com/r/backpacks/comments/thread'+i+'/model/',role:'recommendation',claim:'Owner recommends this model',passage:'I use this backpack daily',query:'backpacks reddit',publishedAt:null}));
+ const normalized=normalizeSourceResult({result:{...result(),evidence:[{...records[0],url:'https://reddit.com.evil.example/r/backpacks/comments/a/'},{...records[0],url:'https://www.reddit.com/search/?q=backpacks'},...records]},openedUrls:records.map(e=>e.url)},task);
+ assert.equal(normalized.candidates.length,2);assert.equal(normalized.evidence.length,2);assert.ok(normalized.evidence.every(e=>e.channel==='reddit'&&e.role==='social'));
+ w.candidates=normalized.candidates.map(p=>({...p,key:candidateKey(p),channels:['reddit']}));w.evidence=normalized.evidence.map(e=>({...e,check:{status:'supported'}}));
+ const proposal=proposeLineup(w,'Backpacks');assert.equal(workspaceQuality(proposal).recommendationCount,0);assert.equal(researchCoverage(proposal).supportedCount,0);assert.equal(researchCoverage(proposal).counts.reddit,2);
 });

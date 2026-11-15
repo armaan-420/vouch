@@ -230,3 +230,50 @@ test('starter product purchase URLs backfill older metadata and preserve explici
  assert.equal((await f.call('/api/products/boj')).data.product.url,'https://shop.example.com/alternate-relief-sun');
  assert.equal((await f.call('/api/products/not-a-product')).status,404);
 });
+
+test('product tags follow the account across devices and appear in its library without duplicate votes',async t=>{
+ const f=await setup(t);f.answer('sku-one','yes');
+ const preview=await f.preview();
+ await f.claim(preview,'alice',undefined,{displayName:'Alice'});
+ const selected=await f.call('/api/products/sku-one',{identity:'alice',body:{tagIds:['design','staple']}});
+ assert.equal(selected.status,200);assert.deepEqual(selected.data.selectedTagIds,['design','staple']);
+ const otherDevice={identity:'alice',browserId:otherBrowser};
+ const restored=await f.call('/api/products/sku-one',otherDevice);
+ assert.deepEqual(restored.data.selectedTagIds,['design','staple']);
+ assert.equal(restored.data.tags.find(t=>t.id==='staple').count,1);
+ const profile=await f.call('/api/account/me',otherDevice);
+ assert.deepEqual(profile.data.profile.opinions[0].tags.map(t=>t.label),['Design','Staple']);
+ await f.call('/api/products/sku-one',{...otherDevice,body:{tagIds:['value']}});
+ const original=await f.call('/api/products/sku-one',{identity:'alice'});
+ assert.deepEqual(original.data.selectedTagIds,['value']);assert.equal(original.data.tags.find(t=>t.id==='staple').count,0);
+ await f.call('/api/products/sku-one',{...otherDevice,body:{tagIds:[]}});
+ assert.deepEqual((await f.call('/api/products/sku-one',{identity:'alice'})).data.selectedTagIds,[]);
+ assert.deepEqual((await f.call('/api/account/me',{identity:'alice'})).data.profile.opinions[0].tags,[]);
+ assert.deepEqual((await f.call('/api/products/sku-one',{identity:'bob',browserId:otherBrowser})).data.selectedTagIds,[]);
+});
+
+test('tags selected before claiming a collection are retained and collapsed into the account on edit',async t=>{
+ const f=await setup(t);f.answer('sku-one','yes');
+ const votes=await f.store.scope('product-tag-votes',()=>({products:{}}));
+ await votes.transaction(d=>{d.products['sku-one']={visitors:{[browser]:['quality','value']}}});
+ await f.claim(await f.preview(),'alice',undefined,{displayName:'Alice'});
+ const otherDevice={identity:'alice',browserId:otherBrowser};
+ const restored=await f.call('/api/products/sku-one',otherDevice);assert.deepEqual(restored.data.selectedTagIds,['quality','value']);
+ await f.call('/api/products/sku-one',{...otherDevice,body:{tagIds:['quality']}});
+ const updated=await f.call('/api/products/sku-one',{identity:'alice'});assert.equal(updated.data.tags.find(t=>t.id==='quality').count,1);assert.deepEqual(updated.data.selectedTagIds,['quality']);
+});
+
+test('verifying and merging a browser profile preserves tags under the recovered account',async t=>{
+ const f=await setup(t),token='a'.repeat(64),guest='tester:'+token;
+ f.answer('sku-one','yes',{visitor:otherBrowser});
+ const targetPreview=await f.preview({browserId:otherBrowser});
+ await f.call('/api/account/claim',{browserId:otherBrowser,identity:'verified',body:{claimToken:targetPreview.claimToken,opinions:[{productId:'sku-one'}],displayName:'Alice'}});
+ f.answer('sku-one','yes');await f.claim(await f.preview(),guest,undefined,{displayName:'Alice'});
+ await f.call('/api/products/sku-one',{identity:guest,body:{tagIds:['design','staple']}});
+ await f.api.acceptVerifiedIdentity(new Request('https://vouch.example/api/auth/verify',{headers:{cookie:'vouch_tester_session='+token+'; vouch_visitor='+browser}}),{subject:'verified',email:'alice@example.test'});
+ const recovered=await f.call('/api/products/sku-one',{identity:'verified',browserId:otherBrowser});
+ assert.deepEqual(recovered.data.selectedTagIds,['design','staple']);
+ assert.deepEqual((await f.call('/api/account/me',{identity:'verified',browserId:otherBrowser})).data.profile.opinions[0].tags.map(t=>t.id),['design','staple']);
+ await f.call('/api/products/sku-one',{identity:'verified',browserId:otherBrowser,body:{tagIds:['value']}});
+ const edited=await f.call('/api/products/sku-one',{identity:'verified',browserId:otherBrowser});assert.deepEqual(edited.data.selectedTagIds,['value']);assert.equal(edited.data.tags.find(t=>t.id==='design').count,0);assert.equal(edited.data.tags.find(t=>t.id==='value').count,1);
+});

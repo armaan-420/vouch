@@ -6,7 +6,7 @@ import path from 'node:path';
 import {createFileStore} from '../lib/file-store.mjs';
 import {createAccountsApi} from '../lib/accounts.mjs';
 import {createExperimentApi} from '../lib/experiment-api.mjs';
-import {STANDARD_TAGS} from '../lib/product-tags.mjs';
+import {STANDARD_TAGS,initialTags} from '../lib/product-tags.mjs';
 async function fixture(t){
  const directory=await fs.mkdtemp(path.join(os.tmpdir(),'vouch-tag-votes-'));t.after(()=>fs.rm(directory,{recursive:true,force:true}));
  const store=await createFileStore(directory),accounts=createAccountsApi({store}),experiments=createExperimentApi({store,search:{find:async()=>null,search:async()=>({products:[]})},authorizeAdmin:r=>r.headers.get('x-admin')==='yes'});
@@ -37,4 +37,14 @@ test('tag writes reject cross-site requests, unknown tags/products, malformed in
  assert.equal((await call('/api/products/boj',{tagIds:'value'})).status,400);
  assert.equal((await call('/api/products/unknown',{tagIds:[]})).status,404);
  assert.equal((await call('/api/admin/inventory')).status,401);
+});
+
+test('four standard tags have the requested order and retire old chips without deleting history',async t=>{
+ const {call,directory}=await fixture(t);await call('/api/products/boj');const store=await createFileStore(directory);
+ const taxonomy=await store.scope('product-tags',initialTags);
+ await taxonomy.transaction(d=>{d.definitions['ease-of-use']={id:'ease-of-use',label:'Ease of use',category:null};d.definitions.reliability={id:'reliability',label:'Reliability',category:null};d.products.boj={tagIds:['ease-of-use','reliability'],category:'Sunscreen'}});
+ const result=await call('/api/products/boj');assert.deepEqual(result.data.tags.map(t=>t.label),['Design','Quality','Staple','Value']);
+ assert.equal((await call('/api/products/boj',{tagIds:['staple']})).status,200);
+ assert.equal((await call('/api/products/boj',{tagIds:['reliability']})).status,400);
+ assert.deepEqual((await taxonomy.read()).products.boj.tagIds,['ease-of-use','reliability']);
 });

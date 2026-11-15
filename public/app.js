@@ -124,7 +124,19 @@ function flowProgress(){const total=products.length,current=Math.min(index+1,tot
 function nominationCard(){app.innerHTML=`<section class="game nomination-step">${flowProgress()}${nominationView({inFlow:true})}<div class="nomination-actions"><button class="primary nomination-continue" id="nomination-continue" type="submit" form="nomination-form">See the board →</button></div></section>`;mountNomination();watchEnd();const announcement=document.getElementById('voting-announcement');if(announcement)announcement.textContent=`All ${products.length} products answered. Nominations are optional.`;}
 
 function attribution(){
- app.innerHTML=`<section class="attribution-step"><p class="eyebrow">YOUR PICKS, YOUR NAME</p><h1>Make these<br>vouches yours.</h1><p class="attribution-intro">Save your picks with an email code. No password needed. You’ll add your name after verifying your email.</p><a class="primary" href="/account?experiment=${encodeURIComponent(experimentId)}">Continue with email</a><button class="text-button" type="button" data-skip-attribution>See the rankings for now</button><p class="attribution-privacy">Your responses are already saved. Creating an account is optional.</p></section>`;
+ app.innerHTML=`<section class="attribution-step"><p class="eyebrow">YOUR PICKS, YOUR NAME</p><h1>Make these<br>vouches yours.</h1><p class="attribution-intro">Save your picks with an email code. No password needed. You’ll add your name after verifying your email.</p><form id="attribution-email-form" autocomplete="on"><label for="attribution-email">Email address</label><input id="attribution-email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" maxlength="254" required aria-describedby="attribution-email-help"><p id="attribution-email-help" class="attribution-help">At Wharton? Use your @wharton.upenn.edu email. Your email stays private.</p><button class="primary" type="submit">Send me a code</button><p class="attribution-error" role="alert" data-email-error hidden></p></form><button class="attribution-rankings" type="button" data-skip-attribution>See the rankings</button><p class="attribution-privacy">Your responses are already saved. Creating an account is optional.</p></section>`;
+ app.querySelector('#attribution-email-form').onsubmit=async event=>{
+  event.preventDefault();const form=event.target,button=form.querySelector('[type=submit]'),errorMessage=form.querySelector('[data-email-error]');
+  if(button.disabled)return;
+  button.disabled=true;button.textContent='Sending code…';errorMessage.hidden=true;
+  try{
+   // Use the same challenge handoff as the account page; keep email out of the URL.
+   sessionStorage.setItem('vouch-email-handoff','1');sessionStorage.removeItem('vouch-email-handoff');
+   const email=form.elements.email.value.trim(),result=await api('/api/auth/start',{email});
+   sessionStorage.setItem('vouch-email-attempt',JSON.stringify({id:result.challengeId,email:email.toLowerCase(),resendAt:Date.now()+(result.resendAfter||60)*1000,expiresAt:Date.now()+result.expiresIn*1000}));
+   location.assign('/account?experiment='+encodeURIComponent(experimentId));
+  }catch(error){button.disabled=false;button.textContent='Send me a code';errorMessage.textContent=error.message;errorMessage.hidden=false;}
+ };
  app.querySelector('[data-skip-attribution]').onclick=()=>{state.attributionDismissed=true;save();go('board')};
 }
 

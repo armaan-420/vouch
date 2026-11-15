@@ -31,14 +31,14 @@ function mountNomination(){
   function changed(){error.textContent='';saved.hidden=true}
   function choose(p){
     if(saving)return;
-    if(p.onBoardId){if(screen==='game')go('board');document.getElementById('product-'+p.onBoardId)?.scrollIntoView({behavior:'smooth',block:'center'});return}
+    if(p.onBoardId){status.textContent='That product is already on the board. Keep selecting favorites that are missing.';return}
     if(has(p))selectedNominations=selectedNominations.filter(n=>n.product?.id!==p.id);
     else {if(selectedNominations.length>=50){error.textContent='Choose up to 50 nominations.';return}selectedNominations.push({name:[p.brand,p.name].filter(Boolean).join(' '),product:p})}
     changed();selection();highlight();status.textContent=`${selectedNominations.length} selected. Keep selecting or search another brand.`;
   }
   function highlight(){nominationPicker.refresh();}
   function clearSearch(){nominationDraft='';searchVersion++;searchController?.abort();clearTimeout(searchTimer);collapse();fallback.hidden=true;status.textContent='Type at least two characters to search.';}
-  nominationPicker=window.VouchProductPicker({input,results,more:document.getElementById('nomination-more'),clear:document.getElementById('nomination-clear'),another:document.getElementById('nomination-another'),esc,isSelected:has,onChoose:choose,onClear:clearSearch});
+  nominationPicker=window.VouchProductPicker({input,results,more:document.getElementById('nomination-more'),clear:document.getElementById('nomination-clear'),another:document.getElementById('nomination-another'),esc,isSelected:has,isUnavailable:p=>!!p.onBoardId,boardLabel:"Already on the board · No nomination needed",onChoose:choose,onClear:clearSearch});
   const destroyPicker=nominationPicker.destroy;nominationPicker.destroy=()=>{mobileSearch.destroy();destroyPicker();};
   document.getElementById('nomination-clear-all').onclick=()=>{if(saving)return;selectedNominations=[];changed();selection();highlight();status.textContent='All selections removed. Save to clear previously saved nominations.';input.focus();};
   async function runSearch(){

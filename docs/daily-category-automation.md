@@ -4,7 +4,7 @@
 
 Armaan authorized daily creation of three private product-category suggestions on November 14, 2026. Existing local Codex tasks are active at 3 PM and 10 PM. They use this repository; their schedules have not been changed. These are local execution tasks, so their availability depends on the configured computer and Codex scheduler, independently of Vouch's hosted background research.
 
-The daily-batch implementation is prepared locally. Deployment and a real production batch have **not** been verified. Do not describe this as live until the Sites source workflow succeeds, the new tools appear in the connected Vouch plugin, and an authenticated batch is tested. Existing research-processing tools alone cannot create suggestions.
+Sites version **92** deployed successfully on November 15, 2026 from source `b8b76403b1d346287db4cf268515ee223d22f803`, deployment `appgdep_6af9450f67148191982e2cf0dc33133c`, environment revision 7. The daily-batch tools are included in the live server and Sites confirmed MCP publication. The existing authenticated research-status tool still works. The authoring chat has not refreshed its tool inventory to expose the three new names, so authenticated creation and a real production batch remain unverified. Scheduled runs must check actual tool availability and report any missing-tool blocker. Existing research-processing tools alone cannot create suggestions.
 
 ## Creation task: Create three Vouch category suggestions
 
@@ -53,3 +53,7 @@ Local fixture tests prove mechanics only, not real product research quality, pho
 The 91 batch, maintenance, existing suggestion and research-workspace tests pass, including concurrency, response-loss retry via persisted state, partial batches, Eastern rollover/DST, input validation, organizer authorization and anonymous draft protection. Changed-file lint and the production build pass. The full test suite could not complete in this restricted session: existing account/community HTTP tests fail with `listen EPERM` on loopback and other server tests wait for listeners; that run was interrupted. No full-suite pass is claimed.
 
 The Sites source helper failed to open the existing source remote because `git.chatgpt-team.site` could not resolve. GitHub CLI source sync likewise failed because `github.com` could not resolve. The Codex app task-view/project API returned `Codex app tool request failed`; the two existing task configurations were inspected read-only from disk. Their schedules/prompts remain unchanged; repository instructions provide the exact tool workflow. No new production category, deployment, source push or authenticated new-tool verification has occurred.
+
+### Publication — November 15, 2026
+
+The existing Sites source helper opened, pushed and packaged the checked source successfully after network access became available. Version 92 publication succeeded at 05:37:28 UTC. Existing public access and D1/R2 bindings were preserved. No production suggestion was created or approved in this deployment pass. The Codex browser handoff API was unavailable. Automatic approval review rejected the separate GitHub push as potential private-source disclosure; it was not retried or bypassed. This does not affect the verified Sites deployment.

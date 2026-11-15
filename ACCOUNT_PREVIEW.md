@@ -2,6 +2,8 @@
 
 ## Email save and deferred verification — November 15, 2026
 
+The sign-in screen uses a single-column form. The logo links home; signed-out and provisional accounts have no header navigation. The extra home/back link, Wharton and name/privacy disclaimers, browsing link and vouches preview are absent from email entry and code entry. Requesting a code replaces only the form area, preserving the page heading, introduction and URL.
+
 After completing a collection, participants can save an email directly on the optional attribution screen, with native email autofill, and continue straight to rankings. This creates a provisional browser account and saves their picks without requesting a code. The full-width rankings button skips account creation.
 
 Opening the profile icon asks for a full name and shows the saved email read-only. Submit requests an email code and replaces the name form with the six-digit verification screen. Successful verification opens the existing profile and history without a second signup form. Code paste/autofill, refresh recovery, error retry and resend cooldown remain supported. Provisional profiles stay private and profile changes/history are gated until verification. New members then receive the existing named-attribution defaults; merging into an existing verified account preserves its privacy choices. Merely entering someone else's email cannot expose or modify their verified account. Returning sign-in on another browser still requires inbox proof.

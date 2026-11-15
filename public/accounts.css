@@ -143,3 +143,5 @@
 
 /* Email-first authentication: generous mobile targets and a paste-friendly code. */
 .auth-recovery{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-top:16px}.auth-recovery button{min-height:44px}.signup-main #account-code{font-size:28px;letter-spacing:.3em;font-variant-numeric:tabular-nums}.signup-main #account-code[aria-invalid=true]{border-color:#a62d24}.account-auth strong{overflow-wrap:anywhere}.auth-recovery button:disabled{opacity:.6;cursor:default}
+
+.signin-layout{display:block;max-width:480px;margin:24px auto 48px}.signin-page .account-shell{max-width:680px}.signin-page footer a{display:none}.signin-layout .account-intro{margin-bottom:28px}.signin-layout .account-auth{max-width:none}

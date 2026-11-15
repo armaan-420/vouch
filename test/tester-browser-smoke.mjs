@@ -13,10 +13,19 @@ const origin='http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({headless:true}),errors=[];
 await fs.mkdir('outputs/tester-attribution',{recursive:true});
 const noOverflow=page=>page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth);
+async function cleanSignIn(page){
+ const text=await page.locator('#account-app').innerText();
+ for(const removed of ['Vouch home','At Wharton?','Your email stays private.','Your name appears with your vouches','Keep browsing','YOUR VOUCHES','Your collection starts here.'])assert.ok(!text.includes(removed),removed+' removed');
+ assert.equal(await page.locator('.signup-preview').count(),0);
+ assert.equal(await page.locator('.site-navigation').isVisible(),false);
+ assert.equal(await page.locator('header .wordmark').getAttribute('href'),'/');
+}
 async function codeSignIn(page,email,{refresh=false,wrong=false}={}){
+ await cleanSignIn(page);const beforeURL=page.url(),heading=await page.locator('.signup-main h1').elementHandle(),beforeHeading=await page.locator('.signup-main h1').boundingBox();
  await page.locator('#account-email').fill(email);
  assert.equal(await page.locator('#account-email').getAttribute('autocomplete'),'email');
  await page.locator('#email-form [type=submit]').click();await page.locator('#account-code').waitFor();
+ await cleanSignIn(page);assert.equal(page.url(),beforeURL);assert.equal(await heading.evaluate(el=>el.isConnected),true,'heading DOM stays in place');assert.deepEqual(await page.locator('.signup-main h1').boundingBox(),beforeHeading);
  assert.equal(await page.locator('[data-resend]').isDisabled(),true);
  const code=await page.locator('#verify-form code').textContent();
  if(wrong){await page.locator('#account-code').fill(code==='000000'?'111111':'000000');await page.getByRole('alert').filter({hasText:'does not match'}).waitFor();}
@@ -65,11 +74,13 @@ try{
   assert.equal(await page.locator('#verification-email').getAttribute('readonly'),'');
   assert.equal(await noOverflow(page),true);
   await page.screenshot({path:`outputs/tester-attribution/verify-name-${width}.png`,fullPage:true});
+  await cleanSignIn(page);const pendingHeading=await page.locator('.signup-main h1').elementHandle();
   await page.locator('#verification-name').fill('Browser Tester');
   await page.route('**/api/auth/start**',route=>route.fulfill({status:503,json:{error:'Temporary email failure'}}),{times:1});
   await page.locator('#pending-verification-form [type=submit]').click();await page.locator('.account-error').waitFor();
   assert.equal(await page.locator('#verification-name').inputValue(),'Browser Tester');
   await page.locator('#pending-verification-form [type=submit]').click();await page.locator('#account-code').waitFor();
+  await cleanSignIn(page);assert.equal(await pendingHeading.evaluate(el=>el.isConnected),true);
   assert.equal(await page.locator('#verification-name').count(),0,'code replaces name form');
   assert.equal(await page.locator('[data-change-email]').count(),0,'verification uses saved email');
   const code=await page.locator('#verify-form code').textContent();
@@ -92,6 +103,7 @@ try{
   assert.ok(!product.contributors.some(c=>c.handle===me.profile.handle));assert.equal((await observer.request.get(origin+'/api/profiles/'+me.profile.handle)).status(),404);await observer.close();
   authTime+=61000;
   const returning=await browser.newContext(),returnPage=await returning.newPage();await returnPage.goto(origin+'/account?signin=1');
+  await returnPage.locator('#account-email').waitFor();await returnPage.screenshot({path:`outputs/tester-attribution/signin-${width}.png`,fullPage:true});
   await codeSignIn(returnPage,`browser${width}@wharton.upenn.edu`);await returnPage.locator('.profile-details h1').waitFor();
   assert.equal(await returnPage.locator('.profile-details h1').textContent(),'Browser Tester');assert.equal(await returnPage.locator('#signup-form').count(),0);
   assert.equal((await (await returnPage.request.get(origin+'/api/account/me')).json()).profile.handle,me.profile.handle);
@@ -102,6 +114,6 @@ try{
   await returning.close();await context.close();
  }
  const skipContext=await browser.newContext({viewport:{width:320,height:760}}),skipPage=await skipContext.newPage();await finish(skipPage);await skipPage.locator('[data-skip-attribution]').click();await skipPage.locator('.board h1').waitFor();assert.equal((await (await skipPage.request.get(origin+'/api/account/me')).json()).authenticated,false);assert.equal(await noOverflow(skipPage),true);await skipContext.close();
- const emptyContext=await browser.newContext({viewport:{width:320,height:760}}),emptyPage=await emptyContext.newPage();await emptyPage.goto(origin+'/account');await emptyPage.locator('#account-email').waitFor();assert.equal(await noOverflow(emptyPage),true);await emptyPage.locator('.signup-skip').click();await emptyPage.waitForURL(origin+'/');assert.equal((await (await emptyPage.request.get(origin+'/api/account/me')).json()).profile,null);await emptyContext.close();
+ const emptyContext=await browser.newContext({viewport:{width:320,height:760}}),emptyPage=await emptyContext.newPage();await emptyPage.goto(origin+'/account');await emptyPage.locator('#account-email').waitFor();assert.equal(await noOverflow(emptyPage),true);await cleanSignIn(emptyPage);await emptyPage.locator('header .wordmark').click();await emptyPage.waitForURL(origin+'/');assert.equal((await (await emptyPage.request.get(origin+'/api/account/me')).json()).profile,null);await emptyContext.close();
  assert.deepEqual(errors,[]);console.log('Browser checks passed: email-only save to rankings, deferred name/code verification, code paste/auto-submit, wrong-code recovery, refresh, save retry, verified cohort, privacy, returning sign-in, optional signup and phone/desktop layouts.');
 }finally{await browser.close();await new Promise(r=>server.close(r));await fs.rm(directory,{recursive:true,force:true})}

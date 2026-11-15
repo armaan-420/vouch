@@ -346,3 +346,5 @@ html.nomination-search-open,html.nomination-search-open body{overflow:hidden;ove
 .attribution-rankings{display:block;width:100%;min-height:56px;box-sizing:border-box;margin:16px 0;padding:14px 22px;border:1.5px solid currentColor;border-radius:999px;background:transparent;color:var(--ink,#282c22);font:inherit;font-weight:650;text-align:center;cursor:pointer}.attribution-rankings:hover{background:#e9e8dc}.attribution-rankings:focus-visible{outline:3px solid #828e31;outline-offset:3px}.attribution-step .attribution-error{font-size:14px;line-height:1.5;margin:0}
 
 [data-home-nav-locked] .site-desktop-links,[data-home-nav-locked] .site-menu-toggle,[data-home-nav-locked] .site-menu{display:none!important}
+
+[data-account-nav-locked] .site-navigation{display:none}

@@ -133,3 +133,15 @@ test('email-only save keeps a provisional account private until name and inbox v
  assert.notEqual(other.data.profile.handle,verified.handle);assert.equal(other.data.profile.opinions,undefined);
  assert.equal((await a('/api/account/me')).data.profile.displayName,'Pending Member');
 });
+
+
+test('home omits navigation until verified sign-in and removes it after sign-out',async t=>{
+ const {browser}=await fixture(t),a=browser();
+ const anonymous=await a('/');assert.equal(anonymous.status,200);assert.ok(!anonymous.data.includes('site-menu-toggle'));assert.ok(!anonymous.data.includes('/site-nav.js'));assert.ok(anonymous.data.includes('/account?signin=1'));
+ const products=(await a('/api/experiment')).data.experiment.products;
+ for(const p of products)await a('/api/events',{type:'answer',productId:p.id,value:'skip'});
+ await a('/api/account/save-email',{email:'nav@example.test'});
+ assert.ok(!(await a('/')).data.includes('site-menu-toggle'),'email-only save does not unlock home navigation');
+ await signin(a,'nav@example.test');assert.ok((await a('/')).data.includes('site-menu-toggle'));assert.ok((await a('/index.html')).data.includes('site-menu-toggle'));
+ await a('/api/auth/logout',{});assert.ok(!(await a('/')).data.includes('site-menu-toggle'));
+});

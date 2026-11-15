@@ -36,6 +36,11 @@ async function finish(page){
 try{
  for(const width of [390,1280]){
   const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(origin+'/');
+  assert.equal(await page.locator('.site-menu-toggle').count(),0);
+  assert.equal(await page.locator('.site-desktop-links').count(),0);
+  assert.equal(await page.getByRole('link',{name:'Sign in',exact:true}).count(),1);
+  await page.screenshot({path:`outputs/tester-attribution/home-signed-out-${width}.png`,fullPage:true});
   await finish(page);
   assert.equal(await page.locator('#attribution-email').getAttribute('autocomplete'),'email');
   assert.equal(await noOverflow(page),true);
@@ -90,6 +95,10 @@ try{
   await codeSignIn(returnPage,`browser${width}@wharton.upenn.edu`);await returnPage.locator('.profile-details h1').waitFor();
   assert.equal(await returnPage.locator('.profile-details h1').textContent(),'Browser Tester');assert.equal(await returnPage.locator('#signup-form').count(),0);
   assert.equal((await (await returnPage.request.get(origin+'/api/account/me')).json()).profile.handle,me.profile.handle);
+  await returnPage.goto(origin+'/');await returnPage.locator('.site-menu-toggle').waitFor();
+  await returnPage.locator('.site-menu-toggle').click();await returnPage.locator('.site-menu a[href="/categories"]').waitFor();
+  assert.equal(await noOverflow(returnPage),true);
+  await page.goto(origin+'/');assert.equal(await page.locator('.site-menu-toggle').count(),1);
   await returning.close();await context.close();
  }
  const skipContext=await browser.newContext({viewport:{width:320,height:760}}),skipPage=await skipContext.newPage();await finish(skipPage);await skipPage.locator('[data-skip-attribution]').click();await skipPage.locator('.board h1').waitFor();assert.equal((await (await skipPage.request.get(origin+'/api/account/me')).json()).authenticated,false);assert.equal(await noOverflow(skipPage),true);await skipContext.close();

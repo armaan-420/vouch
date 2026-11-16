@@ -1,5 +1,11 @@
 # Vouch
 
+## Current release — November 16, 2026 · version 104
+
+Live at [Vouch](https://v4ch.app/sunscreen?board=1). The Board now shows interactive tag counts, larger clickable scores with vote counts directly underneath, and a public-voucher row in the vote popup. See all opens the item’s People who vouch section. The release also includes the approved sign-in product visual, labeled with an illustrative score. The + beside tags remains a visitor-facing placeholder.
+
+Application source: `d30f9de613c2329188330662d26b04452d0a8aa2`. All 304 tests and the production build pass; four existing D1 lint errors remain. Public page/API checks passed and five live assets match the release source. Local test people and votes were not deployed. The [release notes](docs/releases/2026-11-16-v104.md), [Notion changelog](https://app.notion.com/p/40cd2a3caa8a812d83f4f3d13065be2d) and release checkpoints are current. Earlier dated sections below retain their historical status.
+
 Product detail layout, circular scores, quick tags, and organizer tag visibility are described in [Product details and quick tags](docs/product-detail.md).
 
 ## Source repository

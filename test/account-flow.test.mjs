@@ -145,3 +145,20 @@ test('home omits navigation until verified sign-in and removes it after sign-out
  await signin(a,'nav@example.test');assert.ok((await a('/')).data.includes('site-menu-toggle'));assert.ok((await a('/index.html')).data.includes('site-menu-toggle'));
  await a('/api/auth/logout',{});assert.ok(!(await a('/')).data.includes('site-menu-toggle'));
 });
+
+test('saved-email Wharton participant verifies their name and appears automatically on the leaderboard',async t=>{
+ const {browser}=await fixture(t),participant=browser(),observer=browser();
+ const products=(await participant('/api/experiment')).data.experiment.products;
+ for(const p of products)await participant('/api/events',{type:'answer',productId:p.id,value:'yes'});
+ const saved=await participant('/api/account/save-email',{email:'leaderboard-preview@wharton.upenn.edu'});assert.equal(saved.status,200);
+ const pendingBoard=(await participant('/api/community-leaderboard')).data;assert.equal(pendingBoard.viewer.requiresSignup,true);assert.equal(pendingBoard.total,0);
+ assert.equal((await observer('/api/community-leaderboard')).data.viewer.requiresSignup,false);
+ const prepared=await participant('/api/account/prepare-verification',{displayName:'Wharton Preview'});assert.equal(prepared.status,200);
+ const start=await participant('/api/auth/start',{email:prepared.data.email});assert.equal(start.status,200);
+ const wrongCode=start.data.previewCode==='000000'?'111111':'000000';
+ assert.equal((await participant('/api/auth/verify',{challengeId:start.data.challengeId,code:wrongCode})).status,400);
+ assert.equal((await participant('/api/community-leaderboard')).data.viewer.requiresSignup,true);
+ const verified=await participant('/api/auth/verify',{challengeId:start.data.challengeId,code:start.data.previewCode});assert.equal(verified.status,200);
+ const board=(await participant('/api/community-leaderboard')).data;assert.equal(board.viewer.requiresSignup,false);assert.equal(board.total,1);assert.equal(board.viewer.entry.displayName,'Wharton Preview');assert.equal(board.viewer.entry.count,products.length);
+ assert.equal((await observer('/api/profiles/'+board.viewer.entry.handle)).status,200);
+});

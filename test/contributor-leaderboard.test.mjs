@@ -14,8 +14,8 @@ test('counts unique current public recommendations, not repeated vote events or 
  a.opinions.duplicate=opinion('alias',{product:{skuId:'sku-0'},verdict:'no',updatedAt:'2026-11-17T00:00:00Z'});
  assert.equal(publicVouches(a).length,0);
 });
-test('excludes nonconsenting, hidden, deleted, disabled and unverified accounts, including early testers',()=>{
- const excluded=[{leaderboardOptIn:undefined},{visibility:'private'},{showName:false},{deletedAt:'now'},{disabledAt:'now'},{emailVerified:false},{email:'x@upenn.edu'},{email:'x@fakewharton.upenn.edu'},{browserProfile:true},{verificationRequired:true},{opinions:{}}];
+test('excludes explicit opt-outs, hidden, deleted, disabled and unverified accounts, including early testers',()=>{
+ const excluded=[{leaderboardOptIn:false},{visibility:'private'},{showName:false},{deletedAt:'now'},{disabledAt:'now'},{emailVerified:false},{email:'x@upenn.edu'},{email:'x@fakewharton.upenn.edu'},{browserProfile:true},{verificationRequired:true}];
  const accounts={valid:member(),...Object.fromEntries(excluded.map((extra,i)=>['bad'+i,member('bad'+i,1,{whartonEarlyTester:true,...extra})]))};
  assert.deepEqual(whartonLeaderboard(accounts).entries.map(r=>r.handle),['alice']);
 });
@@ -71,4 +71,15 @@ test('verified account merges retain destination consent and deduplicate recomme
  await api.acceptVerifiedIdentity(new Request('https://vouch.test/api/account/me',{headers:{cookie:'vouch_tester_session='+token}}),{subject:'alice',email:'alice@wharton.upenn.edu'});
  const record=await f.scope.read();assert.equal(record.accounts[guestKey],undefined);assert.equal(record.accounts[f.key].leaderboardOptIn,false);assert.equal(publicVouches(record.accounts[f.key]).length,2);
  assert.equal(whartonLeaderboard(record.accounts).total,0);
+});
+
+test('existing verified Wharton members appear by default, including zero public recommendations',()=>{
+ const accounts={old:member('existing',2,{leaderboardOptIn:undefined}),zero:member('zero',0,{leaderboardOptIn:undefined}),left:member('left',20,{leaderboardOptIn:false})};
+ const board=whartonLeaderboard(accounts,{key:'old'});assert.deepEqual(board.entries.map(r=>[r.handle,r.count]),[['existing',2],['zero',0]]);assert.equal(board.viewer.optedIn,true);assert.equal(board.entries[0].badges[0].id,'wharton-verified');
+});
+test('saved-email browser participants get a signup gate without exposing their email to other viewers',()=>{
+ const accounts={pending:member('pending',2,{browserProfile:true,emailVerified:false,verificationRequired:true})};
+ assert.equal(whartonLeaderboard(accounts,{key:'pending'}).viewer.requiresSignup,true);
+ assert.equal(whartonLeaderboard(accounts).viewer.requiresSignup,false);assert.equal(whartonLeaderboard(accounts).total,0);assert.equal(JSON.stringify(whartonLeaderboard(accounts)).includes('pending@'),false);
+ accounts.pending.emailVerified=true;accounts.pending.browserProfile=false;accounts.pending.verificationRequired=false;assert.equal(whartonLeaderboard(accounts,{key:'pending'}).viewer.requiresSignup,false);assert.equal(whartonLeaderboard(accounts).total,1);
 });

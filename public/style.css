@@ -358,3 +358,16 @@ html.nomination-search-open,html.nomination-search-open body{overflow:hidden;ove
 .experiment-tag-status:not(.sr-only){display:block;font-size:11px;line-height:1.4;color:var(--muted);margin-top:6px}
 .experiment-tag-status button{border:0;background:none;text-decoration:underline;padding:4px}
 @media(max-width:700px){.collection-flow[data-screen="rating"] .experiment-tags{gap:5px;margin-top:7px}.collection-flow[data-screen="rating"] .experiment-tags button{min-height:34px;padding:6px 9px;font-size:11px}}
+
+/* Public navigation: three clear destinations, with a reading-friendly header. */
+.site-header{position:sticky;top:0;transition:transform .22s ease;will-change:transform}
+.site-header.is-scroll-hidden{transform:translateY(calc(-100% - 2px));pointer-events:none}
+.site-header.is-menu-open,.site-header.is-search-open,.site-header:focus-within{transform:translateY(0);pointer-events:auto}
+.site-text-link{text-decoration:none;border-bottom:2px solid transparent;font-size:13px;font-weight:600;letter-spacing:.01em;display:inline-flex;align-items:center;min-height:48px}
+.site-text-link:hover,.site-text-link[aria-current=page]{color:var(--ink);border-bottom-color:var(--ink)}
+.site-menu a[aria-current=page]{font-weight:700;text-decoration:underline;text-underline-offset:6px}
+@media(min-width:761px){.site-header{height:88px;gap:32px}.site-header .site-navigation{gap:20px}.site-header .site-desktop-links{display:flex;align-items:center;gap:32px;margin-right:12px}.site-header .site-menu-toggle{display:none}.site-header.is-search-open .site-desktop-links{display:none}.site-header .site-brand-group{flex:1;flex-direction:row}.site-header .header-label{display:none}.site-header.voting-header .site-desktop-links{display:none}}
+@media(min-width:761px) and (max-width:950px){.site-header{padding:0 24px;gap:20px}.site-header .site-desktop-links{gap:22px;margin-right:4px}.site-header .site-navigation{gap:10px}}
+@media(max-width:760px){.site-header .site-desktop-links{display:none}.site-header .site-menu-toggle{display:inline-flex}.site-header.voting-header .site-menu-toggle{display:none}.site-menu{padding:8px 24px 16px}.site-menu>a{min-height:60px;font-size:18px;font-weight:500}.site-header .site-menu-toggle{margin-right:0}}
+@media(prefers-reduced-motion:reduce){.site-header{transition:none}}
+@media(min-width:761px){.site-header .site-desktop-links{order:-1}}

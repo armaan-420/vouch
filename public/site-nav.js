@@ -7,6 +7,7 @@
  const desktopDiscover=document.createElement('a');desktopDiscover.href='/search';desktopDiscover.className='site-text-link';desktopDiscover.textContent='Discover';header.querySelector('.site-desktop-links')?.prepend(desktopDiscover);
  const categories=document.createElement('a');categories.href='/categories';categories.textContent='Explore categories';if(location.pathname==='/categories')categories.setAttribute('aria-current','page');menu.prepend(categories);
  const desktopCategories=categories.cloneNode(true);desktopCategories.className='site-text-link';header.querySelector('.site-desktop-links')?.prepend(desktopCategories);
+ const people=document.createElement('a');people.href='/community-leaderboard';people.textContent='Wharton leaderboard';if(location.pathname==='/community-leaderboard')people.setAttribute('aria-current','page');menu.prepend(people);
  const menuIcon=menuToggle.innerHTML,closeIcon=searchClose.innerHTML;
  let context=null,picker=null,menuOpen=false,searchOpen=false,scrollBefore=null,scrim=null,controller=null,timer=null,version=0,feedbackDialog=null,feedbackFocus=null;
  function lock(){if(scrollBefore===null){scrollBefore=document.body.style.overflow;document.body.style.overflow='hidden';}}

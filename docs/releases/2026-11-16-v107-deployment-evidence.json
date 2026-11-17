@@ -1,0 +1,90 @@
+{
+  "date": "2026-11-16",
+  "timezone": "America/New_York",
+  "verifiedAt": "2026-11-17T00:50:04.003Z",
+  "applicationCommit": "d14b86b2a52dc1cb8038666c05ff79163cbf7a14",
+  "sitesVersion": 107,
+  "deploymentId": "appgdep_6afba49ac46c8191945de1ee2a42aa52",
+  "deploymentStatus": "succeeded",
+  "environmentRevision": 7,
+  "routes": [
+    {
+      "path": "/account?signin=1",
+      "status": 200
+    },
+    {
+      "path": "/",
+      "status": 200
+    },
+    {
+      "path": "/categories",
+      "status": 200
+    },
+    {
+      "path": "/search",
+      "status": 200
+    },
+    {
+      "path": "/admin/login",
+      "status": 200
+    },
+    {
+      "path": "/api/health",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/status",
+      "status": 200,
+      "available": true,
+      "previewDelivery": false
+    },
+    {
+      "path": "/api/admin/inventory",
+      "status": 401
+    }
+  ],
+  "assets": [
+    {
+      "path": "/accounts.js",
+      "status": 200,
+      "matches": true,
+      "sha256": "f0da6a809a81c66aec38729c456fd3c64f27df247f3d511c5cdf3eca0ce7aa28"
+    },
+    {
+      "path": "/accounts.css",
+      "status": 200,
+      "matches": true,
+      "sha256": "9c110b597e35fae2c2cf027d0d1923f27522db81f1841276deb475d84855906b"
+    },
+    {
+      "path": "/brand.js",
+      "status": 200,
+      "matches": true,
+      "sha256": "9cdfe11d8aa60cde7f411586d3eb4a68fdcb33d02fe485d5051c55d3ed0528fd"
+    },
+    {
+      "path": "/brand/vouch-emblem.svg",
+      "status": 200,
+      "matches": true,
+      "sha256": "f1204c7676941ce9844cc7f70a946558aed4496348d01055c7d7767ff643ff26"
+    },
+    {
+      "path": "/brand/favicon.svg",
+      "status": 200,
+      "matches": true,
+      "sha256": "1c65eca48e92d83acfff56cbd5857a8c3c5fde659b9e275ced05356a562bb498"
+    },
+    {
+      "path": "/site.webmanifest",
+      "status": 200,
+      "matches": true,
+      "sha256": "07617b45db3d34fc56a8924604798567a8db8b96bd549bd94cb28c627f0a8238"
+    }
+  ],
+  "tests": {
+    "passed": 309,
+    "failed": 0
+  },
+  "build": "passed",
+  "productionAccess": "GET only; no codes requested or production records written"
+}

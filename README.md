@@ -1,6 +1,14 @@
 # Vouch
 
-## Current release — November 16, 2026 · version 104
+## Current release — November 16, 2026 · version 107
+
+Live at [Vouch sign-in](https://v4ch.app/account?signin=1). Email entry now uses the generic “Enter your email address” placeholder and tighter headline spacing. Phones below 768px show the form without imagery; tablets at 768–899px show the polaroid fan beside/behind the headline; desktop uses a warm paper panel. Example people and scores are static and labeled “Sample activity”. Code entry has a six-cell single input, automatic verification, heading focus and a 30-second client/server resend cooldown. The italic-v branding from version 106 is retained.
+
+Exact packaged source: `d14b86b2a52dc1cb8038666c05ff79163cbf7a14`; Sites version 107; successful deployment `appgdep_6afba49ac46c8191945de1ee2a42aa52`; environment revision 7. All 309 tests and the clean production build pass. Production responsive checks are GET-only; six deployed assets exactly match source. Actual inbox delivery/code sign-in, a physical phone keyboard and a full screen-reader audit remain unverified. Lint was not rerun; version 104 recorded four existing D1 typing errors. Pending navigation/search/Vouch-pill edits remain local and are excluded.
+
+See [sign-in behavior](docs/signin.md), [release notes](docs/releases/2026-11-16-v107.md), [deployment evidence](docs/releases/2026-11-16-v107-deployment-evidence.json), and the [Notion changelog](https://app.notion.com/p/40cd2a3caa8a812d83f4f3d13065be2d). Earlier dated sections below preserve their historical scope.
+
+## Prior release — November 16, 2026 · version 104
 
 Live at [Vouch](https://v4ch.app/sunscreen?board=1). The Board now shows interactive tag counts, larger clickable scores with vote counts directly underneath, and a public-voucher row in the vote popup. See all opens the item’s People who vouch section. The release also includes the approved sign-in product visual, labeled with an illustrative score. The + beside tags remains a visitor-facing placeholder.
 

@@ -20,7 +20,7 @@ Hosted admin access now uses a server-configured four-digit PIN instead of the p
 
 ---
 
-Participant email-code accounts are separate from the hosted organizer PIN and 24-hour admin session. Email verification is required before a participant identity is issued. The same verified email returns to the same opaque account ID; emails do not appear in profile or authentication response payloads.
+Participant email-code accounts are separate from the hosted organizer PIN and 24-hour admin session. Email verification is required before a participant identity is issued. The same verified email returns to the same opaque account ID; public profiles omit email, while authenticated owner endpoints may return the owner’s private email.
 
 ## Preview versus hosted email
 
@@ -37,7 +37,7 @@ Do not paste credentials into source, release notes, or browser code. Sender-dom
 ## Controls implemented
 
 - Six-digit codes expire after ten minutes, permit five attempts, and are single-use. Resending invalidates the prior code for that email/browser pair.
-- Codes are stored as HMAC-SHA-256 digests, with random challenge IDs and a server-only secret. A challenge is bound to an opaque browser cookie. Emails are normalized and stored only as SHA-256 lookup hashes in the private auth record.
+- Codes are stored as HMAC-SHA-256 digests, with random challenge IDs and a server-only secret. A challenge is bound to an opaque browser cookie. Email lookup keys use SHA-256 hashes; the normalized delivery address is retained in private auth records.
 - Requests are limited to one code per email per 30 seconds, five per email per hour, and twenty per source address per hour. Source keys are HMAC hashes, not recorded addresses.
 - Session cookies contain random 256-bit tokens. Storage retains only token hashes. Cookies are HttpOnly and SameSite=Lax, with Secure on HTTPS, a seven-day idle expiry, and a thirty-day absolute expiry.
 - Successful verification replaces the current device session token. Switching to a different account (or replacing an expired/invalid account cookie) also clears anonymous visitor/session cookies; a first signup preserves its anonymous edit. Logout revokes the current token and clears auth and anonymous visitor/session cookies to isolate subsequent users of a shared browser.

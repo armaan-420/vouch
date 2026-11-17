@@ -264,6 +264,15 @@
     return `<section class="item-comments" id="item-comments" data-count="${comments.length}"><h2>What people say <small>${comments.length}</small></h2><div class="item-comment-grid" id="item-comment-list">${comments.map((p,i)=>`<article class="item-comment"><p>${esc(p.comment)}</p><div class="item-comment-by">${window.VouchPeople.avatar(p,i,{className:'item-person',profilePath})}<strong>${p.handle?`<a href="${esc(profilePath(p.handle))}">${esc(window.VouchPeople.shortName(p.displayName))}</a>`:esc(p.displayName||'Anonymous')}</strong><time datetime="${esc(p.updatedAt||'')}">${esc(itemRelativeDate(p.updatedAt))}</time></div></article>`).join('')}</div>${comments.length>2?`<button type="button" class="item-see-all" data-more-comments aria-expanded="false" aria-controls="item-comment-list">See all ${comments.length} comments</button>`:''}</section>`;
   }
   let pendingProductVouch=null;
+  try{pendingProductVouch=JSON.parse(sessionStorage.getItem('vouch-pending-product')||'null')}catch{}
+  function setPendingProduct(value){pendingProductVouch=value;try{if(value)sessionStorage.setItem('vouch-pending-product',JSON.stringify(value));else sessionStorage.removeItem('vouch-pending-product')}catch{}}
+  const photoVoteChoices=[['no','Nope',"Nope, wouldn't recommend"],['brand','Brand','Brand vouch, trust the brand only'],['yes','Vouch','Vouch, would recommend'],['skip','Not tried','Not tried']];
+  const photoVoteText={yes:'You vouched',brand:'You trust the brand',no:'You said nope',skip:'Not tried'};
+  function photoVoteIcon(verdict){
+    const thumb='<path d="M7 10v11H3V10h4Zm0 0 5-7c1-1 3 0 2 3l-1 4h6c2 0 2 2 1 4l-2 6H7"/>';
+    const paths=verdict==='skip'?'<path d="M5 12h14"/>':verdict==='brand'?'<path d="m3 7 4-3 4 2 3-2 7 4-4 8-4 4-6-4-4-9Zm5 0 4-1 4 4-3 3-3-2-2 2M3 7l-2 2 4 9 2-2M21 8l2 2-4 9-2-2m-6-2 4 3m-6-1 3 3"/>':`<g${verdict==='no'?' transform="rotate(180 12 12)"':''}>${thumb}</g>`;
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+  }
   async function renderProduct(id){
     document.body.classList.remove('signin-page');
     let data;try{data=await request('/api/products/'+encodeURIComponent(id));}catch{shell('<h1>This product isn’t available anymore.</h1><p>Try searching for it again.</p><a href="/find">Search products</a>');return}const p=data.product||{},contributors=data.contributors||[];
@@ -284,23 +293,62 @@
     shell(`<nav class="item-navigation" aria-label="Product navigation"><a class="item-back" href="${esc(backPath)}"><span class="item-back-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5-5 5 5 5M4 10h12"/></svg></span><span>${experimentId?'The Board':'Vouch home'}</span></a>${p.category?`<span class="item-nav-category">${esc(p.category)}</span>`:''}</nav><article class="item-detail"><div class="item-photo">${window.VouchGallery.markup(p,'product-page-gallery')}</div><div class="item-story"><p class="brand">${esc(p.brand)}${p.category?' / '+esc(p.category):''}</p><div class="item-title-row"><h1>${esc(p.name||'Product')}</h1><a class="item-score" href="#item-community" style="--item-score-color:${color}" aria-label="Vouch score ${rated?n.toFixed(1)+' out of 10':resultsUnavailable?'unavailable':'unrated'}. See community results."><span>Vouch score</span>${rated?`<span class="item-score-dial"><svg viewBox="0 0 80 80" aria-hidden="true"><circle class="item-score-track" cx="40" cy="40" r="35"/><circle class="item-score-progress" cx="40" cy="40" r="35" pathLength="100" stroke-dasharray="${Math.max(0,Math.min(100,n*10))} 100"/></svg><strong>${n.toFixed(1)}</strong></span>`:`<strong class="item-unrated">${resultsUnavailable?'Unavailable':'Unrated'}</strong>`}</a></div>${itemPeopleSection(people)}${productTagSection(data)}${itemCommentsSection(people)}<section class="item-community" id="item-community"><div class="item-community-heading"><h2>The community says</h2>${counts?`<span>${total} ${total===1?'vote':'votes'}</span>`:''}</div>${counts?`<div class="item-vote-bar" aria-hidden="true">${[['pass','#b96b45'],['maybe','#d8c7ae'],['yes','#6c7d40']].map(([key,c])=>Number(counts[key])>0?`<span style="flex:${Number(counts[key])};background:${c}"></span>`:'').join('')}</div><dl class="item-vote-numbers">${[['pass','👎 Nope'],['maybe','🤝 Brand vouch'],['yes','👍 Vouch']].map(([key,label])=>`<div><dt>${label}</dt><dd>${Number(counts[key])||0}<small>${total?Math.round((Number(counts[key])||0)/total*100):0}%</small></dd></div>`).join('')}</dl>`:`<p class="account-help">${resultsUnavailable?'Community results could not be loaded. Refresh to try again.':'Open this product from a collection’s board to see its score and vote breakdown.'}</p>`}<details class="item-evidence"><summary>What’s behind these votes?</summary><p>Vouch means “I tried it. I recommend it.” Trust the brand is not a firsthand item endorsement. Don’t recommend is a negative recommendation; older responses were labeled Pass and did not establish firsthand experience. “Skip this one” responses are excluded. The score and vote totals come from this collection’s board; only consenting public account opinions appear in the people list.</p></details></section><div class="item-purchase">${buyUrl?`<a class="item-buy" href="${esc(buyUrl)}" target="_blank" rel="noopener noreferrer">Buy now <span aria-hidden="true">↗</span></a><p class="account-help">See current price and availability at the retailer.</p>`:''}<div id="where-to-buy"></div></div></div></article>`);
     root.querySelectorAll('[data-more-people]').forEach(button=>button.addEventListener('click',()=>{const panel=root.querySelector('.item-more-people');panel.hidden=!panel.hidden;root.querySelectorAll('[data-more-people]').forEach(b=>b.setAttribute('aria-expanded',String(!panel.hidden)));}));
     root.querySelector('[data-more-comments]')?.addEventListener('click',event=>{const section=root.querySelector('.item-comments'),expanded=section.classList.toggle('is-expanded');event.currentTarget.setAttribute('aria-expanded',String(expanded));event.currentTarget.textContent=expanded?'Show fewer comments':'See all '+section.dataset.count+' comments';});
-    const vouch=document.createElement('button');vouch.className='primary';vouch.textContent=data.myVouch?'Vouched ✓':'Vouch';vouch.disabled=!!data.myVouch;
-    const message=document.createElement('p');message.setAttribute('role','status');
-    const controls=document.createElement('div');root.querySelector('.item-purchase')?.prepend(vouch,message,controls);
-    if(data.newToVouch){root.querySelector('.item-score').remove();message.textContent='New to Vouch. Be the first to vouch.';root.querySelector('.item-community').hidden=true;}
+    const message=document.createElement('p');message.setAttribute('role','status');message.setAttribute('aria-live','polite');
+    const controls=document.createElement('div');root.querySelector('.item-purchase')?.prepend(message,controls);
+    if(data.newToVouch){root.querySelector('.item-score').remove();message.textContent='New to Vouch. Be the first to weigh in.';root.querySelector('.item-community').hidden=true;}
     if(p.variantLabel||p.retailerCount){const details=document.createElement('p');details.textContent=[p.variantLabel,p.retailerCount?p.retailerCount+' retailers':null].filter(Boolean).join(' · ');controls.append(details)}
-    if(data.eligibleEdits?.length===1){const note=document.createElement('p');note.textContent='Part of the '+data.eligibleEdits[0].title+' once '+data.nominationThreshold+' people nominate it.';controls.append(note)}
-    const profile=document.createElement('a');profile.href='/account';profile.textContent='View or change your vouch';profile.hidden=!data.myVouch;controls.append(profile);
-    const save=async editId=>{vouch.disabled=true;try{const result=await request('/api/account/vouch',{productId:id,...(editId?{editId}:{})});if(result.saved){pendingProductVouch=null;vouch.textContent='Vouched ✓';profile.hidden=false;message.textContent='Saved to your profile.';
-      const n=result.nomination||{};
+    const nominationNote=document.createElement('p');
+    if(data.eligibleEdits?.length===1){nominationNote.textContent='Part of the '+data.eligibleEdits[0].title+' once '+data.nominationThreshold+' people nominate it.';controls.append(nominationNote)}
+    const profile=document.createElement('a');profile.href='/account';profile.textContent='View or change your vouch';profile.hidden=data.myVerdict!=='yes';controls.append(profile);
+    const bar=document.createElement('div');bar.className='photo-vote-bar';bar.setAttribute('role','group');bar.setAttribute('aria-label','Your take on this product');root.querySelector('.item-photo').append(bar);
+    let selected=data.myVerdict||null,collapsed=!!selected,saving=false;
+    function paintVoteBar(focus=false){
+      nominationNote.hidden=!!selected&&selected!=='yes';
+      bar.classList.toggle('is-collapsed',collapsed);bar.setAttribute('aria-busy',String(saving));
+      bar.innerHTML=collapsed?`<span class="photo-vote-summary" tabindex="-1"><span class="photo-vote-icon" data-verdict="${selected}">${photoVoteIcon(selected)}</span><span>${photoVoteText[selected]}</span></span><button type="button" class="photo-vote-change">${selected==='skip'?'Undo':'Change'}</button>`:photoVoteChoices.map(([verdict,label,name])=>`<button type="button" class="photo-vote-option" data-verdict="${verdict}" aria-label="${esc(name)}" aria-pressed="${selected===verdict}"><span class="photo-vote-icon" data-verdict="${verdict}">${photoVoteIcon(verdict)}</span><span>${label}</span></button>`).join('');
+      bar.querySelectorAll('button').forEach(button=>button.disabled=saving);
+      bar.querySelector('.photo-vote-change')?.addEventListener('click',()=>{collapsed=false;paintVoteBar(true)});
+      bar.querySelectorAll('.photo-vote-option').forEach(button=>button.addEventListener('click',()=>choose(button.dataset.verdict)));
+      if(focus)(collapsed?bar.querySelector('.photo-vote-summary'):bar.querySelector('[aria-pressed="true"]')||bar.querySelector('button'))?.focus({preventScroll:true});
+    }
+    async function refreshPeople(){
+      // Account opinions are separate from board scores. Refresh only public attribution.
+      try{const fresh=await request('/api/products/'+encodeURIComponent(id)),people=(fresh.contributors||[]).filter(c=>c.verdict==='yes');
+        const section=root.querySelector('.item-people');if(section)section.outerHTML=itemPeopleSection(people);
+        root.querySelector('.item-comments')?.remove();root.querySelector('.item-tags')?.insertAdjacentHTML('afterend',itemCommentsSection(people));
+        root.querySelectorAll('[data-more-people]').forEach(button=>button.addEventListener('click',()=>{const panel=root.querySelector('.item-more-people');panel.hidden=!panel.hidden;root.querySelectorAll('[data-more-people]').forEach(b=>b.setAttribute('aria-expanded',String(!panel.hidden)))}));
+        root.querySelector('[data-more-comments]')?.addEventListener('click',event=>{const section=root.querySelector('.item-comments'),expanded=section.classList.toggle('is-expanded');event.currentTarget.setAttribute('aria-expanded',String(expanded));event.currentTarget.textContent=expanded?'Show fewer comments':'See all '+section.dataset.count+' comments';});
+      }catch{/* A successful opinion save must not be reported as failed if attribution is unavailable. */}
+    }
+    const save=async(verdict,editId)=>{
+      if(saving)return;saving=true;paintVoteBar();message.textContent='Saving…';
       controls.querySelectorAll('[data-nomination-action]').forEach(node=>node.remove());
-      if(n.status==='choose_edit'){message.textContent+=' Choose an Edit to nominate it to.';for(const e of n.edits){const button=document.createElement('button');button.type='button';button.textContent=e.title;button.dataset.nominationAction='';button.onclick=()=>{button.disabled=true;save(e.id)};controls.append(button)}}
-      else if(n.status==='retryable'){message.textContent+=' The Edit nomination could not be saved.';const retry=document.createElement('button');retry.textContent='Retry nomination';retry.dataset.nominationAction='';retry.onclick=()=>{retry.disabled=true;save(editId)};controls.append(retry)}
-      else if(n.status==='no_eligible_edit')message.textContent+=' No '+(p.category||'matching')+' Edit yet — it’s on your profile.';
-      else {message.textContent+=n.status==='already_on_edit'?' Already in the '+n.title+'.':n.remaining?' '+n.remaining+' more nomination'+(n.remaining===1?'':'s')+' needed for '+n.title+'.':' Nominated to '+n.title+'.';if(n.href){const link=document.createElement('a');link.href=n.href;link.textContent='Open '+n.title;link.dataset.nominationAction='';controls.append(link)}}
-    }}catch(error){vouch.disabled=false;message.textContent=error.message;}};
-    vouch.onclick=async()=>{try{me=await request('/api/account/me');if(!me.authenticated||me.browserProfile||me.profile?.browserProfile){pendingProductVouch=id;auth=await request('/api/auth/status');renderAnonymous();return;}await save();}catch(error){message.textContent=error.message}};
-    if(pendingProductVouch===id){me=await request('/api/account/me');if(me.authenticated&&!me.browserProfile&&!me.profile?.browserProfile)await save();}
+      try{
+        const result=await request('/api/account/vouch',{productId:id,verdict,...(editId?{editId}:{})});
+        if(!result.saved)throw Error('Could not save. Please try again.');
+        setPendingProduct(null);selected=verdict;data.myVerdict=verdict==='skip'?null:verdict;collapsed=true;profile.hidden=verdict!=='yes';message.textContent=verdict==='skip'?'Your previous take was cleared.':'Saved to your profile.';
+        const n=result.nomination;
+        if(verdict==='yes'&&n){
+          if(n.status==='choose_edit'){message.textContent+=' Choose an Edit to nominate it to.';for(const e of n.edits){const button=document.createElement('button');button.type='button';button.textContent=e.title;button.dataset.nominationAction='';button.onclick=()=>save('yes',e.id);controls.append(button)}}
+          else if(n.status==='retryable'){message.textContent+=' The Edit nomination could not be saved.';const retry=document.createElement('button');retry.type='button';retry.textContent='Retry nomination';retry.dataset.nominationAction='';retry.onclick=()=>save('yes',editId);controls.append(retry)}
+          else if(n.status==='no_eligible_edit')message.textContent+=' No '+(p.category||'matching')+' Edit yet — it’s on your profile.';
+          else {message.textContent+=n.status==='already_on_edit'?' Already in the '+n.title+'.':n.remaining?' '+n.remaining+' more nomination'+(n.remaining===1?'':'s')+' needed for '+n.title+'.':' Nominated to '+n.title+'.';if(n.href){const link=document.createElement('a');link.href=n.href;link.textContent='Open '+n.title;link.dataset.nominationAction='';controls.append(link)}}
+        }
+        await refreshPeople();
+      }catch(error){message.textContent=error.message;}
+      finally{saving=false;paintVoteBar(true)}
+    };
+    async function choose(verdict){
+      if(saving)return;
+      if(verdict==='skip'&&!data.myVerdict){selected='skip';collapsed=true;paintVoteBar(true);return;}
+      saving=true;paintVoteBar();message.textContent='Checking your account…';
+      try{me=await request('/api/account/me');
+        if(!me.authenticated||me.browserProfile||me.profile?.browserProfile){setPendingProduct({id,verdict});auth=await request('/api/auth/status');renderAnonymous();return;}
+        saving=false;await save(verdict);
+      }catch(error){saving=false;message.textContent=error.message;paintVoteBar(true)}
+    }
+    paintVoteBar();
+    if(pendingProductVouch?.id===id){me=await request('/api/account/me');if(me.authenticated&&!me.browserProfile&&!me.profile?.browserProfile)await save(pendingProductVouch.verdict);else{auth=await request('/api/auth/status');renderAnonymous();return;}}
     wireProductTags(id,data);
     loadWhereToBuy(id);
     if(location.hash==='#item-people')root.querySelector('#item-people')?.scrollIntoView({block:'start'});

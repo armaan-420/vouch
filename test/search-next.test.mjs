@@ -34,3 +34,42 @@ test('application flow searches, verifies email, saves a vouch and reads profile
  const start=await call('/api/auth/start',{email:'fixture@example.com'});assert.equal(start.status,200);const verified=await call('/api/auth/verify',{challengeId:start.data.challengeId,code:start.data.previewCode});assert.equal(verified.status,200);
  const saved=await call('/api/account/vouch',{productId:product.id});assert.equal(saved.status,200);assert.equal(saved.data.nomination.status,'nominated');const me=await call('/api/account/me');assert.equal(me.data.profile.opinions[0].verdict,'yes');assert.equal(me.data.profile.opinions[0].scoreStatus,'unrated');const page=await call('/api/products/'+product.id);assert.equal(page.data.myVouch,true);const nominations=await call('/api/me?experiment=bottles');assert.equal(nominations.data.nominations.length,1);
 });
+
+test('photo verdicts round-trip, preserve default yes, exclude skip and nominate only yes',async t=>{
+ const f=await fixture(t);
+ const get=async endpoint=>(await f.accounts(f.req(endpoint))).json();
+ assert.equal((await get('/api/products/'+product.id)).myVerdict,null);
+ // Publish attribution so clearing is checked against the public contributor list too.
+ await f.call({productId:product.id});
+ let r=await f.accounts(f.req('/api/account/profile',{visibility:'public',showName:true,opinions:[{productId:product.id,visibility:'public'}]}));assert.equal(r.status,200);
+ for(const verdict of ['yes','brand','no','skip']){
+  const saved=await f.call({productId:product.id,verdict});assert.equal(saved.status,200);
+  if(verdict!=='yes')assert.equal(saved.data.nomination,null);
+  const page=await get('/api/products/'+product.id);
+  assert.equal(page.myVerdict,verdict==='skip'?null:verdict);assert.equal(page.myVouch,verdict==='yes');
+  const me=await get('/api/account/me');
+  if(verdict!=='skip')assert.equal(me.profile.opinions.find(o=>o.productId===product.id).verdict,verdict);
+  if(verdict==='yes')assert.equal(page.contributors.length,1);
+  if(verdict==='skip')assert.deepEqual(page.contributors,[]);
+ }
+ assert.equal((await f.call({productId:product.id})).status,200);
+ assert.equal((await get('/api/products/'+product.id)).myVerdict,'yes');
+ for(const verdict of ['invalid','',null,3,{}])assert.equal((await f.call({productId:product.id,verdict})).status,400);
+});
+
+test('brand and nope create no nomination or board vote, and repeated verdicts cost no rate-limit slots',async t=>{
+ const f=await fixture(t);
+ for(const verdict of ['brand','no','skip']){
+  assert.equal((await f.call({productId:product.id,verdict})).data.nomination,null);
+  const before=await(await f.store.scope('accounts-v1',initialAccounts)).read();
+  await f.call({productId:product.id,verdict});
+  const after=await(await f.store.scope('accounts-v1',initialAccounts)).read();
+  assert.deepEqual(after,before);
+ }
+ const state=await(await f.store.scope('experiment:bottles',fresh)).read();
+ assert.deepEqual(state.nominations,[]);assert.deepEqual(state.baseVotes,{});
+ // Each changed verdict consumes one slot, even on the same product.
+ for(let i=3;i<30;i++)assert.equal((await f.call({productId:product.id,verdict:i%2?'brand':'no'})).status,200);
+ assert.equal((await f.call({productId:product.id,verdict:'yes'})).status,429);
+ assert.equal((await f.call({productId:product.id,verdict:'brand'})).status,200);
+});

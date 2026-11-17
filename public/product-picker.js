@@ -1,6 +1,6 @@
 // Shared selection interaction for nominations and the organizer product picker.
-window.VouchProductPicker=function({input,results,more,clear,another,esc,isSelected,isUnavailable=()=>false,onChoose,onClear,boardLabel="Already on the board · View product",unselectedLabel=null,resultLabel=()=>null,enhance=true,focusAfterChoose=true}){
- const media=matchMedia('(max-width:600px)'),pageSize=()=>media.matches?3:5;
+window.VouchProductPicker=function({input,results,more,clear,another,esc,isSelected,isUnavailable=()=>false,onChoose,onClear,boardLabel="Already on the board · View product",unselectedLabel=null,resultLabel=()=>null,enhance=true,focusAfterChoose=true,maxVisible=null}){
+ const media=matchMedia('(max-width:600px)'),pageSize=()=>maxVisible||(media.matches?3:5);
  let products=[],limit=pageSize(),active=-1,disabled=false;
  const rows=()=>[...results.querySelectorAll('.product-result')];
  function highlight(){

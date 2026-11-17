@@ -5,6 +5,7 @@ import {createCatalogRuntime} from './catalog/runtime.mjs';
 import {bucketPhotoStorage} from './profile-photo.mjs';
 import {getExecutionContext} from './execution-context';
 import { env } from 'cloudflare:workers';
+import {createRequestStore} from './request-store.mjs';
 import {createD1Store} from './d1-store';
 import {createProductSearch} from '../product-search.mjs';
 import {createApplicationApi} from './application-api.mjs';
@@ -34,9 +35,9 @@ export async function hostedApi(request:Request){
   const authResponse=await adminAuth.handle(request);
   if(authResponse)return authResponse;
   if(new URL(request.url).pathname.startsWith('/api/admin/')&&!await adminAuth.authorize(request))return Response.json({error:'Enter the admin PIN to continue.'},{status:401,headers:{'Cache-Control':'private, no-store'}});
-  const store=createD1Store(env.DB);
+  const store=createRequestStore(createD1Store(env.DB));
   // Retry initialization after a transient storage failure.
-  searchPromise??=initializeSearch(store).catch(error=>{searchPromise=undefined;throw error});
+  searchPromise??=initializeSearch(createD1Store(env.DB)).catch(error=>{searchPromise=undefined;throw error});
   const search=await searchPromise;
   const ctx=getExecutionContext();
   const requestSearch={...search,search:(q:string,options={})=>search.search(q,{...options,waitUntil:ctx?(p:Promise<unknown>)=>ctx.waitUntil(p):undefined})};

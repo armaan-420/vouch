@@ -52,3 +52,17 @@ Vouch p50 2.28 ms and p95 2.76 ms on the development host. This measures endpoin
 logic and an in-memory fixture, **not production D1, HTTP, or cold-isolate latency**.
 Reproduce with `node scripts/search-latency-check.mjs`; the script also reports a
 catalog fixture baseline. Production p95 remains unverified.
+
+### November 17 follow-up: navigation and library placement
+
+Search remains global on Explore, Leaderboard, product pages, sign-in and profiles,
+including while voting. Removed account/home sign-in navigation locks and voting
+search CSS suppression. The query endpoint remains independent of the current Edit.
+Products now reads “All Products on Vouch”; removed the discovery hero, taste banner
+and explanatory promotional section. Existing public inventory, category and
+community-rating filters and pagination remain; drafts/private records are not
+exposed. The discovery hero is deferred to a future homepage iteration.
+
+Validation: 18 relevant search/discovery tests pass, changed JS lint passes, and
+production build passes. Browser verification and publication remain blocked by
+the execution sandbox's listener and outbound Git DNS restrictions.

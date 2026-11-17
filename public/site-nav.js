@@ -74,30 +74,23 @@
   if(product.discoveryHref&&/^\/products\/[^/?#]+$/.test(product.discoveryHref)){closePanels(false);location.href=product.discoveryHref;return;}
 
   if(product.onBoardId){const href=context?.productPath(product);if(href){closePanels(false);location.href=href;}return;}
+  if(product.vouchStatus==='external'&&String(product.category||'').toLowerCase()!==String(context?.category||'').toLowerCase()){status.textContent='This product is outside the current Edit. Open its category to nominate it.';return;}
   if(!context?.canNominate){status.textContent='Nominations are paused for this Edit.';return;}
   const query=input.value.trim();closePanels();context.nominate(product,query);
  }
- function initializePicker(){if(picker)return;picker=window.VouchProductPicker({input,results,more:header.querySelector('.site-search-more'),clear:header.querySelector('.site-search-clear'),another:header.querySelector('.site-search-another'),esc,isSelected:()=>false,onChoose:choose,onClear:()=>{version++;controller?.abort();clearTimeout(timer);hideResults();},resultLabel:product=>product.discoveryHref?'On Vouch · '+product.category+' · View product':null,boardLabel:'On the board · View product',unselectedLabel:'Not on board · Vouch for it',enhance:false,focusAfterChoose:false});}
+ function initializePicker(){if(picker)return;picker=window.VouchProductPicker({input,results,more:header.querySelector('.site-search-more'),clear:header.querySelector('.site-search-clear'),another:header.querySelector('.site-search-another'),esc,isSelected:()=>false,onChoose:choose,onClear:()=>{version++;controller?.abort();clearTimeout(timer);hideResults();},resultLabel:product=>product.vouchStatus==='rated'?'On Vouch · '+product.evidence.ratingCount+' ratings · View product':product.vouchStatus==='listed'?'On Vouch · No ratings yet · View product':'Outside Vouch · '+(product.category||'Uncategorized')+' · No Vouch opinions',boardLabel:'On the board · View product',unselectedLabel:'Not on board · Vouch for it',enhance:false,focusAfterChoose:false});}
  async function runSearch(){
   const query=input.value.trim();if(!context||query.length<2){picker?.clear();hideResults();return;}
   const label=Array.from(query);nominate.textContent='Vouch for “'+label.slice(0,40).join('')+(label.length>40?'…':'')+'”';
   const current=++version;controller?.abort();controller=new AbortController();picker.clear();popover.hidden=false;input.setAttribute('aria-expanded','true');status.textContent='Looking up products…';nominate.hidden=true;
   try{
    const options={signal:AbortSignal.any([controller.signal,AbortSignal.timeout(12000)])};
-   // Public discovery spans all categories; catalog additions retain this Edit's category.
-   const [global,catalog]=await Promise.allSettled([
-    fetch('/api/discover?q='+encodeURIComponent(query),options).then(async response=>{if(!response.ok)throw Error('Search unavailable.');return response.json();}),
-    window.VouchCatalog.fetch(query,context.searchUrl(query),options).then(async response=>{if(!response.ok)throw Error('Catalog unavailable.');return response.json();})
-   ]);
-   if(current!==version)return;
-   if(global.status==='rejected'&&catalog.status==='rejected')throw Error('Search unavailable.');
-   const discovered=global.status==='fulfilled'?global.value.products.map(product=>({...product,discoveryHref:product.href})):[];
-   const key=product=>[product.brand,product.name].join(' ').toLowerCase().replace(/[^a-z0-9]/g,'');
-   const known=new Set(discovered.map(key));
-   const additions=catalog.status==='fulfilled'?(catalog.value.products||[]).filter(product=>!known.has(key(product))):[];
-   const products=[...discovered,...additions];
+   const response=await fetch('/api/search?q='+encodeURIComponent(query),options);
+   if(!response.ok)throw Error('Search unavailable.');
+   const data=await response.json();if(current!==version)return;
+   const products=data.products||[];
    picker.setProducts(products);popover.hidden=false;input.setAttribute('aria-expanded','true');
-   const partial=global.status==='rejected'||catalog.status==='rejected';
+   const partial=data.partial;
    status.textContent=(products.length?products.length+' '+(products.length===1?'match':'matches')+' across Vouch.':partial?'Search is partly unavailable.':'No match. Vouch for it by name.')+' Missing products are added to the '+context.category+' Edit.'+(partial&&products.length?' Some results could not load.':'');
    nominate.hidden=products.length>0||!context.canNominate;
   }catch(error){if(current!==version||error.name==='AbortError')return;picker.clear();popover.hidden=false;input.setAttribute('aria-expanded','true');status.textContent='Search is unavailable. Try again or vouch for it by name in the '+context.category+' Edit.';nominate.hidden=!context?.canNominate;}

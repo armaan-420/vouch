@@ -13,7 +13,7 @@ Stop the process with Ctrl-C when finished. No credentials or manual configurati
 ## Changes
 
 - Dedicated `/wharton` landing, email-code recovery and category selection; no signup visibility choices. Existing general account/sign-in screens remain available.
-- Existing rating card, tags, verdict buttons, Skip and immediate advancement remain. A collapsed optional comment field saves with the answer, restores on revisiting, and retains typed text if saving fails.
+- Existing rating card, tags, verdict buttons, Skip and immediate advancement remain. An inline optional note inside the product card saves with the answer, restores on revisiting, and retains typed text if saving fails.
 - One current comment per account/product opinion, maximum 240 characters. Notes on item Vouches can appear with eligible public endorsements; notes on other verdicts stay owner-only. Changing a verdict clears the old note. Existing profile opinion settings edit/remove comments. Existing visibility choices continue to apply.
 - Board tag chips are replaced by photos/initials and named public item-vouch summaries. Tags remain in rating, product detail and the library. A batched request reads account data once for up to 100 Board product IDs and returns at most four people per item. Individual avatars open profiles; the summary opens product detail's People who vouch section.
 - Existing product detail lists endorsers and optional comments; existing profiles/collections are reused. No synthetic names, reviews or popularity counts in application UI.
@@ -45,3 +45,11 @@ To undo a selected checkpoint while retaining history, use `git -c core.hooksPat
 ## Before a three-category student pilot
 
 Choose and approve a sports category and exact lineup through the existing organizer process. The implementation displays currently open, approved categories instead of publishing placeholder categories. Decide whether the existing sunscreen lineup is the desired skincare choice. No sports category was invented or approved during implementation.
+
+## Feedback refinements — November 17
+
+- `2e3bf4a`: email submission replaces only the signup box with code entry, retaining the landing hero/image. Verification uses the entered name automatically; category choice removes the right-hand image. Three editorial category rows reflect the concept mockup. Running shoes remains Coming soon until an approved experiment exists.
+- `d6bb0d8`: zero-endorser Board rows are hidden; visible avatars align to the product image, 46px after the rank.
+- Inline-note checkpoint: replaces the external disclosure with a quiet pencil/textarea row inside the product card. It grows to four lines with helper/counter, compacts the phone photo while focused and guards pointerdown so a vote saves the note in one tap. Existing vote controls and tags remain unchanged.
+
+Verification: full lint completes with zero errors and 21 existing warnings; all 327 tests pass; build passes. Browser checks at 390px and 1440px cover unchanged landing hero during code entry, three category rows with no right-hand image, small phone thumbnail vs unchanged desktop photo, four-line field cap, Tab from note to verdict, one-tap voting, restored note/saved verdict, Skip clearing, image/avatar alignment, hidden empty rows, and profile navigation. A reduced 390×500 viewport simulates the keyboard-reduced available space and confirms the vote buttons fit. A real iOS/Android keyboard was not exercised; on-device confirmation remains useful. The supplied HTML mockup was opened in the browser as the reference.

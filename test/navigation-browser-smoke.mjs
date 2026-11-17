@@ -10,11 +10,12 @@ try{
    await page.goto(origin+route);await page.locator('.site-header.has-product-search').waitFor();await page.waitForTimeout(100);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,route+' '+width);
    const brand=await page.locator('.site-brand-group').boundingBox();assert.ok(brand.width>=36);
-   if(width<=760){assert.equal(await page.locator('.site-search').isVisible(),false);assert.equal(await page.locator('.site-search-toggle').isVisible(),true);assert.equal(await page.locator('.leaderboard-link').isVisible(),false);assert.equal(await page.locator('.site-menu-toggle').isVisible(),false);
-    const icon=await page.locator('.site-search-toggle').boundingBox();assert.ok(brand.x+brand.width<icon.x);assert.equal(Math.round((await page.locator('.site-header').boundingBox()).height),64);
+   if(width<=760){assert.equal(await page.locator('.site-search').isVisible(),false);assert.equal(await page.locator('.site-search-toggle').isVisible(),true);assert.equal(await page.locator('.leaderboard-link').isVisible(),false);assert.equal(await page.locator('.site-menu-toggle').isVisible(),true);
+    const icon=await page.locator('.site-search-toggle').boundingBox();assert.ok(brand.x+brand.width<icon.x);const menu=await page.locator('.site-menu-toggle').boundingBox();assert.ok(icon.x+icon.width<=menu.x,'menu sits to right of search');assert.equal(Math.round((await page.locator('.site-header').boundingBox()).height),64);
    }else{assert.equal(await page.locator('#site-search-input').isVisible(),true);const field=await page.locator('.site-search').boundingBox();assert.ok(field.x>=brand.x+brand.width);assert.equal(await page.locator('.site-search-emblem').count(),0);}
   }
   await page.goto(origin+'/waterbottle?start=1');await page.locator('[data-vote=yes]').waitFor();
+  if(width<=760){await page.locator('.site-menu-toggle').click();assert.equal(await page.locator('.site-menu-toggle').getAttribute('aria-expanded'),'true');assert.equal(await page.locator('.site-menu a[href="/categories"]').isVisible(),true);assert.equal(await page.locator('.site-menu-account').isVisible(),true);await page.keyboard.press('Escape');assert.equal(await page.locator('.site-menu-toggle').getAttribute('aria-expanded'),'false');assert.ok(await page.locator('.site-menu-toggle').evaluate(e=>e===document.activeElement));}
   if(width===390||width===1440)await page.screenshot({path:`/tmp/vouch-navigation-rest-${width}.png`});
   if(width<=760){await page.locator('.site-search-toggle').click();assert.equal(await page.locator('.site-search').getAttribute('aria-modal'),'true');assert.ok(await page.locator('main').evaluate(e=>e.inert));assert.equal(await page.locator('.site-search-close').isVisible(),false);assert.equal(await page.locator('.site-search-shortcuts').isVisible(),true);}
   else{await page.locator('#site-search-input').click();}

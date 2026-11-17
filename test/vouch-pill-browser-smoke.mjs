@@ -107,7 +107,7 @@ try{
  assert.equal(await page.locator('#nomination-form').count(),0,'global result is never nominated to sunscreen');
  await page.setViewportSize({width:375,height:812});
  for(const route of ['/','/account','/categories','/closed?board=1','/draft?preview=1&board=1']){
-  await page.goto(origin+route);await page.waitForLoadState('networkidle');if(route==='/account')assert.equal(await visible('.site-menu-toggle'),false,'signed-out account stays navigation locked');assert.equal(await visible('.vouch-pill'),false,route);assert.equal(await visible('.board-vouch-card'),false,route);
+  await page.goto(origin+route);await page.waitForLoadState('networkidle');if(route==='/account')assert.ok(await visible('.site-menu-toggle'),'signed-out account retains navigation');assert.equal(await visible('.vouch-pill'),false,route);assert.equal(await visible('.board-vouch-card'),false,route);
  }
  await page.goto(origin+'/sunscreen?start=1');await page.locator('[data-vote]').first().waitFor();assert.equal(await visible('.vouch-pill'),false);assert.equal(await visible('.board-vouch-card'),false);
  assert.deepEqual(errors,[]);

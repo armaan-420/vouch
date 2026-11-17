@@ -7,6 +7,7 @@
  // Navigation destinations are shared by desktop links and the mobile menu.
  header.querySelectorAll('.site-desktop-links a,.site-menu a').forEach(link=>{if(link.pathname===location.pathname)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});
  const menuIcon=menuToggle.innerHTML,closeIcon=searchClose.innerHTML;
+ const menuAccount=document.createElement('a');menuAccount.className='site-menu-account';menu.append(menuAccount);
  let searchFocus=null,restoringSearchFocus=false,lastQuery=null;
  const normalizeQuery=value=>value.normalize('NFKD').toLowerCase().replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
  let context={},picker=null,menuOpen=false,searchOpen=false,scrollBefore=null,scrim=null,controller=null,timer=null,version=0,feedbackDialog=null,feedbackFocus=null;
@@ -59,7 +60,7 @@
  function hideResults(){allResults.hidden=true;popover.hidden=true;input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');}
  function closeSearch(focus=true){modalSearch(false);const wasOpen=searchOpen;searchOpen=false;header.classList.remove('is-search-open');searchToggle.setAttribute('aria-expanded','false');version++;clearTimeout(timer);controller?.abort();hideResults();syncScrim();unlock();if(wasOpen&&focus){syncPill();const target=searchFocus?.isConnected&&searchFocus.getClientRects().length?searchFocus:window.innerWidth>760?input:searchToggle;restoringSearchFocus=true;target.focus({preventScroll:true});restoringSearchFocus=false;}}
  function closePanels(focus=true){closeMenu(focus);closeSearch(focus);}
- function toggleMenu(){if(menuOpen){closeMenu();return;}closeSearch(false);menuOpen=true;menu.hidden=false;header.classList.add('is-menu-open');menuToggle.setAttribute('aria-expanded','true');menuToggle.setAttribute('aria-label','Close menu');menuToggle.innerHTML=closeIcon;lock();syncScrim();}
+ function toggleMenu(){const account=header.querySelector('.leaderboard-link');menuAccount.href=account.href;menuAccount.textContent=account.getAttribute('aria-label')||'Your account';if(menuOpen){closeMenu();return;}closeSearch(false);menuOpen=true;menu.hidden=false;header.classList.add('is-menu-open');menuToggle.setAttribute('aria-expanded','true');menuToggle.setAttribute('aria-label','Close menu');menuToggle.innerHTML=closeIcon;lock();syncScrim();}
  function openSearch(trigger=searchToggle,clear=false){if(!searchOpen)searchFocus=trigger instanceof HTMLElement?trigger:searchToggle;if(clear){input.value='';lastQuery=null;picker?.clear();hideResults();}closeMenu(false);showHeader();searchOpen=true;header.classList.add('is-search-open');searchToggle.setAttribute('aria-expanded','true');lock();syncScrim();modalSearch(true);syncSearchShortcuts();input.focus();if(input.value.trim().length>=2)runSearch();}
  menuToggle.onclick=toggleMenu;searchToggle.onclick=()=>openSearch(searchToggle);searchClose.onclick=()=>closeSearch();
  header.querySelectorAll('[data-suggest-edit]').forEach(trigger=>trigger.hidden=true);

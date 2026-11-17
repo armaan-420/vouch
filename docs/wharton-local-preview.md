@@ -78,3 +78,7 @@ Local navigation refinement based on Armaan's Infatuation screenshots. Supersede
 - An adjacent product purchase-control overflow found at 1100px was corrected separately in `f2de4d9`.
 
 Validation: 327 automated tests and production build pass; full lint has zero errors and existing warnings. `node test/navigation-browser-smoke.mjs` checks 320/390/760/768/900/1100/1440 widths across rating, Board, product, categories and account pages; loading/results/failure, routing, focus, Escape, modal background state, resizing, and overflow use synthetic intercepted search responses. Updated floating Vouch smoke passes across 320/360/375/768/1280px with scroll behavior, reduced motion, global-result routing, nomination handoff and route gating. Wharton signup-to-profile and item-page browser smokes also pass. No real device screen-reader or OS keyboard session was used. Screenshots are in output/navigation-refinement at the workspace root.
+
+### Mobile hamburger refinement
+
+At Armaan's follow-up request, the mobile header now shows the hamburger immediately to the right of search. It opens the shared navigation menu with an account/sign-in link. Navigation remains available within the expanded search panel too. Browser checks pass at 320–1440px, including control spacing, menu open/close state, Escape focus return, search results and responsive resizing. Production build passes. Local only.

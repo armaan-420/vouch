@@ -1,6 +1,12 @@
 # Vouch participant authentication
 
-## Current production — November 8, 2026, version 50
+## Sign-in redesign — November 16, 2026
+
+The approved `/account?signin=1` screen leads with “Your taste. Your people.” and “Sign in or join with your email. No password.” Its email placeholder is “Enter your email address.” The shared sign-in, code, account-creation and pending-verification screens use a 420px form column. At 900px and above, a warm paper panel shows a static product polaroid fan; at 768–899px the fan sits beside and behind the headline; below 768px the entire illustration and sample label are hidden. Tablet/desktop examples are fictional first names, initials and water-bottle products, labeled “Sample activity”; no visitor data is loaded for them.
+
+Code entry has one numeric, paste/autofill-friendly input styled as six cells, automatic submission at six digits and a manual Verify and continue button. The heading changes to “Check your email.” and receives focus when the step changes. Sending displays “Sending…” with `aria-busy`. Resend opens after 30 seconds on both client and server; expiry remains ten minutes, with five verification attempts and the existing five-per-email/twenty-per-source hourly send caps. The local test inbox remains preview-only. Actual production inbox delivery and physical-phone keyboard behavior are not established by local checks. See [sign-in guide](docs/signin.md) for the final responsive design and validation scope.
+
+## Historical production verification — November 8, 2026, version 50
 
 Sites version 50 is deployed at [Vouch](https://v4ch.app), source `cd5ba45f12d0fa29da0df441209efa6a0d05fb33`, deployment `appgdep_6af00aae41948191a294a21a3d8708d0`, environment revision 6. It succeeded on November 8, 2026 at 12:37 AM America/New_York. This documentation update covers deployed versions 42–50 since version 41.
 
@@ -32,7 +38,7 @@ Do not paste credentials into source, release notes, or browser code. Sender-dom
 
 - Six-digit codes expire after ten minutes, permit five attempts, and are single-use. Resending invalidates the prior code for that email/browser pair.
 - Codes are stored as HMAC-SHA-256 digests, with random challenge IDs and a server-only secret. A challenge is bound to an opaque browser cookie. Emails are normalized and stored only as SHA-256 lookup hashes in the private auth record.
-- Requests are limited to one code per email per minute, five per email per hour, and twenty per source address per hour. Source keys are HMAC hashes, not recorded addresses.
+- Requests are limited to one code per email per 30 seconds, five per email per hour, and twenty per source address per hour. Source keys are HMAC hashes, not recorded addresses.
 - Session cookies contain random 256-bit tokens. Storage retains only token hashes. Cookies are HttpOnly and SameSite=Lax, with Secure on HTTPS, a seven-day idle expiry, and a thirty-day absolute expiry.
 - Successful verification replaces the current device session token. Switching to a different account (or replacing an expired/invalid account cookie) also clears anonymous visitor/session cookies; a first signup preserves its anonymous edit. Logout revokes the current token and clears auth and anonymous visitor/session cookies to isolate subsequent users of a shared browser.
 - Mutations require a matching Origin and reject cross-site browser requests. Missing Origin is rejected. Server authorization must still protect account APIs independently.
@@ -75,7 +81,7 @@ Session validity is checked from storage on each request. Repeated checks within
 
 ## Email-first account entry — November 13, 2026
 
-`/account` and `/account?signin=1` now share one email-code flow for new and returning members. New members verify their email before entering a display name and saving the previewed collection; returning verified members recover their profile. The code screen supports paste, one-time-code autofill, automatic submission at six digits, separate resend/change-email controls, a server-backed 60-second resend cooldown and ten-minute expiry. The pending attempt survives refresh in tab session storage; local preview codes do not persist. Existing browser profiles remain accessible and offer a verification prompt; their existing recovery/migration safeguards remain in place. Legacy participation APIs are retained for compatibility.
+`/account` and `/account?signin=1` now share one email-code flow for new and returning members. New members verify their email before entering a display name and saving the previewed collection; returning verified members recover their profile. The code screen supports paste, one-time-code autofill, automatic submission at six digits, separate resend/change-email controls, a server-backed 30-second resend cooldown and ten-minute expiry. The pending attempt survives refresh in tab session storage; local preview codes do not persist. Existing browser profiles remain accessible and offer a verification prompt; their existing recovery/migration safeguards remain in place. Legacy participation APIs are retained for compatibility.
 
 The private owner profile and organizer People API expose `whartonEmailVerified`, derived from verified email ownership and the exact `@wharton.upenn.edu` domain. People includes a verified-Wharton count/filter. The historical Wharton early tester badge remains separate and is not proof of current enrollment, degree, or other demographics. Public profile responses omit email and verification evidence.
 

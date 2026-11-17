@@ -142,37 +142,83 @@
 @media(max-width:600px){.account-shell:has(.item-detail){padding-top:10px}.item-navigation{gap:12px;margin-bottom:8px}.item-nav-category{padding-left:12px;font-size:9px}}
 @media(prefers-reduced-motion:reduce){.item-back-icon{transition:none}}
 
-/* Email-first authentication: generous mobile targets and a paste-friendly code. */
-.auth-recovery{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-top:16px}.auth-recovery button{min-height:44px}.signup-main #account-code{font-size:28px;letter-spacing:.3em;font-variant-numeric:tabular-nums}.signup-main #account-code[aria-invalid=true]{border-color:#a62d24}.account-auth strong{overflow-wrap:anywhere}.auth-recovery button:disabled{opacity:.6;cursor:default}
-
-.signin-layout{display:block;max-width:480px;margin:24px auto 48px}.signin-page .account-shell{max-width:680px}.signin-page footer a{display:none}.signin-layout .account-intro{margin-bottom:28px}.signin-layout .account-auth{max-width:none}
-
 .library-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
 .library-tags>span{display:inline-block;border:1px solid #d5dcc5;border-radius:99px;background:#eef2df;color:#4c5a35;padding:3px 7px;font-size:10px;line-height:1.3;white-space:nowrap}
 .profile-product-title>.library-tags:last-child{display:flex}
 
-/* Local sign-in product concept. */
-.signin-page .account-shell{max-width:1120px;padding-top:64px}
-.signin-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:80px;max-width:none;margin:12px auto 48px}
-.signin-layout .signup-main{min-width:0;padding-top:24px}
-.signin-product-card{position:relative;isolation:isolate;min-width:0;aspect-ratio:4/5;max-height:600px;border-radius:28px;background:#e9e4da;overflow:hidden;box-shadow:0 18px 44px #302d2110;transform:rotate(2deg)}
-.signin-product-card>img{display:block;width:100%;height:100%;object-fit:cover;mix-blend-mode:multiply}
-.signin-product-score{position:absolute;right:22px;top:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;width:114px;height:114px;border-radius:50%;background:#d9f06d;color:#292d24;transform:rotate(-10deg);box-shadow:0 5px 15px #50572a15}
-.signin-product-score>span:first-child{font-size:10px;font-weight:650;letter-spacing:.04em}.signin-product-score strong{font-family:'Instrument Serif',serif;font-size:56px;line-height:1.02;font-weight:400;letter-spacing:-.05em}.signin-score-star{font-size:18px;line-height:1}
-.signin-product-caption{position:absolute;left:24px;bottom:22px;padding:14px 18px;border:1px solid #fff9;border-radius:16px;background:#f6f4eadb;backdrop-filter:blur(12px)}.signin-product-caption p{font-size:9px;letter-spacing:.12em;font-weight:650;margin:0 0 4px}.signin-product-caption h2{font-family:'Instrument Serif',serif;font-size:30px;line-height:1.1;margin:0 0 3px}.signin-product-caption>span{font-size:10px;color:#6c7165}
-@media(max-width:800px){.signin-page .account-shell{max-width:560px;padding-top:36px}.signin-layout{grid-template-columns:minmax(0,1fr);gap:38px}.signin-layout .signup-main{padding-top:0}.signin-product-card{aspect-ratio:1;max-height:420px;width:100%;transform:rotate(0)}.signin-product-card>img{object-position:center 42%}.signin-product-score{width:96px;height:96px}.signin-product-score strong{font-size:47px}}
-
-/* Place the product behind the headline, in the upper-right of the screen. */
-.signin-page .account-shell{position:relative;isolation:isolate;max-width:none;padding-top:64px;min-height:650px}
-.signin-layout{display:block;max-width:480px;margin:12px auto 48px}
-.signin-layout .signup-main{position:relative;z-index:1;width:100%}
-.signin-product-card{position:absolute;z-index:0;top:18px;right:24px;width:min(30vw,380px);height:350px;aspect-ratio:auto;max-height:none;transform:rotate(7deg);box-shadow:none;opacity:.9}
-.signin-product-card>img{object-position:center 48%}
-.signin-product-score{width:92px;height:92px;right:18px;top:18px}
-.signin-product-score strong{font-size:46px}
-.signin-product-caption{left:16px;bottom:16px;padding:10px 14px}
-.signin-product-caption h2{font-size:25px}
-@media(max-width:800px){.signin-page .account-shell{max-width:none;padding-top:160px}.signin-layout{max-width:480px}.signin-layout .signup-main{padding-top:0}.signin-product-card{top:12px;right:20px;width:180px;height:190px;opacity:.72;transform:rotate(7deg)}.signin-product-caption{display:none}.signin-product-score{width:65px;height:65px;right:8px;top:8px}.signin-product-score strong{font-size:31px}.signin-product-score>span:first-child{font-size:8px}.signin-score-star{font-size:12px}}
-
 .item-person.person-avatar{background:var(--person-background)}
 .item-people{scroll-margin-top:110px}
+
+/* Shared sign-in, code, account creation and verification composition. */
+.signin-page .account-shell{max-width:1176px;padding:40px 28px 32px}
+.signin-page footer a{display:none}
+.signin-layout.simple-signup{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch;gap:0;max-width:1120px;margin:0 auto}
+.signin-layout .signup-main{align-self:center;min-width:0;width:100%;max-width:460px;padding:24px 40px 24px 0}
+.signin-layout .signup-main h1{font-family:'Instrument Serif',serif;font-size:clamp(44px,6vw,64px);line-height:1;letter-spacing:-.025em;text-wrap:balance;margin:18px 0}
+.signin-layout h1 em{font-weight:400}
+.signin-layout .account-intro{font-size:17px;line-height:1.6;text-wrap:pretty;margin:0 0 24px;color:#626759}
+.signin-layout .account-auth{max-width:none}
+.signin-layout form{margin-top:20px;gap:12px}
+.signin-layout form>label{margin:0;font-size:14px}
+.signin-layout input{height:52px;border-radius:12px;border:1px solid #959a89;background:#fffefa;color:#292d24}
+.signin-layout input:focus{border-color:#292d24;outline:3px solid #d7ed68;outline-offset:2px}
+.signin-layout form .primary{height:52px;min-height:52px;margin-top:4px;border-radius:999px;background:#292d24;color:#f6f4ea}
+.signin-layout .account-help{color:#626759;font-size:13px;line-height:1.6}
+.signin-layout .signin-code-help{margin:0}
+.signin-layout .account-status:empty{display:none}
+.signin-layout .account-preview-inbox,.signin-layout .account-preview-code{border:1px dashed #959a89;background:transparent;padding:10px 12px;border-radius:10px;font-size:12px;line-height:1.5}
+.signin-layout .account-preview-inbox{margin:16px 0}
+.signin-layout .account-preview-code{margin:0}
+.signin-layout #code-help{margin:0;overflow-wrap:anywhere}
+.signin-layout #account-code{--cell:48px;--gap:8px;box-sizing:border-box;width:calc(6 * var(--cell) + 5 * var(--gap));max-width:100%;height:56px;padding:0 0 0 15px;border:1px solid #959a89;background:repeating-linear-gradient(to right,#fffefa 0,#fffefa var(--cell),#959a89 var(--cell),#959a89 calc(var(--cell) + 1px),#f6f4ea calc(var(--cell) + 1px),#f6f4ea calc(var(--cell) + var(--gap) - 1px),#959a89 calc(var(--cell) + var(--gap) - 1px),#959a89 calc(var(--cell) + var(--gap)));border-radius:8px;font:28px/1 monospace;letter-spacing:calc(var(--cell) + var(--gap) - 1ch);font-variant-numeric:tabular-nums}
+.signin-layout #account-code[aria-invalid=true]{border-color:#a62d24}
+.auth-recovery{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-top:12px}
+.auth-recovery button{min-height:44px;font-size:13px;color:#292d24}
+.auth-recovery button:disabled{color:#626759;cursor:default;opacity:1}
+.signin-people{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:560px;padding:40px;border-radius:28px;background:#ece8dc;color:#292d24;overflow:hidden}
+.signin-fan{position:relative;list-style:none;margin:0;padding:0;width:440px;max-width:100%;height:400px}
+.signin-polaroid{position:absolute;width:180px;padding:10px 10px 14px;border:1px solid #e4e0d2;border-radius:16px;background:#fffefa;box-shadow:0 10px 30px #292d2414;transform:rotate(var(--fan-angle));color:#292d24}
+.signin-polaroid.is-left{--fan-angle:-8deg;left:0;top:22%;z-index:1}
+.signin-polaroid.is-center{--fan-angle:2deg;left:calc(50% - 105px);top:8%;width:210px;z-index:3}
+.signin-polaroid.is-right{--fan-angle:9deg;right:0;top:26%;z-index:2}
+.signin-polaroid-photo{display:flex;align-items:flex-end;justify-content:center;aspect-ratio:4/5;border-radius:10px;background:#e8e3d6;overflow:hidden}
+.signin-polaroid-photo img{width:100%;height:82%;object-fit:contain;mix-blend-mode:multiply;object-position:center bottom}
+.signin-polaroid-score,.signin-polaroid-pass{position:absolute;top:-12px;right:-12px;display:grid;place-items:center;transform:rotate(-8deg)}
+.signin-polaroid-score{width:46px;height:46px;border-radius:50%;background:#d7ed68;color:#292d24;font:400 22px/1 'Instrument Serif',serif}
+.is-center .signin-polaroid-score{width:56px;height:56px;font-size:26px}
+.signin-polaroid-pass{left:10px;right:auto;border:1px solid #292d24;border-radius:999px;padding:5px 10px;font-size:11px;line-height:1;background:transparent}
+.signin-polaroid-who{display:flex;align-items:center;gap:6px;margin:12px 0 5px;font-size:12px;line-height:1.4;white-space:nowrap}
+.signin-avatar{display:grid;place-items:center;flex-shrink:0;width:20px;height:20px;border-radius:50%;font:600 8px 'DM Sans',sans-serif}
+.is-left .signin-avatar{background:#e9c9b5;color:#5a3a27}
+.is-center .signin-avatar{background:#d7ed68;color:#292d24}
+.is-right .signin-avatar{background:#c9d6e8;color:#24364f}
+.signin-polaroid-product{margin:0;color:#626759;font-size:12px;line-height:1.4}
+.signin-people-note{font-size:12px;color:#626759;margin:18px 0 0}
+@media(max-width:899px){
+ .signin-page .account-shell{padding:8px 16px 20px;max-width:592px}
+ .signin-layout.simple-signup{position:relative;grid-template-columns:minmax(0,1fr);gap:0;max-width:420px;isolation:isolate}
+ .signin-layout .signup-main{padding:0;max-width:420px;justify-self:center}
+ .signin-layout .signup-main>.eyebrow,.signin-layout .signup-main>h1{position:relative;z-index:2}
+ .signin-layout .signup-main>h1{text-shadow:0 1px 3px #f6f4ea,0 0 10px #f6f4ea}
+ .signin-people{position:absolute;top:24px;right:0;z-index:0;width:208px;min-height:0;padding:0;border-radius:0;background:transparent;overflow:visible;pointer-events:none}
+ .signin-fan{width:208px;max-width:100%;height:90px}
+ .signin-polaroid{width:76px;padding:5px 5px 7px;border-radius:12px;box-shadow:0 4px 12px #292d240a}
+ .signin-polaroid.is-left{left:8px;top:12px}
+ .signin-polaroid.is-center{left:calc(50% - 44px);top:0;width:88px}
+ .signin-polaroid.is-right{right:8px;top:18px}
+ .signin-polaroid-photo{border-radius:7px;aspect-ratio:1}
+ .signin-polaroid-score{width:28px;height:28px;top:-6px;right:-6px;font-size:17px}
+ .is-center .signin-polaroid-score{width:34px;height:34px;font-size:20px}
+ .signin-polaroid-pass{top:-6px;right:-6px;font-size:11px;padding:4px 7px}
+ .signin-polaroid-who,.signin-polaroid-product{display:none}
+ .signin-people-note{margin:4px 0 0;font-size:11px}
+ .signin-layout .signup-main h1{font-size:clamp(44px,6vw,64px);margin:12px 0}
+ .signin-layout .account-intro{margin-bottom:16px;font-size:16px}
+ .signin-layout #account-code{--cell:calc((min(100vw - 32px,420px) - 40px) / 6);--gap:8px;padding-left:calc((var(--cell) - 1ch) / 2)}
+ .signin-page footer{margin-top:0;padding-top:20px;padding-bottom:20px}
+}
+@media(max-width:767px){
+ .signin-people{display:none}
+ .signin-layout .signup-main>h1{text-shadow:none}
+}
+@media(prefers-reduced-motion:reduce){.signin-polaroid{animation:none;transition:none}}

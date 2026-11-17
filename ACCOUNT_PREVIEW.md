@@ -1,6 +1,10 @@
 # Vouch accounts and product profiles — implementation and verification
 
-## Email save and deferred verification — November 15, 2026
+## Current sign-in design — November 16, 2026
+
+The approved email/code/signup/pending-verification layout uses a plain form on phones below 768px, an inline polaroid fan beside/behind the headline on tablets at 768–899px, and a two-column Paper form / warm-tinted illustration panel at 900px and above. “WELCOME TO VOUCH” stays above the headline. The email placeholder is “Enter your email address.” The previous sunscreen card is removed; fictional water-bottle examples are labeled “Sample activity” when displayed. Requesting a code now changes the heading to “Check your email.” and focuses it; Change email restores the email step. The prior fixed headline spacer is removed. See [sign-in guide](docs/signin.md) for current behavior, checks and remaining verification limits. Earlier dated sections below retain historical behavior and checks.
+
+## Historical email save and deferred verification — November 15, 2026
 
 The sign-in screen uses a single-column form. The logo links home; signed-out and provisional accounts have no header navigation. The extra home/back link, Wharton and name/privacy disclaimers, browsing link and vouches preview are absent from email entry and code entry. Requesting a code replaces only the form area, preserving the page heading, introduction and URL.
 

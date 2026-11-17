@@ -109,3 +109,16 @@ test('Resend verification email contains the confirmation link and no undefined 
  await send({email:'member@example.test',verificationUrl:'https://v4ch.app/account#verify-email=test-token',expiresIn:600});
  assert.equal(payload.subject,'Verify your Vouch email');assert.ok(payload.text.includes('https://v4ch.app/account#verify-email=test-token'));assert.ok(!payload.text.includes('undefined'));
 });
+
+test('email code resend opens at 30 seconds and retains hourly rate limit',async()=>{
+ const f=fixture(),a=browser(f);
+ const start=await a.call('/api/auth/start',{email:'cooldown@example.test'});
+ assert.equal(start.data.resendAfter,30);
+ f.advance(29999);
+ assert.equal((await a.call('/api/auth/start',{email:'cooldown@example.test'})).status,429);
+ f.advance(1);
+ assert.equal((await a.call('/api/auth/start',{email:'cooldown@example.test'})).status,200);
+ for(let i=0;i<3;i++){f.advance(30000);assert.equal((await a.call('/api/auth/start',{email:'cooldown@example.test'})).status,200)}
+ f.advance(30000);
+ assert.equal((await a.call('/api/auth/start',{email:'cooldown@example.test'})).status,429);
+});

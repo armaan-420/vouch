@@ -277,3 +277,27 @@ test('verifying and merging a browser profile preserves tags under the recovered
  await f.call('/api/products/sku-one',{identity:'verified',browserId:otherBrowser,body:{tagIds:['value']}});
  const edited=await f.call('/api/products/sku-one',{identity:'verified',browserId:otherBrowser});assert.deepEqual(edited.data.selectedTagIds,['value']);assert.equal(edited.data.tags.find(t=>t.id==='design').count,0);assert.equal(edited.data.tags.find(t=>t.id==='value').count,1);
 });
+
+test('sign-in people panel uses labeled static catalog examples without sunscreen',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const {WATER_BOTTLES}=await import('../lib/water-bottles.mjs');
+ const source=await fs.readFile(new URL('../public/accounts.js',import.meta.url),'utf8');
+ const helper=source.slice(source.indexOf('  function signinPeople()'),source.indexOf('  function renderSignup()'));
+ const markup=runInNewContext(helper+'; signinPeople()');
+ assert.match(markup,/Sample activity/);
+ assert.match(markup,/<aside[^>]*aria-label=/);
+ assert.doesNotMatch(source,/boj\.png|signin-product-card/);
+ assert.equal((markup.match(/<li /g)||[]).length,3);
+ assert.equal((markup.match(/class="signin-polaroid-score"/g)||[]).length,2);
+ for(const brand of ['Owala','Stanley','Hydro Flask']){
+  const product=WATER_BOTTLES.find(item=>item.brand===brand);
+  assert.ok(markup.includes({'Owala':'Owala FreeSip','Stanley':'Stanley IceFlow','Hydro Flask':'Hydro Flask Wide Mouth'}[brand]));
+  assert.ok(markup.includes(`src="${product.image}" alt=""`));
+ }
+ assert.match(markup,/Jon<\/strong> passed/);
+ assert.match(markup,/signin-polaroid-pass/);
+ assert.ok(markup.indexOf('is-left')<markup.indexOf('is-center'));
+ assert.ok(markup.indexOf('is-center')<markup.indexOf('is-right'));
+ for(const initials of ['MK','JL','PR'])assert.ok(markup.includes('>'+initials+'</span>'));
+ assert.doesNotMatch(markup,/24 oz|32 oz|signin-vouch/);
+});

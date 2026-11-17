@@ -40,10 +40,10 @@ try{
   const url=new URL(page.url());url.search='?board=1&wharton=1';await page.goto(url.href);
   await page.locator('.board-people-link').first().waitFor();const row=page.locator('.rank-row').filter({has:page.locator('.board-people-link')}).first();const face=await row.locator('.board-person').first().boundingBox(),photo=await row.locator('.rank-image-link').boundingBox();assert.ok(Math.abs(face.x-photo.x)<2,'people aligned to product image');assert.equal(await page.getByText('No named vouches yet',{exact:true}).count(),0);assert.equal(await page.locator('.board-product-tags').count(),0);
   await page.screenshot({path:`/tmp/wharton-board-${width}.png`,fullPage:true});
-  await page.locator('.board-people-link').first().click();await page.locator('.endorser-comment').first().waitFor();assert.match(await page.locator('.endorser-comment').first().textContent(),/Reliable/);
+  await page.locator('.board-people-link').first().click();await page.locator('.item-comment>p').first().waitFor();assert.match(await page.locator('.item-comment>p').first().textContent(),/Reliable/);
   await page.screenshot({path:`/tmp/wharton-people-${width}.png`,fullPage:true});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);
-  await page.locator('.endorser-row a:visible').first().click();await page.locator('.profile-layout').waitFor();
+  await page.locator('.item-comment-by strong a:visible').first().click();await page.locator('.profile-layout').waitFor();
   console.log('PASS',width,'signup → verification → categories → tags/comment/vote → reload → Board → people → profile');await context.close();
  }
 }finally{await browser.close()}

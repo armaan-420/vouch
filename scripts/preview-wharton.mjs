@@ -1,0 +1,10 @@
+import {createVouchServer} from '../server.mjs';
+import path from 'node:path';
+import {createFileStore} from '../lib/file-store.mjs';
+import {initialRegistry,DEFAULT_EXPERIMENT} from '../lib/experiment-api.mjs';
+import {WATER_BOTTLES} from '../lib/water-bottles.mjs';
+const store=await createFileStore(path.resolve('.data/wharton-preview'));
+const registry=await store.scope('experiment-registry',initialRegistry);
+await registry.transaction(d=>{d.experiments.waterbottle??={...DEFAULT_EXPERIMENT,id:'waterbottle',title:'The Wharton Water Bottle Edit',category:'Water bottles',products:WATER_BOTTLES};});
+const server=await createVouchServer({directory:path.resolve('.data/wharton-preview'),authOptions:{previewDelivery:true}});
+server.listen(4196,'127.0.0.1',()=>console.log('Wharton local preview: http://127.0.0.1:4196/wharton (test inbox only; no real email)'));

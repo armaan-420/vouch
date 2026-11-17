@@ -343,7 +343,7 @@ html.nomination-search-open,html.nomination-search-open body{overflow:hidden;ove
 
 /* Ranked products: one top line and a tag strip aligned with the image. */
 .board{width:100%;min-width:0;--tag-ink:#3f4036;--tag-border:#cfcbbb;--tag-beige:#ebe7d8;--tag-count:#5a5b50;--tag-selected:#23241f;--tag-paper:#f6f3ea;--tag-lime:#dceb7b;--tag-add:#a29e8c;--board-caption:#63645a}
-.board .rank-row{display:flex;flex-direction:column;align-items:stretch;gap:14px;padding:18px 0}
+.board .rank-row{display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:14px 0}
 .rank-topline{display:flex;align-items:center;gap:12px;min-width:0}
 .rank-product{display:flex;align-items:flex-start;gap:12px;flex:1;min-width:0}
 .board .rank{width:34px;flex:0 0 34px;align-self:center}
@@ -448,7 +448,7 @@ html.nomination-search-open,html.nomination-search-open body{overflow:hidden;ove
 @media(prefers-reduced-motion:reduce){.catalog-searching::before,.catalog-searching::after{animation:none}}
 
 /* Wharton experiment: people occupy the former Board tag row. */
-.board-people{display:flex;align-items:center;gap:10px;padding:8px 0 12px;min-height:48px;flex-wrap:wrap}.board-people-avatars{display:flex;padding-left:4px}.board-person{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:#e9ecdf;border:2px solid #f6f4ea;margin-left:-4px;font-size:10px;color:#292d24;text-decoration:none;position:relative;overflow:hidden}.person-avatar{position:relative;overflow:hidden}.person-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}.board-people-link{font-size:12px;color:#697837;text-decoration:none}.board-people-link:hover{text-decoration:underline}.board-person:focus-visible{outline:2px solid #697837;outline-offset:2px}
+.board-people{display:flex;align-items:center;gap:10px;padding:2px 0 0;min-height:32px;flex-wrap:wrap}.board-people-avatars{display:flex;padding-left:4px}.board-person{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:#e9ecdf;border:2px solid #f6f4ea;margin-left:-4px;font-size:10px;color:#292d24;text-decoration:none;position:relative;overflow:hidden}.person-avatar{position:relative;overflow:hidden}.person-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}.board-people-link{font-size:12px;color:#697837;text-decoration:none}.board-people-link:hover{text-decoration:underline}.board-person:focus-visible{outline:2px solid #697837;outline-offset:2px}
 
 
 

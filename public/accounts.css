@@ -232,3 +232,5 @@
 .account-shell .item-people button.item-see-all,.account-shell .item-comments button.item-see-all{min-height:30px;border:0;background:transparent;padding:2px 0;color:#697837;font-size:11px}
 .account-shell .item-tags button.item-tag{min-height:32px;padding:5px 10px}
 .account-shell .item-tags button.item-tag[aria-pressed="true"]{background:var(--green);border-color:#becb7a;color:#123c2e}
+/* Keep purchase controls inside the product column at intermediate widths. */
+@media(min-width:701px){.item-purchase>.primary{grid-column:2;grid-row:1;justify-self:start;max-width:100%}.item-purchase>div:not(#where-to-buy){grid-column:1 / -1;min-width:0;overflow-wrap:anywhere}}

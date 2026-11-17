@@ -6,7 +6,8 @@
   const name=person.displayName||'Anonymous',anonymous=name==='Anonymous',initials=anonymous?'?':name.trim().split(/\s+/).slice(0,2).map(part=>part[0]).join('').toUpperCase();
   const classes=className+' person-avatar person-tone-'+index%3+(popup&&anonymous?' person-anonymous':''),label=popup?(anonymous?'Anonymous voucher':name+', vouched for this item'):name+' — vouched for this item';
   const attrs=`class="${classes}" aria-label="${esc(label)}" title="${esc(name)}"`;
-  return person.handle&&!anonymous?`<a ${attrs} href="${esc(profilePath(person.handle))}">${esc(initials)}</a>`:`<span ${attrs} role="img">${esc(initials)}</span>`;
+  const content=!anonymous&&typeof person.photo==='string'&&/^\/api\/account\/photos\/[a-f0-9-]+\.png$/.test(person.photo)?`<img src="${esc(person.photo)}" alt="" loading="lazy" onerror="this.hidden=true"><span>${esc(initials)}</span>`:esc(initials);
+  return person.handle&&!anonymous?`<a ${attrs} href="${esc(profilePath(person.handle))}">${content}</a>`:`<span ${attrs} role="img">${content}</span>`;
  }
  function voucherSummary(contributors,viewerHandle){
   const people=(contributors||[]).filter(person=>person.verdict==='yes').map((person,index)=>({...person,avatarIndex:index}));

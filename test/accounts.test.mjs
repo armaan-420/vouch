@@ -301,3 +301,15 @@ test('sign-in people panel uses labeled static catalog examples without sunscree
  for(const initials of ['MK','JL','PR'])assert.ok(markup.includes('>'+initials+'</span>'));
  assert.doesNotMatch(markup,/24 oz|32 oz|signin-vouch/);
 });
+
+test('Board summaries count only named public item vouches and bound previews',async t=>{
+ const f=await setup(t);f.answer('sku-one','yes');f.answer('sku-two','brand');
+ await f.claim(await f.preview(),'alice',undefined,{displayName:'Alice'});
+ await f.call('/api/account/profile',{identity:'alice',body:{visibility:'public',opinions:[{productId:'sku-one',visibility:'public'},{productId:'sku-two',visibility:'public'}]}});
+ const result=await f.call('/api/people-summary?id=sku-one&id=sku-two',{identity:'alice'});
+ assert.equal(result.status,200);assert.equal(result.data.summaries['sku-one'].total,1);assert.equal(result.data.summaries['sku-one'].people[0].isYou,true);assert.equal(result.data.summaries['sku-two'].total,0);
+ assert.doesNotMatch(JSON.stringify(result.data),/email|subject|visitor/);
+ await f.call('/api/account/profile',{identity:'alice',body:{showName:false}});
+ assert.equal((await f.call('/api/people-summary?id=sku-one')).data.summaries['sku-one'].total,0);
+ assert.equal((await f.call('/api/people-summary?'+new URLSearchParams(Array.from({length:101},(_,i)=>['id',String(i)])))).status,400);
+});

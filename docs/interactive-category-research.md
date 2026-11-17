@@ -8,6 +8,8 @@ Source breadth, exact-model checks, independent editorial support and official m
 
 A partial lineup with fewer than five products remains a private draft for editing. If no suitable products are found, the suggestion needs attention and offers manual lineup creation; the system does not invent products to make a draft.
 
+Individual sources cannot reject a category. A source returning `allowed=false` is retained as a needs-review outcome with its explanation, and other sources continue. The queue recovers the earlier automatic source-veto rejections once, preserving saved candidates and responses. This recovery excludes organizer rejections, paused/deleted suggestions and categories blocked by server moderation.
+
 ## Source tasks
 
 - Independent editorial: seek original recommendations across at least three publishers.

@@ -27,6 +27,29 @@ test('every requested source is attempted; inaccessible coverage never fails a p
  const s=await setup(t),j=await s.run();assert.deepEqual(s.calls.map(c=>c.id),['editorial','wirecutter','google','tiktok','reddit','manufacturer']);
  assert.equal(j.draft.status,'draft');assert.equal(j.draft.products.length,6);assert.equal(j.workspace.tasks[3].status,'inaccessible');assert.equal(j.state,'needs_attention');assert.equal(j.readiness.quality.advisory,true);assert.equal(j.readiness.quality.recommendationCount,0);
 });
+test('a source veto is advisory and preserves candidates while other sources finish',async t=>{
+ const s=await setup(t,{startSource:async(category,task)=>({result:task.id==='wirecutter'?{...result(),allowed:false,rejectReason:'Publisher is inaccessible',status:'inaccessible',candidates:[]}:result(task.id)})});
+ const j=await s.run();assert.equal(j.state,'needs_attention');assert.equal(j.draft.products.length,6);
+ assert.equal(j.workspace.tasks[1].status,'needs_review');assert.match(j.workspace.tasks[1].notes,/Publisher is inaccessible/);
+ assert.ok(j.workspace.tasks.every(t=>!['queued','searching'].includes(t.status)));
+});
+test('every source declining coverage stays actionable instead of rejected',async t=>{
+ const s=await setup(t,{startSource:async()=>({result:{...result(),allowed:false,rejectReason:'No accessible sources',candidates:[],evidence:[]}})});
+ const j=await s.run();assert.equal(j.state,'needs_attention');assert.equal(j.draft,null);assert.equal(j.workspace.tasks.length,6);assert.ok(j.workspace.tasks.every(t=>t.status==='needs_review'));
+});
+test('old automatic source rejections resume saved responses without another start',async t=>{
+ let polls=0;const s=await setup(t,{pollSource:async()=>{polls++;return {result:{...result(),allowed:false,rejectReason:'No coverage',candidates:[]}};}});
+ const jobs=await s.store.scope('suggestion-jobs',()=>({jobs:{},budget:{}}));
+ await jobs.transaction(d=>{const j=Object.values(d.jobs)[0];j.state='rejected';j.lastError='This category does not fit Vouch.';j.workspace=createWorkspace(j.category);Object.assign(j.workspace.tasks[0],{status:'searching',requestKey:'saved-request',responseId:'saved-response',attempts:1});});
+ const j=await s.run();assert.equal(polls,1);assert.ok(j.sourceVetoRecoveredAt);assert.equal(j.state,'needs_attention');assert.equal(j.draft.products.length,6);assert.equal(s.calls.some(c=>c.id==='editorial'),false);
+});
+test('automatic recovery preserves organizer rejections and pauses',async t=>{
+ const s=await setup(t),jobs=await s.store.scope('suggestion-jobs',()=>({jobs:{},budget:{}}));
+ for(const paused of [false,true]){
+  await jobs.transaction(d=>{const j=Object.values(d.jobs)[0];j.state='rejected';j.paused=paused;j.lastError=paused?'This category does not fit Vouch.':'Rejected by organizer.';j.workspace=createWorkspace(j.category);Object.assign(j.workspace.tasks[0],{status:'searching',requestKey:'saved'});});
+  assert.equal((await s.auto.advance()).advanced,false);assert.equal((await s.list()).state,'rejected');
+ }
+});
 test('source-only gaps allow approval once product count and photos are ready',async t=>{
  const s=await setup(t),j=await s.run();
  const products=j.draft.products.map(p=>({...p,image:'https://images.example/photo.jpg'}));

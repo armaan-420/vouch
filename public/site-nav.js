@@ -26,7 +26,7 @@
  const searchAction=document.createElement('button');searchAction.type='button';searchAction.className='site-search-action';searchAction.setAttribute('aria-label','Search products');searchAction.innerHTML=searchToggle.innerHTML;
  hint.after(searchAction);searchAction.onclick=()=>openSearch(searchAction);
 
- const allResults=document.createElement('a');allResults.textContent='See all results';popover.append(allResults);
+ const allResults=document.createElement('a');allResults.className='site-search-all';allResults.hidden=true;allResults.innerHTML='<span>See all results</span><span class="site-search-all-arrow" aria-hidden="true">↗</span>';popover.append(allResults);
  const textField=node=>!!node?.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"])');
  function syncPill(){
   const eligible=!!(context?.experimentId&&!context.draft&&context.canNominate&&!context.voting);
@@ -46,7 +46,7 @@
  function unlock(){if(!menuOpen&&!searchOpen&&scrollBefore!==null){document.body.style.overflow=scrollBefore;scrollBefore=null;}}
  function syncScrim(){syncPill();scrim?.remove();scrim=null;if(menuOpen||searchOpen){scrim=document.createElement('div');scrim.className='site-nav-scrim';scrim.style.top=Math.max(0,header.getBoundingClientRect().bottom)+'px';scrim.setAttribute('aria-hidden','true');scrim.onclick=()=>closePanels();document.body.append(scrim);}}
  function closeMenu(focus=true){if(!menuOpen)return;menuOpen=false;menu.hidden=true;header.classList.remove('is-menu-open');menuToggle.setAttribute('aria-expanded','false');menuToggle.setAttribute('aria-label','Menu');menuToggle.innerHTML=menuIcon;syncScrim();unlock();if(focus)menuToggle.focus({preventScroll:true});}
- function hideResults(){popover.hidden=true;input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');}
+ function hideResults(){allResults.hidden=true;popover.hidden=true;input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');}
  function closeSearch(focus=true){const wasOpen=searchOpen;searchOpen=false;header.classList.remove('is-search-open');searchToggle.setAttribute('aria-expanded','false');version++;clearTimeout(timer);controller?.abort();hideResults();syncScrim();unlock();if(wasOpen&&focus){syncPill();const target=searchFocus?.isConnected?searchFocus:searchToggle;restoringSearchFocus=true;target.focus({preventScroll:true});restoringSearchFocus=false;}}
  function closePanels(focus=true){closeMenu(focus);closeSearch(focus);}
  function toggleMenu(){if(menuOpen){closeMenu();return;}closeSearch(false);menuOpen=true;menu.hidden=false;header.classList.add('is-menu-open');menuToggle.setAttribute('aria-expanded','true');menuToggle.setAttribute('aria-label','Close menu');menuToggle.innerHTML=closeIcon;lock();syncScrim();}
@@ -83,19 +83,19 @@
  }
  function initializePicker(){if(picker)return;picker=window.VouchProductPicker({input,results,more:header.querySelector('.site-search-more'),clear:header.querySelector('.site-search-clear'),another:header.querySelector('.site-search-another'),esc,isSelected:()=>false,onChoose:choose,onClear:()=>{version++;controller?.abort();clearTimeout(timer);hideResults();},resultLabel:product=>product.vouchStatus==='rated'?'On Vouch · '+product.evidence.communityScore+' / 10 · '+product.evidence.ratingCount+' ratings'+(product.fit?.verdict==='yes'?' · Vouched by you':''):product.vouchStatus==='listed'?'On Vouch · No ratings yet · View product':'New to Vouch · '+(product.category||'Uncategorized')+' · No Vouch opinions',boardLabel:'On the board · View product',unselectedLabel:'Not on board · Vouch for it',enhance:false,focusAfterChoose:false,maxVisible:8});}
  async function runSearch(){
-  const query=input.value.trim();allResults.href='/find?q='+encodeURIComponent(query);if(!picker){await pickerReady;}if(!context||query.length<2){picker?.clear();hideResults();return;}
+  allResults.hidden=true;const query=input.value.trim();allResults.href='/find?q='+encodeURIComponent(query);if(!picker){await pickerReady;}if(!context||query.length<2){picker?.clear();hideResults();return;}
   const label=Array.from(query);nominate.textContent='Vouch for “'+label.slice(0,40).join('')+(label.length>40?'…':'')+'”';
   const current=++version;controller?.abort();controller=new AbortController();picker.clear();popover.hidden=false;input.setAttribute('aria-expanded','true');window.VouchSearchStatus?.(status,{loading:true});nominate.hidden=true;
   try{
    if(/^https:\/\//i.test(query)){const config=await window.VouchCatalog.config();if(!config.linkPaste)throw Error('Link lookup unavailable');const response=await fetch('/api/catalog/lookup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:query}),signal:controller.signal});const data=await response.json();if(current!==version)return;if(!response.ok)throw Error(data.error);choose({discoveryHref:'/products/'+encodeURIComponent(data.product.id)});return;}
    const options={signal:AbortSignal.any([controller.signal,AbortSignal.timeout(12000)])};
    const groups={vouch:[],catalog:[]};let catalogPending=query.length>=3,localPending=true,partial=false;
-   const paint=()=>{if(current!==version||localPending)return;const known=new Set(groups.vouch.map(p=>p.id));const products=[...groups.vouch,...groups.catalog.filter(p=>!known.has(p.id))];picker.setProducts(products.slice(0,8));popover.hidden=false;input.setAttribute('aria-expanded','true');window.VouchSearchStatus(status,{loading:catalogPending,count:products.length,partial});nominate.hidden=products.length>0||!context.canNominate;};
+   const paint=()=>{if(current!==version||localPending)return;const known=new Set(groups.vouch.map(p=>p.id));const products=[...groups.vouch,...groups.catalog.filter(p=>!known.has(p.id))];picker.setProducts(products.slice(0,8));popover.hidden=false;input.setAttribute('aria-expanded','true');window.VouchSearchStatus(status,{loading:catalogPending,count:products.length,partial});allResults.hidden=catalogPending;nominate.hidden=products.length>0||!context.canNominate;};
    await Promise.all(['vouch',...(query.length>=3?['catalog']:[])].map(async source=>{try{const response=await fetch('/api/search?q='+encodeURIComponent(query)+'&source='+source,options);if(!response.ok)throw Error();const data=await response.json();groups[source]=data.products||[];partial=partial||data.partial;}catch{partial=true;}finally{if(source==='catalog')catalogPending=false;else localPending=false;paint();}}));
    if(current!==version)return;
    const products=[...groups.vouch,...groups.catalog];
    nominate.hidden=products.length>0||!context.canNominate;
-  }catch(error){if(current!==version||error.name==='AbortError')return;picker.clear();popover.hidden=false;input.setAttribute('aria-expanded','true');window.VouchSearchStatus(status,{partial:true});nominate.hidden=!context?.canNominate;}
+  }catch(error){if(current!==version||error.name==='AbortError')return;picker.clear();popover.hidden=false;input.setAttribute('aria-expanded','true');window.VouchSearchStatus(status,{partial:true});allResults.hidden=false;nominate.hidden=!context?.canNominate;}
 
  }
  input.addEventListener('input',()=>{const normalized=normalizeQuery(input.value);if(normalized===lastQuery)return;lastQuery=normalized;version++;controller?.abort();clearTimeout(timer);picker?.clear();hideResults();if(input.value.trim().length>=2){popover.hidden=false;input.setAttribute('aria-expanded','true');window.VouchSearchStatus?.(status,{loading:true});nominate.hidden=true;timer=setTimeout(runSearch,250);}});

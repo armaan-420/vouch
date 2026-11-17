@@ -23,6 +23,9 @@ try{
   await page.locator('[data-vote=yes]').waitFor();await page.locator('.experiment-tags[aria-busy=false]').waitFor();
   await page.screenshot({path:`/tmp/wharton-note-resting-${width}.png`,fullPage:true});await page.locator('#rating-comment').focus();await page.locator('#rating-comment').fill('Reliable for my commute.');
   if(width===390){assert.ok((await page.locator('.product-photo').boundingBox()).height<=64);await page.locator('#rating-comment').fill('line\n'.repeat(48));assert.ok(await page.locator('#rating-comment').evaluate(el=>el.getBoundingClientRect().height<=88));await page.locator('#rating-comment').fill('Reliable for my commute.');}
+  const tag=page.locator('[data-product-tag]').first(),selected=await tag.getAttribute('aria-pressed');
+  await tag.click();await page.locator('.experiment-tags[aria-busy=false]').waitFor();assert.notEqual(await tag.getAttribute('aria-pressed'),selected);assert.ok(await page.locator('#rating-comment').evaluate(el=>el===document.activeElement));assert.equal(await page.locator('#rating-comment').inputValue(),'Reliable for my commute.');
+  await tag.click();await page.locator('.experiment-tags[aria-busy=false]').waitFor();assert.equal(await tag.getAttribute('aria-pressed'),selected);
   assert.equal(await page.locator('.product-card').evaluate(el=>el.classList.contains('is-noting')),width<=760);
   await page.waitForTimeout(250);await page.screenshot({path:`/tmp/wharton-rating-${width}.png`,fullPage:true});
   if(width===390){await page.setViewportSize({width,height:500});await page.locator('#rating-comment').focus();await page.screenshot({path:'/tmp/wharton-note-keyboard.png',fullPage:true});const box=await page.locator('[data-vote=yes]').boundingBox();assert.ok(box.y+box.height<=500,'vote above simulated keyboard');await page.setViewportSize({width,height:844});}

@@ -221,6 +221,7 @@ function mountInlineNote(){
  field.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();field.blur();}});
  field.addEventListener('focus',()=>{if(matchMedia('(max-width:760px)').matches){card.classList.add('is-noting');card.scrollIntoView({block:'start'});}update();});
  field.addEventListener('blur',()=>{card.classList.remove('is-noting');update();});
- app.querySelectorAll('.vote-actions button').forEach(button=>button.addEventListener('pointerdown',event=>{if(document.activeElement===field)event.preventDefault();}));
+ // Keep note focus and the compact layout stable when tapping tags or verdicts.
+ app.querySelectorAll('.vote-actions button,[data-product-tag]').forEach(button=>button.addEventListener('pointerdown',event=>{if(document.activeElement===field)event.preventDefault();}));
  update();
 }

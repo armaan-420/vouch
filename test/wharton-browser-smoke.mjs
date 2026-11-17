@@ -16,7 +16,7 @@ try{
    const code=await page.locator('code').textContent();await page.locator('#wharton-code').fill(code);await page.locator('#wharton-verify button').click();
   }
   await page.locator('.wharton-category[href]').first().waitFor();
-  assert.equal(await page.locator('.wharton-category').count(),3);
+  assert.equal(await page.locator('.wharton-category').count(),3);assert.equal(await page.getByText('Only recommend what you’ve actually tried.',{exact:true}).count(),0);assert.equal(await page.getByRole('link',{name:'Your collection'}).count(),0);
   assert.equal(await page.locator('.wharton-story').isVisible(),false);
   await page.screenshot({path:`/tmp/wharton-categories-${width}.png`,fullPage:true});
   await page.locator('.wharton-category[href]').filter({hasText:'Water bottles'}).click();
@@ -31,6 +31,7 @@ try{
   await page.goto(new URL(page.url()).origin+new URL(page.url()).pathname+'?start=1&wharton=1');await page.locator('[data-vote=yes]').waitFor();await page.locator('.experiment-tags[aria-busy=false]').waitFor();
   assert.equal(await page.locator('#rating-comment').inputValue(),'Reliable for my commute.');
   assert.ok(await page.locator('#saved-verdict').count());
+  const title=await page.locator('#voting-product-title').textContent();await page.locator('#rating-comment').focus();await page.keyboard.press('Enter');assert.equal(await page.locator('#rating-comment').evaluate(el=>el===document.activeElement),false);assert.equal(await page.locator('.product-card.is-noting').count(),0);assert.equal(await page.locator('#voting-product-title').textContent(),title);assert.equal(await page.locator('#rating-comment').inputValue(),'Reliable for my commute.');assert.equal(await page.getByText('Shown with your name on public vouches.',{exact:true}).count(),0);
   await page.locator('#rating-comment').focus();await page.keyboard.press('Tab');assert.equal(await page.locator('[data-vote=no]').evaluate(el=>el===document.activeElement),true);
   const firstId=(await (await page.request.get('http://127.0.0.1:4196/api/experiment?experiment=waterbottle')).json()).experiment.products[0].id;
   await page.locator('[data-vote=skip]').click();await page.waitForTimeout(100);assert.equal((await (await page.request.get('http://127.0.0.1:4196/api/me?experiment=waterbottle')).json()).comments[firstId],'');

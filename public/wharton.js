@@ -40,7 +40,7 @@
  async function createProfile(email,name){const items=(await api('/api/categories')).categories;if(!items.length)throw Error('No experiments are open yet. Please check back soon.');const query='?experiment='+encodeURIComponent(items[0].id),preview=await api('/api/account/edit'+query);await api('/api/account/signup'+query,{displayName:name,email,claimToken:preview.claimToken});}
  async function categories(name){
   document.body.classList.add('wharton-choosing');
-  frame(`<p class="eyebrow">YOUR TASTE BELONGS HERE</p><h1 tabindex="-1">What do you<br><em>know and love?</em></h1><p class="wharton-intro">Welcome, ${esc(name.split(' ')[0])}. Start with one category. Explore the rest whenever you like.</p><div data-categories aria-busy="true"></div><p class="wharton-help">Only recommend what you’ve actually tried.</p><a class="text-button" href="/account">Your collection →</a>`);
+  frame(`<p class="eyebrow">YOUR TASTE BELONGS HERE</p><h1 tabindex="-1">What do you<br><em>know and love?</em></h1><p class="wharton-intro">Welcome, ${esc(name.split(' ')[0])}. Start with one category. Explore the rest whenever you like.</p><div data-categories aria-busy="true"></div>`);
   const host=root.querySelector('[data-categories]');
   try{const available=(await api('/api/categories')).categories;
    const groups=[{label:'Water bottles',subtitle:'Your everyday carry',match:/bottle/i,cover:'water-bottles'}, {label:'Facial sunscreen',subtitle:'Your daily SPF',match:/sunscreen|skincare/i,cover:'sunscreen'}, {label:'Running shoes',subtitle:'Your go-to pair',match:/running|shoe|sport/i,cover:'running-shoes'}];

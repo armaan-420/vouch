@@ -342,3 +342,17 @@ test('organizers can remove comments without changing votes and stale claims can
  const profile=(await f.call('/api/account/me',{identity:'alice'})).data.profile;
  assert.equal(profile.opinions[0].comment,'');assert.equal(profile.opinions[0].verdict,'yes');
 });
+
+test('category participation distinguishes new, partial and completed including skips across devices',async t=>{
+ const f=await setup(t);
+ assert.equal((await f.call('/api/category-participation?id=first')).data.categories.first.status,'new');
+ f.answer('sku-one','yes');
+ let state=(await f.call('/api/category-participation?id=first&id=second')).data.categories;
+ assert.equal(state.first.status,'partial');assert.equal(state.first.nextProductId,'sku-two');assert.equal(state.second.status,'new');
+ f.answer('sku-two','skip');f.answer('sku-three','brand');
+ assert.equal((await f.call('/api/category-participation?id=first')).data.categories.first.status,'done');
+ await f.claim(await f.preview(),'alice',undefined,{displayName:'Alice'});
+ assert.equal((await f.call('/api/category-participation?id=first',{identity:'alice',browserId:otherBrowser})).data.categories.first.status,'done');
+ assert.equal((await f.call('/api/category-participation?id=first',{browserId:otherBrowser})).data.categories.first.status,'new');
+ assert.equal((await f.call('/api/category-participation?id=first&id=second&id=third&id=fourth')).status,400);
+});

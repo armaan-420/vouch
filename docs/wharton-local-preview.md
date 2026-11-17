@@ -100,3 +100,13 @@ Validation: 337 tests pass, including new participation tests for new/partial/co
 ### Profile action and floating pill removal
 
 Mobile header actions now appear in order: Search → Profile/sign-in → Menu. Signed-in users retain their existing avatar/initial; signed-out users see a person icon. Removed floating Vouch pill creation, observers, scroll behavior and reserved page padding, while keeping the in-page nomination card and search nomination handoff. The old pill smoke command now forwards to shared navigation coverage. Category chips wrap on very narrow phones to avoid overflow. Navigation checks pass at 320–1440px; the signed-in Wharton flow and production build pass. Local only.
+
+## Wharton lineup: Water bottles · Lip balm · Carry-On
+
+Armaan selected these category labels and explicitly asked to reuse existing products rather than do new research. Updated both the dedicated Wharton category choices and Board chips. Lip balm replaces Sunscreen in these Wharton-specific surfaces; Carry-On replaces Running shoes and remains Soon.
+
+Read-only connected category inventory confirmed Lip balm is already live/approved as lip-balm. Its public experiment response at https://v4ch.app/api/experiment?experiment=lip-balm was read on November 17, 2026. The local snapshot in data/wharton-lip-balm.json contains its existing ten product identities, names and merchant links; no visitor responses, accounts or scores were imported. Ten existing product photos are mirrored into public/assets/wharton-lip-balm for reliable local preview. The isolated preview seeds this lineup only when absent, preserving existing local answers on restart.
+
+Carry-On has no live experiment and its prior production suggestion is marked rejected. This work does not reactivate, approve or publish it. The placeholder uses the requested Carry-On label and a simple suitcase illustration. Other existing categories remain in the general directory.
+
+Checks: 337 tests and build pass; lint has zero errors and existing warnings. Phone/desktop Board and Wharton flow smokes pass with the new labels. Verified all ten Lip balm photos decode and its rating card can save a note/vote and advance, with Lip balm active on its Board and Carry-On shown as Soon. No production writes, push or deployment.

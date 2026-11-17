@@ -1,0 +1,216 @@
+{
+  "id": "lip-balm",
+  "title": "The Wharton Lip Balm Edit",
+  "category": "Lip balm",
+  "source": "Existing public Vouch category, read 2026-11-17; no visitor responses copied.",
+  "products": [
+    {
+      "id": "c3-ajcgnrn",
+      "provider": "channel3",
+      "providerId": "ajcgnrn",
+      "brand": "Summer Fridays",
+      "name": "Limited Edition Lip Butter Balm",
+      "variantLabel": null,
+      "category": "Lip Balms",
+      "image": "/assets/wharton-lip-balm/c3-ajcgnrn.jpg",
+      "images": [
+        "/assets/wharton-lip-balm/c3-ajcgnrn.jpg"
+      ],
+      "url": null,
+      "photoOverride": "/assets/wharton-lip-balm/c3-ajcgnrn.jpg",
+      "photoOverrides": [
+        "/assets/wharton-lip-balm/c3-ajcgnrn.jpg"
+      ]
+    },
+    {
+      "id": "c3-8wbtfwG",
+      "provider": "channel3",
+      "providerId": "8wbtfwG",
+      "brand": "rhode",
+      "name": "peptide lip tint",
+      "variantLabel": null,
+      "category": "Lip Balms & Treatments",
+      "alternateRefs": [
+        {
+          "provider": "channel3",
+          "providerId": "zIco4uK"
+        }
+      ],
+      "image": "/assets/wharton-lip-balm/c3-8wbtfwG.jpg",
+      "images": [
+        "/assets/wharton-lip-balm/c3-8wbtfwG.jpg"
+      ],
+      "url": null,
+      "photoOverride": "/assets/wharton-lip-balm/c3-8wbtfwG.jpg",
+      "photoOverrides": [
+        "/assets/wharton-lip-balm/c3-8wbtfwG.jpg"
+      ]
+    },
+    {
+      "id": "c3-b0nEftq",
+      "provider": "channel3",
+      "providerId": "b0nEftq",
+      "brand": "Aquaphor",
+      "name": "Lip Repair Stick + Sunscreen SPF 30",
+      "variantLabel": "SPF 30",
+      "category": "Lip Balms",
+      "photoOverride": "/assets/wharton-lip-balm/c3-b0nEftq.jpg",
+      "photoOverrides": [
+        "/assets/wharton-lip-balm/c3-b0nEftq.jpg"
+      ],
+      "image": "/assets/wharton-lip-balm/c3-b0nEftq.jpg",
+      "images": [
+        "/assets/wharton-lip-balm/c3-b0nEftq.jpg"
+      ],
+      "url": null
+    },
+    {
+      "id": "c3-B3YPfnw",
+      "provider": "channel3",
+      "providerId": "B3YPfnw",
+      "brand": "Glossier",
+      "name": "Balm Dotcom",
+      "variantLabel": null,
+      "category": "Lip Balms",
+      "alternateRefs": [
+        {
+          "provider": "channel3",
+          "providerId": "nccYuoG"
+        }
+      ],
+      "image": "/assets/wharton-lip-balm/c3-B3YPfnw.jpg",
+      "images": [
+        "/assets/wharton-lip-balm/c3-B3YPfnw.jpg"
+      ],
+      "url": null,
+      "photoOverride": "/assets/wharton-lip-balm/c3-B3YPfnw.jpg",
+      "photoOverrides": [
+        "/assets/wharton-lip-balm/c3-B3YPfnw.jpg"
+      ]
+    },
+    {
+      "id": "c3-qAxZSfu",
+      "provider": "channel3",
+      "providerId": "qAxZSfu",
+      "brand": "EADEM",
+      "name": "Le Chouchou Exfoliating + Softening Peptide Lip Balm",
+      "variantLabel": "Guava",
+      "category": "Lip Balms",
+      "photoOverride": "/assets/wharton-lip-balm/c3-qAxZSfu.jpg",
+      "photoOverrides": [
+        "/assets/wharton-lip-balm/c3-qAxZSfu.jpg"
+      ],
+      "image": "/assets/wharton-lip-balm/c3-qAxZSfu.jpg",
+      "images": [
+        "/assets/wharton-lip-balm/c3-qAxZSfu.jpg"
+      ],
+      "url": null
+    },
+    {
+      "id": "c3-hAg7HF3",
+      "provider": "channel3",
+      "providerId": "hAg7HF3",
+      "brand": "Tower 28",
+      "name": "LipSoftie Hydrating Tinted Lip Treatment Balm",
+      "variantLabel": null,
+      "category": "Lip Balms",
+      "alternateRefs": [
+        {
+          "provider": "channel3",
+          "providerId": "dJP6Yaz"
+        }
+      ],
+      "image": "/assets/wharton-lip-balm/c3-hAg7HF3.jpg",
+      "images": [
+        "/assets/wharton-lip-balm/c3-hAg7HF3.jpg"
+      ],
+      "url": null,
+      "photoOverride": "/assets/wharton-lip-balm/c3-hAg7HF3.jpg",
+      "photoOverrides": [
+        "/assets/wharton-lip-balm/c3-hAg7HF3.jpg"
+      ]
+    },
+    {
+      "id": "c3-TTRmhgX",
+      "provider": "channel3",
+      "providerId": "TTRmhgX",
+      "brand": "N\u00e9cessaire",
+      "name": "The Lip Balm | Multi-ceramide",
+      "variantLabel": null,
+      "category": "Lip Balms",
+      "image": "/assets/wharton-lip-balm/c3-TTRmhgX.jpg",
+      "images": [
+        "/assets/wharton-lip-balm/c3-TTRmhgX.jpg"
+      ],
+      "url": null,
+      "photoOverride": "/assets/wharton-lip-balm/c3-TTRmhgX.jpg",
+      "photoOverrides": [
+        "/assets/wharton-lip-balm/c3-TTRmhgX.jpg"
+      ]
+    },
+    {
+      "id": "c3-kQ5c7ns",
+      "provider": "channel3",
+      "providerId": "kQ5c7ns",
+      "brand": "Kiehl's",
+      "name": "Lip Balm #1",
+      "variantLabel": null,
+      "category": "Lip Balms",
+      "alternateRefs": [
+        {
+          "provider": "channel3",
+          "providerId": "2BDHyvz"
+        },
+        {
+          "provider": "channel3",
+          "providerId": "XvYqaCR"
+        }
+      ],
+      "image": "/assets/wharton-lip-balm/c3-kQ5c7ns.jpg",
+      "images": [
+        "/assets/wharton-lip-balm/c3-kQ5c7ns.jpg"
+      ],
+      "url": null,
+      "photoOverride": "/assets/wharton-lip-balm/c3-kQ5c7ns.jpg",
+      "photoOverrides": [
+        "/assets/wharton-lip-balm/c3-kQ5c7ns.jpg"
+      ]
+    },
+    {
+      "id": "c3-P3wLzbj",
+      "provider": "channel3",
+      "providerId": "P3wLzbj",
+      "brand": "Burt's Bees",
+      "name": "Beeswax Lip Balm",
+      "variantLabel": "Beeswax Lip Balm \u00b7 Single",
+      "category": "Lip Balms",
+      "image": "/assets/wharton-lip-balm/c3-P3wLzbj.jpg",
+      "images": [
+        "/assets/wharton-lip-balm/c3-P3wLzbj.jpg"
+      ],
+      "url": null,
+      "photoOverride": "/assets/wharton-lip-balm/c3-P3wLzbj.jpg",
+      "photoOverrides": [
+        "/assets/wharton-lip-balm/c3-P3wLzbj.jpg"
+      ]
+    },
+    {
+      "id": "c3-ITbwQXe",
+      "provider": "channel3",
+      "providerId": "ITbwQXe",
+      "brand": "Dr. Bronner's",
+      "name": "Organic Lip Balm Naked 0.15 oz 4 g",
+      "variantLabel": "0.15 oz \u00b7 4 g",
+      "category": "Lip Balms",
+      "photoOverride": "/assets/wharton-lip-balm/c3-ITbwQXe.jpg",
+      "photoOverrides": [
+        "/assets/wharton-lip-balm/c3-ITbwQXe.jpg"
+      ],
+      "image": "/assets/wharton-lip-balm/c3-ITbwQXe.jpg",
+      "images": [
+        "/assets/wharton-lip-balm/c3-ITbwQXe.jpg"
+      ],
+      "url": null
+    }
+  ]
+}

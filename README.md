@@ -183,3 +183,7 @@ Qualified community nominations appear alongside the original lineup in score or
 ## Homepage preview
 
 `/homepage` serves the editorial homepage preview, with isolated assets under `/homepage-assets/`. The main `/` route retains the current landing page. Scores and recommendations in the preview are illustrative; perks and expertise remain future concepts. When approved, this page can be promoted to the root route separately.
+
+### Logo v2 — November 16, 2026
+
+Product headers use the approved tilted lime italic-v emblem before the lowercase Vouch wordmark. Outlined assets live in `public/brand/`; `brand.js` supplies the current-color v glyph for photo placeholders. Every HTML entry links browser icons, the Apple touch icon and `site.webmanifest`. Vite copies `public/` into `dist/client/`, which is the production Worker's assets directory. Local asset MIME types and page branding are covered by `test/brand-assets.test.mjs`. The legacy ignored `community-update.mjs` source-rewriting utility was updated locally but was not run.

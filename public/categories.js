@@ -25,6 +25,6 @@
    target.querySelector('[data-category-retry]').onclick=()=>mount(root,{exclude,limit});
   }finally{target.setAttribute('aria-busy','false');}
  }
- window.VouchCategories={section,mount};
+ window.VouchCategories={section,mount,load};
  if(document.body.classList.contains('categories-page'))mount(document);
 })();

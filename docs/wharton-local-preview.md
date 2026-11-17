@@ -82,3 +82,17 @@ Validation: 327 automated tests and production build pass; full lint has zero er
 ### Mobile hamburger refinement
 
 At Armaan's follow-up request, the mobile header now shows the hamburger immediately to the right of search. It opens the shared navigation menu with an account/sign-in link. Navigation remains available within the expanded search panel too. Browser checks pass at 320–1440px, including control spacing, menu open/close state, Escape focus return, search results and responsive resizing. Production build passes. Local only.
+
+## Wharton Board category chips
+
+Local implementation of the approved category-chip concept. Water bottles and Sunscreen link to open, public experiments returned by the existing category inventory. Running shoes stays Soon until a matching approved experiment opens; no category or products are published by this work. The original isolated concept remains in output/board-category-concept.
+
+The current Board shows Vouch for [category] for an unstarted flow, Continue vouching for a partial flow, and no invitation after completion. Completed chips show a small check. The three experiment choices use ordinary accessible navigation links with aria-current, rather than pretending full-page navigation is an in-place ARIA tab widget. Existing category cards below the Board remain available.
+
+GET /api/category-participation accepts at most three public experiment IDs and returns only the current participant's status, answered product IDs and first unanswered ID. It reuses existing browser/account ownership and stored verdicts, including Skip. Account-linked browser history preserves completion across devices, including skipped cards that do not appear as profile endorsements. It does not add completion counters to profiles or publish private opinions. No migration or external setup is required.
+
+Continue opens the existing rating flow at the first unanswered product and skips already answered cards as it advances, preserving existing answers. Wharton entry context stays in category links. The category inventory loader is reused across Board chips and existing category cards; participation reads are bounded and not shared-cached between people. Failures show a retry state rather than inventing completion.
+
+Board layout centers rank and score/vote total across product plus endorser chips. People remain aligned to the product image; empty endorser rows remain hidden. Ratings, score calculations, tags and comments are unchanged.
+
+Validation: 337 tests pass, including new participation tests for new/partial/complete, Skip, another category, cross-device recovery, isolated visitors and bounded queries. Production build passes; full lint has zero errors and existing warnings. Local browser checks at 390px and 1440px cover live (synthetic local account) new/partial/complete states, first-unanswered resume, category switching, pending Running shoes, full-row rank/score centering, no overflow and no page errors. Existing Wharton flow smoke also passes. Screenshots are in output/board-category-implementation at the workspace root. Local only; no push or deployment.

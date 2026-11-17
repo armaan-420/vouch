@@ -330,3 +330,15 @@ test('comments survive claims, private notes stay private, and account edits res
  assert.equal((await f.call('/api/account/profile',{identity:'alice',body:{opinions:[{productId:'sku-one',comment:'x'.repeat(241)}]}})).status,400);
  assert.equal((await f.call('/api/admin/comment-remove',{body:{handle:claimed.data.profile.handle,productId:'sku-one'}})).status,403);
 });
+
+test('organizers can remove comments without changing votes and stale claims cannot restore them',async t=>{
+ const f=await setup(t);f.answer('sku-one','yes');f.states.first.baseComments={'sku-one':{[browser]:{text:'Remove this note',updatedAt:when}}};
+ const result=await f.claim(await f.preview(),'alice',undefined,{displayName:'Alice'});
+ const admin=createAccountsApi({store:f.store,authorizeAdmin:async r=>r.headers.get('x-organizer')==='yes'});
+ const request=(endpoint,body)=>f.request(endpoint,{body,headers:{'x-organizer':'yes'}});
+ const listing=await admin(request('/api/admin/comments?handle='+result.data.profile.handle));assert.equal((await listing.json()).comments.length,1);
+ const response=await admin(request('/api/admin/comment-remove',{handle:result.data.profile.handle,productId:'sku-one'}));assert.equal(response.status,200);
+ await f.api.syncAccountOpinions(f.request('/api/events',{identity:'alice'}),'first','sku-one');
+ const profile=(await f.call('/api/account/me',{identity:'alice'})).data.profile;
+ assert.equal(profile.opinions[0].comment,'');assert.equal(profile.opinions[0].verdict,'yes');
+});

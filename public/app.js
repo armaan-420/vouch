@@ -126,40 +126,6 @@ function mountExperimentTags(product,host=app,lockCard=true){
  });
  load();
 }
-function boardTags(product){
- const id=product.communityNominated?product.skuId:(product.skuId||product.onBoardId||product.id);
- if(!id)return '';
- return `<div class="board-product-tags" data-board-tags="${esc(id)}"><ul class="board-tag-strip" aria-label="Tags" aria-busy="true"></ul><span class="board-tag-status sr-only" role="status" aria-live="polite">Loading tags…</span></div>`;
-}
-function mountBoardTags(){app.querySelectorAll('[data-board-tags]').forEach(host=>{
- const strip=host.querySelector('.board-tag-strip'),status=host.querySelector('.board-tag-status');
- let current=null,saving=false;
- const paint=()=>{
-  const focused=document.activeElement?.dataset.boardTag,plusFocused=document.activeElement?.hasAttribute('data-add-board-tag');
-  const selected=new Set(current?.selectedTagIds||[]);
-  strip.innerHTML=(current?.tags||[]).map(tag=>`<li><button type="button" class="board-tag-chip${tag.count?' has-votes':''}" data-board-tag="${esc(tag.id)}" aria-pressed="${selected.has(tag.id)}" aria-disabled="${saving}"><span>${esc(tag.label)}</span>${tag.count?`<span class="board-tag-votes">${Number(tag.count)}</span>`:''}</button></li>`).join('')+`<li><button type="button" class="board-tag-add" data-add-board-tag aria-label="Add a tag"><svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M6 1v10M1 6h10"/></svg></button></li>`;
-  strip.setAttribute('aria-busy',String(saving));
-  if(focused)Array.from(strip.querySelectorAll('[data-board-tag]')).find(button=>button.dataset.boardTag===focused)?.focus({preventScroll:true});
-  else if(plusFocused)strip.querySelector('[data-add-board-tag]').focus({preventScroll:true});
- };
- const load=async()=>{try{current=await api('/api/products/'+encodeURIComponent(host.dataset.boardTags));if(!host.isConnected)return;paint();status.textContent=''}catch{if(!host.isConnected)return;strip.setAttribute('aria-busy','false');status.classList.remove('sr-only');status.textContent='Tags could not load. ';const retry=document.createElement('button');retry.type='button';retry.textContent='Try again';retry.onclick=()=>{status.classList.add('sr-only');status.textContent='Loading tags…';load()};status.append(retry)}};
- host.addEventListener('click',async event=>{
-  if(event.target.closest('[data-add-board-tag]')){
-   // TODO: Connect a public add-tag flow when one exists. Organizer tools require admin access.
-   status.classList.remove('sr-only');status.textContent='Adding custom tags is not available yet.';return;
-  }
-  const button=event.target.closest('[data-board-tag]');if(!button||!current||saving)return;
-  if(experiment.status==='draft'){status.classList.remove('sr-only');status.textContent='Tags can be saved after this collection is approved.';return}
-  const previous=current,selected=new Set(current.selectedTagIds||[]),id=button.dataset.boardTag,removing=selected.has(id);
-  removing?selected.delete(id):selected.add(id);
-  current={...current,selectedTagIds:[...selected],tags:current.tags.map(tag=>tag.id===id?{...tag,count:Math.max(0,Number(tag.count||0)+(removing?-1:1))}:tag)};
-  saving=true;paint();status.classList.add('sr-only');status.textContent='Saving tags…';
-  try{current=await api('/api/products/'+encodeURIComponent(host.dataset.boardTags),{tagIds:[...selected]});status.textContent='Tags saved.'}
-  catch(error){current=previous;status.classList.remove('sr-only');status.textContent=error.message+' Your tag change was undone. Tap to retry.'}
-  finally{saving=false;if(host.isConnected)paint()}
- });
- load();
-})}
 function rankedRow(p,i,isCommunity=false){
  const saved=isCommunity?p.myVote:state.votes[p.id];
  return `<div class="rank-row${isCommunity?' community-row':''}"${!isCommunity?` id="product-${esc(p.id)}"`:''}><div class="rank-topline"><div class="rank-product"><span class="rank">${String(i+1).padStart(2,'0')}</span>${standingsImage(p,isCommunity)}<div class="rank-info">${standingsName(p,isCommunity)}${saved&&saved!=='skip'?`<span class="your-vote">You ${verdictLabel(saved)}</span>`:''}</div></div>${scoreSummary(p)}</div>${boardPeople(p,isCommunity)}${isCommunity&&(!p.myVote||p.myVote==='skip')?`<div class="community-actions">${[['no','Nope 👎','👎'],['brand','Brand vouch 🤝','🤝'],['yes','Vouch 👍','👍'],['skip','Skip this one','🤷']].map(([value,label,emoji])=>`<button data-community="${esc(p.id)}" data-choice="${value}" aria-label="${label}" aria-pressed="${p.myVote===value}"><span class="community-action-label" aria-hidden="true">${label}</span><span class="community-action-emoji" aria-hidden="true">${emoji}</span></button>`).join('')}</div>`:''}</div>`;
@@ -245,3 +211,5 @@ async function mountBoardPeople(){
  };
  for(let i=0;i<ids.length;i+=100)await load(ids.slice(i,i+100));
 }
+
+document.addEventListener('click',event=>{const anchor=event.target.closest('.board-people a');if(!anchor)return;fetch(apiUrl('/api/events'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:anchor.classList.contains('board-person')?'profile_open':'people_open'}),credentials:'same-origin',keepalive:true}).catch(()=>{});});

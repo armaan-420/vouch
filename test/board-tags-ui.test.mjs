@@ -3,32 +3,16 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import vm from 'node:vm';
 
-// Exercise the board's actual handler with deferred saves: render immediately,
-// preserve other selections, and restore both count and pressed state on failure.
-test('board chips optimistically toggle counts and roll back a rejected save',async()=>{
+test('Board people load in one batch and errors remain distinct from zero endorsers',async()=>{
  const source=await fs.readFile(new URL('../public/app.js',import.meta.url),'utf8');
- const controller=source.slice(source.indexOf('function mountBoardTags(){'),source.indexOf('function rankedRow('));
- const initial={tags:[{id:'design',label:'Design',count:1},{id:'quality',label:'Quality',count:2}],selectedTagIds:['quality']};
- const strip={innerHTML:'',setAttribute(){}},status={textContent:'',classList:{add(){},remove(){}}};
- let click,resolveSave,rejectSave,payload;
- const host={isConnected:true,dataset:{boardTags:'example'},querySelector:selector=>selector==='.board-tag-strip'?strip:status,addEventListener:(type,handler)=>{click=handler}};
- const api=async(path,body)=>{if(!body)return structuredClone(initial);payload=body;return new Promise((resolve,reject)=>{resolveSave=resolve;rejectSave=reject})};
- vm.runInNewContext(controller+';mountBoardTags();',{app:{querySelectorAll:()=>[host]},api,document:{activeElement:null},experiment:{status:'open'},esc:String,Set,Array,Number,Math});
- await new Promise(setImmediate);
- const press=id=>click({target:{closest:selector=>selector==='[data-board-tag]'?{dataset:{boardTag:id}}:null}});
- const added=press('design');
- assert.match(strip.innerHTML,/data-board-tag="design" aria-pressed="true"/);
- assert.match(strip.innerHTML,/Design<\/span><span class="board-tag-votes">2<\/span>/);
- assert.deepEqual(Array.from(payload.tagIds),['quality','design']);
- rejectSave(Error('Save unavailable'));await added;
- assert.match(strip.innerHTML,/data-board-tag="design" aria-pressed="false"/);
- assert.match(strip.innerHTML,/Design<\/span><span class="board-tag-votes">1<\/span>/);
- assert.match(status.textContent,/undone/);
- const retry=press('design');resolveSave({tags:[{id:'design',label:'Design',count:2},{id:'quality',label:'Quality',count:2}],selectedTagIds:['quality','design']});await retry;
- const removed=press('design');
- assert.match(strip.innerHTML,/data-board-tag="design" aria-pressed="false"/);
- assert.match(strip.innerHTML,/Design<\/span><span class="board-tag-votes">1<\/span>/);
- assert.deepEqual(Array.from(payload.tagIds),['quality']);
- resolveSave(initial);await removed;
- assert.equal(status.textContent,'Tags saved.');
+ const start=source.indexOf('async function mountBoardPeople()'),end=source.indexOf("\ndocument.addEventListener('click'",start);
+ const controller=source.slice(start,end);
+ let fail=false,calls=0,retry;
+ const hosts=['one','two'].map(id=>({dataset:{boardPeople:id,path:'/products/'+id},isConnected:true,innerHTML:'',setAttribute(){},querySelector(){return {set onclick(fn){retry=fn}}}}));
+ const api=async()=>{calls++;if(fail)throw Error('Offline');return {summaries:{one:{total:1,people:[{displayName:'Alice',handle:'alice',isYou:true}]},two:{total:0,people:[]}}}};
+ const context={app:{querySelectorAll:()=>hosts},api,URLSearchParams,Set,window:{VouchPeople:{avatar:()=>'<a>AL</a>',shortName:String}},esc:String};
+ vm.createContext(context);vm.runInContext(controller,context);await vm.runInContext('mountBoardPeople()',context);
+ assert.equal(calls,1);assert.match(hosts[0].innerHTML,/You vouch/);assert.match(hosts[1].innerHTML,/No named vouches/);
+ fail=true;await vm.runInContext('mountBoardPeople()',context);assert.match(hosts[0].innerHTML,/Retry/);assert.doesNotMatch(hosts[0].innerHTML,/No named/);
+ fail=false;await retry();assert.match(hosts[0].innerHTML,/You vouch/);
 });

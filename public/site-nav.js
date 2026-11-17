@@ -6,55 +6,109 @@
  // Navigation destinations are shared by desktop links and the mobile menu.
  header.querySelectorAll('.site-desktop-links a,.site-menu a').forEach(link=>{if(link.pathname===location.pathname)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});
  const menuIcon=menuToggle.innerHTML,closeIcon=searchClose.innerHTML;
+ // Keep the mobile menu before the brand in both visual and keyboard order.
+ header.prepend(menuToggle);
+ let searchFocus=null,restoringSearchFocus=false;
  let context=null,picker=null,menuOpen=false,searchOpen=false,scrollBefore=null,scrim=null,controller=null,timer=null,version=0,feedbackDialog=null,feedbackFocus=null;
+ const emblem=header.querySelector('.wordmark-emblem');
+ const emblemMarkup=emblem?.outerHTML.replace('wordmark-emblem','vouch-action-emblem')||'';
+ const pill=document.createElement('button');
+ pill.type='button';pill.className='vouch-pill';pill.hidden=true;
+ pill.setAttribute('aria-label','Vouch for a product');pill.setAttribute('data-vouch-search','');
+ pill.innerHTML=emblemMarkup+'<span class="vouch-pill-label">Vouch</span>';
+ document.body.append(pill);
+ const searchEmblem=emblem?.cloneNode(true);
+ if(searchEmblem){searchEmblem.className='site-search-emblem';searchEmblem.width=26;searchEmblem.height=26;search.querySelector('.site-search-field>svg')?.replaceWith(searchEmblem);}
+ const hint=document.createElement('kbd');hint.className='site-search-shortcut';hint.textContent='/';hint.setAttribute('aria-hidden','true');
+ input.after(hint);
+ const searchAction=document.createElement('button');searchAction.type='button';searchAction.className='site-search-action';searchAction.setAttribute('aria-label','Search products');searchAction.innerHTML=searchToggle.innerHTML;
+ hint.after(searchAction);searchAction.onclick=()=>openSearch(searchAction);
+
+ const textField=node=>!!node?.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"])');
+ function syncPill(){
+  const eligible=!!(context?.experimentId&&!context.draft&&context.canNominate&&!context.voting);
+  const visible=eligible&&!menuOpen&&!searchOpen&&!document.querySelector('dialog[open]')&&!(textField(document.activeElement)&&!header.contains(document.activeElement));
+  if(pill.hidden===visible)pill.hidden=!visible;
+  // Keep the reserved space stable while overlays or the keyboard temporarily hide the button.
+  document.body.classList.toggle('has-vouch-pill',eligible);
+ }
+ new MutationObserver(syncPill).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open']});
+ document.addEventListener('focusin',syncPill);
+ document.addEventListener('focusout',()=>queueMicrotask(syncPill));
+ document.addEventListener('click',event=>{
+  const trigger=event.target.closest('[data-vouch-search]');
+  if(trigger)openSearch(trigger,true);
+ });
  function lock(){if(scrollBefore===null){scrollBefore=document.body.style.overflow;document.body.style.overflow='hidden';}}
  function unlock(){if(!menuOpen&&!searchOpen&&scrollBefore!==null){document.body.style.overflow=scrollBefore;scrollBefore=null;}}
- function syncScrim(){scrim?.remove();scrim=null;if(menuOpen||searchOpen){scrim=document.createElement('div');scrim.className='site-nav-scrim';scrim.style.top=Math.max(0,header.getBoundingClientRect().bottom)+'px';scrim.setAttribute('aria-hidden','true');scrim.onclick=()=>closePanels();document.body.append(scrim);}}
+ function syncScrim(){syncPill();scrim?.remove();scrim=null;if(menuOpen||searchOpen){scrim=document.createElement('div');scrim.className='site-nav-scrim';scrim.style.top=Math.max(0,header.getBoundingClientRect().bottom)+'px';scrim.setAttribute('aria-hidden','true');scrim.onclick=()=>closePanels();document.body.append(scrim);}}
  function closeMenu(focus=true){if(!menuOpen)return;menuOpen=false;menu.hidden=true;header.classList.remove('is-menu-open');menuToggle.setAttribute('aria-expanded','false');menuToggle.setAttribute('aria-label','Menu');menuToggle.innerHTML=menuIcon;syncScrim();unlock();if(focus)menuToggle.focus({preventScroll:true});}
  function hideResults(){popover.hidden=true;input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');}
- function closeSearch(focus=true){const wasOpen=searchOpen;searchOpen=false;header.classList.remove('is-search-open');searchToggle.setAttribute('aria-expanded','false');version++;clearTimeout(timer);controller?.abort();hideResults();syncScrim();unlock();if(wasOpen&&focus)searchToggle.focus({preventScroll:true});}
+ function closeSearch(focus=true){const wasOpen=searchOpen;searchOpen=false;header.classList.remove('is-search-open');searchToggle.setAttribute('aria-expanded','false');version++;clearTimeout(timer);controller?.abort();hideResults();syncScrim();unlock();if(wasOpen&&focus){syncPill();const target=searchFocus?.isConnected?searchFocus:searchToggle;restoringSearchFocus=true;target.focus({preventScroll:true});restoringSearchFocus=false;}}
  function closePanels(focus=true){closeMenu(focus);closeSearch(focus);}
  function toggleMenu(){if(menuOpen){closeMenu();return;}closeSearch(false);menuOpen=true;menu.hidden=false;header.classList.add('is-menu-open');menuToggle.setAttribute('aria-expanded','true');menuToggle.setAttribute('aria-label','Close menu');menuToggle.innerHTML=closeIcon;lock();syncScrim();}
- function openSearch(){if(!context||context.draft)return;closeMenu(false);searchOpen=true;header.classList.add('is-search-open');searchToggle.setAttribute('aria-expanded','true');lock();syncScrim();input.focus();if(input.value.trim().length>=2)runSearch();}
- menuToggle.onclick=toggleMenu;searchToggle.onclick=openSearch;searchClose.onclick=()=>closeSearch();
+ function openSearch(trigger=searchToggle,clear=false){if(!context?.experimentId||context.draft)return;if(!searchOpen)searchFocus=trigger instanceof HTMLElement?trigger:searchToggle;if(clear){input.value='';picker?.clear();hideResults();}closeMenu(false);showHeader();searchOpen=true;header.classList.add('is-search-open');searchToggle.setAttribute('aria-expanded','true');lock();syncScrim();input.focus();if(input.value.trim().length>=2)runSearch();}
+ menuToggle.onclick=toggleMenu;searchToggle.onclick=()=>openSearch(searchToggle);searchClose.onclick=()=>closeSearch();
  header.querySelectorAll('[data-suggest-edit]').forEach(trigger=>trigger.hidden=true);
  header.querySelectorAll('[data-site-feedback]').forEach(button=>button.onclick=()=>{const fromMenu=menu.contains(button);closeMenu();openFeedback(fromMenu?menuToggle:button);});
  menu.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>closeMenu()));
- document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(menuOpen||searchOpen){event.preventDefault();closePanels();}else if(!popover.hidden)hideResults();});
- document.addEventListener('click',event=>{if(!event.composedPath().includes(header)){if(menuOpen||searchOpen)closePanels();else hideResults();}});
+ document.addEventListener('keydown',event=>{if(event.key==='/'&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&!event.shiftKey&&!textField(event.target)&&!document.querySelector('dialog[open]')&&context?.experimentId&&!context.draft){event.preventDefault();openSearch(window.innerWidth>760?input:searchToggle);return;}if(event.key!=='Escape')return;if(menuOpen||searchOpen){event.preventDefault();closePanels();}else if(!popover.hidden)hideResults();});
+ document.addEventListener('click',event=>{if(!event.composedPath().includes(header)&&!event.target.closest('[data-vouch-search]')){if(menuOpen||searchOpen)closePanels();else hideResults();}});
  // Keep keyboard focus within the expanded navigation until it closes.
  header.addEventListener('keydown',event=>{if(event.key!=='Tab'||!menuOpen&&!searchOpen)return;const nodes=[...header.querySelectorAll('a[href],button,input')].filter(n=>!n.disabled&&n.getClientRects().length),first=nodes[0],last=nodes.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});
  document.addEventListener('focusin',event=>{if(!header.contains(event.target)&&!searchOpen)hideResults();});
- window.addEventListener('resize',()=>{if(window.innerWidth>760&&menuOpen)closeMenu(false);if(menuOpen||searchOpen)syncScrim();});
+ window.addEventListener('resize',()=>{if(window.innerWidth>1100&&menuOpen)closeMenu(false);if(menuOpen||searchOpen)syncScrim();});
  // Keep the header reachable while reading without covering the page on descent.
  let lastScroll=Math.max(0,window.scrollY),scrollTravel=0,scrollFrame=false;
- const showHeader=()=>{header.classList.remove('is-scroll-hidden');scrollTravel=0;};
+ const showHeader=()=>{header.classList.remove('is-scroll-hidden');pill.classList.remove('is-collapsed');scrollTravel=0;};
  function updateScrollHeader(){
   scrollFrame=false;const y=Math.max(0,Math.min(window.scrollY,Math.max(0,document.documentElement.scrollHeight-window.innerHeight))),delta=y-lastScroll;lastScroll=y;
   if(y<=header.offsetHeight||menuOpen||searchOpen||header.contains(document.activeElement)||document.querySelector('dialog[open]')){showHeader();return;}
   if(!delta)return;
   scrollTravel=Math.sign(delta)===Math.sign(scrollTravel)?scrollTravel+delta:delta;
-  if(scrollTravel>18)header.classList.add('is-scroll-hidden');else if(scrollTravel< -8)showHeader();
+  if(scrollTravel>18){header.classList.add('is-scroll-hidden');pill.classList.add('is-collapsed');}else if(scrollTravel< -8)showHeader();
  }
  window.addEventListener('scroll',()=>{if(!scrollFrame){scrollFrame=true;requestAnimationFrame(updateScrollHeader);}},{passive:true});
  header.addEventListener('focusin',showHeader);
  function choose(product){
+  if(product.discoveryHref&&/^\/products\/[^/?#]+$/.test(product.discoveryHref)){closePanels(false);location.href=product.discoveryHref;return;}
+
   if(product.onBoardId){const href=context?.productPath(product);if(href){closePanels(false);location.href=href;}return;}
   if(!context?.canNominate){status.textContent='Nominations are paused for this Edit.';return;}
   const query=input.value.trim();closePanels();context.nominate(product,query);
  }
- function initializePicker(){if(picker)return;picker=window.VouchProductPicker({input,results,more:header.querySelector('.site-search-more'),clear:header.querySelector('.site-search-clear'),another:header.querySelector('.site-search-another'),esc,isSelected:()=>false,onChoose:choose,onClear:()=>{version++;controller?.abort();clearTimeout(timer);hideResults();},boardLabel:'On the board · View product',unselectedLabel:'Not on board · Nominate',enhance:false,focusAfterChoose:false});}
+ function initializePicker(){if(picker)return;picker=window.VouchProductPicker({input,results,more:header.querySelector('.site-search-more'),clear:header.querySelector('.site-search-clear'),another:header.querySelector('.site-search-another'),esc,isSelected:()=>false,onChoose:choose,onClear:()=>{version++;controller?.abort();clearTimeout(timer);hideResults();},resultLabel:product=>product.discoveryHref?'On Vouch · '+product.category+' · View product':null,boardLabel:'On the board · View product',unselectedLabel:'Not on board · Vouch for it',enhance:false,focusAfterChoose:false});}
  async function runSearch(){
   const query=input.value.trim();if(!context||query.length<2){picker?.clear();hideResults();return;}
+  const label=Array.from(query);nominate.textContent='Vouch for “'+label.slice(0,40).join('')+(label.length>40?'…':'')+'”';
   const current=++version;controller?.abort();controller=new AbortController();picker.clear();popover.hidden=false;input.setAttribute('aria-expanded','true');status.textContent='Looking up products…';nominate.hidden=true;
-  try{const response=await window.VouchCatalog.fetch(query,context.searchUrl(query),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(12000)])}),data=await response.json();if(current!==version)return;if(!response.ok)throw Error('Search unavailable.');const products=data.products||[];picker.setProducts(products);popover.hidden=false;input.setAttribute('aria-expanded','true');status.textContent=products.length?products.length+' '+(products.length===1?'match':'matches')+'.':"No match. Nominate it by name.";nominate.hidden=products.length>0||!context.canNominate;
-  }catch(error){if(current!==version||error.name==='AbortError')return;picker.clear();popover.hidden=false;input.setAttribute('aria-expanded','true');status.textContent='Search is unavailable. Try again or nominate by name.';nominate.hidden=!context?.canNominate;}
+  try{
+   const options={signal:AbortSignal.any([controller.signal,AbortSignal.timeout(12000)])};
+   // Public discovery spans all categories; catalog additions retain this Edit's category.
+   const [global,catalog]=await Promise.allSettled([
+    fetch('/api/discover?q='+encodeURIComponent(query),options).then(async response=>{if(!response.ok)throw Error('Search unavailable.');return response.json();}),
+    window.VouchCatalog.fetch(query,context.searchUrl(query),options).then(async response=>{if(!response.ok)throw Error('Catalog unavailable.');return response.json();})
+   ]);
+   if(current!==version)return;
+   if(global.status==='rejected'&&catalog.status==='rejected')throw Error('Search unavailable.');
+   const discovered=global.status==='fulfilled'?global.value.products.map(product=>({...product,discoveryHref:product.href})):[];
+   const key=product=>[product.brand,product.name].join(' ').toLowerCase().replace(/[^a-z0-9]/g,'');
+   const known=new Set(discovered.map(key));
+   const additions=catalog.status==='fulfilled'?(catalog.value.products||[]).filter(product=>!known.has(key(product))):[];
+   const products=[...discovered,...additions];
+   picker.setProducts(products);popover.hidden=false;input.setAttribute('aria-expanded','true');
+   const partial=global.status==='rejected'||catalog.status==='rejected';
+   status.textContent=(products.length?products.length+' '+(products.length===1?'match':'matches')+' across Vouch.':partial?'Search is partly unavailable.':'No match. Vouch for it by name.')+' Missing products are added to the '+context.category+' Edit.'+(partial&&products.length?' Some results could not load.':'');
+   nominate.hidden=products.length>0||!context.canNominate;
+  }catch(error){if(current!==version||error.name==='AbortError')return;picker.clear();popover.hidden=false;input.setAttribute('aria-expanded','true');status.textContent='Search is unavailable. Try again or vouch for it by name in the '+context.category+' Edit.';nominate.hidden=!context?.canNominate;}
+
  }
  input.addEventListener('input',()=>{version++;controller?.abort();clearTimeout(timer);picker?.clear();hideResults();if(input.value.trim().length>=2){popover.hidden=false;input.setAttribute('aria-expanded','true');status.textContent='Looking up products…';nominate.hidden=true;timer=setTimeout(runSearch,250);}});
- input.addEventListener('focus',()=>{if(input.value.trim().length>=2&&results.children.length){popover.hidden=false;input.setAttribute('aria-expanded','true');}});
+ input.addEventListener('focus',()=>{if(window.innerWidth<=760&&!searchOpen&&!restoringSearchFocus)openSearch(input);if(input.value.trim().length>=2&&results.children.length){popover.hidden=false;input.setAttribute('aria-expanded','true');}});
  nominate.onclick=()=>{const query=input.value.trim();closePanels();context?.nominate(null,query);};
- function productNoun(category){let noun=String(category||'products').trim().toLowerCase();if(!noun||noun.length>40)return 'products';if(/(sh|ch|ss|x|z)$/.test(noun))return noun+'es';if(/[^aeiou]y$/.test(noun))return noun.slice(0,-1)+'ies';return noun.endsWith('s')?noun:noun+'s';}
- function configure(value){context=value;const enabled=!!context.experimentId&&!context.draft;search.hidden=!enabled;searchToggle.hidden=!enabled;input.placeholder='Search '+productNoun(context.category);input.setAttribute('aria-label',input.placeholder);if(enabled)initializePicker();if(context.voting&&(searchOpen||menuOpen))closePanels(false);}
+ input.placeholder='Search vouch';input.setAttribute('aria-label','Search vouch');
+ function configure(value){context=value;const enabled=!!context.experimentId&&!context.draft;search.hidden=!enabled;searchToggle.hidden=!enabled;header.classList.toggle('has-product-search',enabled);if(enabled)initializePicker();if((!enabled||context.voting)&&(searchOpen||menuOpen))closePanels(false);syncPill();}
+
  async function refreshAccount(){if(document.body.classList.contains('collection-flow'))return;try{const response=await fetch('/api/account/me');if(!response.ok)return;const me=await response.json(),link=header.querySelector('.leaderboard-link');if(document.body.classList.contains('account-page'))header.toggleAttribute('data-account-nav-locked',location.pathname==='/account'&&(!me.authenticated||!!me.browserProfile));if(header.hasAttribute('data-home-nav')){const verified=!!me.authenticated&&!me.browserProfile;header.toggleAttribute('data-home-nav-locked',!verified);menuToggle.disabled=!verified;if(!verified)closePanels(false);}link.classList.toggle('profile-link',!!me.authenticated);link.href=me.authenticated?'/account':'/account?signin=1';link.setAttribute('aria-label',me.authenticated?'My profile':'Sign in');link.textContent=me.authenticated?(me.profile?.displayName||'V').trim().charAt(0).toUpperCase():'Sign in';if(me.profile?.verificationRequired)link.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg>';const photo=me.profile?.photo;if(me.authenticated&&typeof photo==='string'&&photo.startsWith('/api/account/photos/')){const image=document.createElement('img');image.src=photo;image.alt='';link.replaceChildren(image);}}catch{/* Keep the account link available during a transient failure. */}}
  function openFeedback(trigger){
   if(!feedbackDialog){feedbackDialog=document.createElement('dialog');feedbackDialog.className='suggestion-dialog feedback-dialog';feedbackDialog.id='feedback-dialog';feedbackDialog.setAttribute('aria-labelledby','feedback-title');document.body.append(feedbackDialog);feedbackDialog.addEventListener('close',()=>{if(feedbackFocus?.isConnected)feedbackFocus.focus({preventScroll:true});});}
@@ -64,7 +118,7 @@
   form.onsubmit=async event=>{event.preventDefault();if(pending)return;pending=true;button.disabled=true;button.textContent='Sending…';message.textContent='';try{const response=await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:form.elements.message.value,email:form.elements.email.value,path:location.pathname,experimentId:context?.experimentId||null})}),data=await response.json();if(!response.ok)throw Error(data.error||'Could not send feedback. Please try again.');form.reset();button.textContent='Feedback sent ✓';message.textContent='Thanks — we read every note.';}catch(error){button.disabled=false;button.textContent='Send feedback';message.textContent=error.message;}finally{pending=false;}};
   feedbackDialog.showModal();form.elements.message.focus();
  }
- window.VouchSiteNav={configure,refreshAccount};
+ window.VouchSiteNav={configure,refreshAccount,openSearch,emblemMarkup};
  if(document.querySelector('.draft-banner'))header.querySelectorAll('[data-suggest-edit]').forEach(trigger=>trigger.hidden=true);
  if(!document.body.classList.contains('collection-flow'))refreshAccount();document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAccount();});
 })();

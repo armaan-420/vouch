@@ -434,3 +434,131 @@ html.nomination-search-open,html.nomination-search-open body{overflow:hidden;ove
 
 /* Logo v2: the SVG includes space for the tilted tile. */
 .wordmark{display:inline-flex;align-items:center;min-height:44px;white-space:nowrap}.wordmark-emblem{width:1.08em;height:1.08em;margin-right:.16em;flex-shrink:0}.brand-v{display:inline-block;width:.74em;height:1em;vertical-align:middle;fill:currentColor;color:#8B9479}.signin-score-star .brand-v{color:#292D24}.brand-emblem{display:inline-block;width:1em;height:1em;object-fit:contain;vertical-align:middle}.home-experiment-icon .brand-emblem{width:32px;height:32px}.logo{display:inline-flex;align-items:center;min-height:44px}.benefit-strip .brand-v{color:inherit}.expert-star .brand-emblem,.closing-flower .brand-emblem{width:100%;height:100%}
+
+/* One search entry for finding products and vouching for missing favorites. */
+.site-search-emblem{width:26px;height:26px;flex:none}
+.site-search-shortcut{display:none;border:1px solid var(--line);border-radius:6px;min-width:22px;text-align:center;color:var(--muted);font:inherit}
+.vouch-pill[hidden]{display:none}
+.vouch-pill{display:none}
+.board-vouch-card{display:flex;align-items:center;justify-content:center;gap:12px;grid-column:1 / -1;width:100%;min-height:64px;margin:18px 0;padding:14px 18px;border:1px dashed var(--muted);border-radius:18px;background:transparent;color:var(--ink);font-size:15px;font-weight:500;text-align:center}
+.vouch-action-emblem{width:34px;height:34px;flex:none}
+.board-vouch-card:focus-visible,.vouch-pill:focus-visible{outline:3px solid var(--ink);outline-offset:4px}
+.site-search-field:focus-within{outline:2px solid var(--ink);outline-offset:1px}
+@media(min-width:761px){
+ .site-header.has-product-search .site-brand-group{flex:0 0 auto}
+ .site-header.has-product-search .site-navigation{flex:1;min-width:0}
+ .site-header .site-search{display:block;max-width:560px}
+ .site-header .site-search-toggle{display:none}
+ .site-search-shortcut{display:block}
+ .site-header.is-search-open{padding:0 40px}
+ .site-header.is-search-open .site-brand-group,.site-header.is-search-open .leaderboard-link{display:inline-flex}
+ .site-header.is-search-open .site-desktop-links{display:flex}
+ .site-header.is-search-open .site-search{position:relative;max-width:560px;min-width:140px}
+ .site-header .site-search-field{padding:5px 10px;gap:10px;border:1px solid var(--line);background:var(--paper)}
+ .site-header.is-search-open .site-search-field input{padding:6px 0;font-size:13px;border:0;background:none;min-height:32px}
+ .site-header .site-search-field input{padding:6px 0;font-size:13px}
+ .site-header.is-search-open .site-search-close{display:none}
+ .site-search-popover{top:calc(100% + 10px);left:0;right:auto;width:max(100%,340px);max-width:calc(100vw - 32px);border:1px solid var(--line);border-radius:12px}
+}
+@media(min-width:761px) and (max-width:1050px){
+ .site-header.has-product-search .site-desktop-links{display:none}
+ .site-header.is-search-open{padding:0 24px}
+}
+@media(max-width:760px){
+ body.has-vouch-pill{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+ .vouch-pill{display:flex;align-items:center;position:fixed;z-index:45;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);min-width:44px;min-height:44px;padding:5px;border:0;border-radius:99px;background:var(--ink);color:var(--paper);font-size:15px;font-weight:500}
+ .vouch-pill-label{overflow:hidden;white-space:nowrap;max-width:90px;opacity:1;padding:0 11px;transition:max-width .22s ease,opacity .18s ease,padding .22s ease}
+ .vouch-pill.is-collapsed .vouch-pill-label{max-width:0;opacity:0;padding:0}
+ .vouch-pill:active{transform:translateX(-50%) scale(.96)}
+}
+@media(prefers-reduced-motion:reduce){
+ .vouch-pill,.vouch-pill-label{transition:none}
+ .vouch-pill:active{transform:translateX(-50%)}
+ .site-header{transition:none}
+}
+
+
+/* Spacious search-first navigation, using Vouch's paper, ink and lime. */
+.site-search-action{display:inline-flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;min-width:40px;min-height:40px;padding:10px;border:0;border-radius:50%;background:var(--green);color:var(--ink)}
+.site-search-action svg{width:20px;height:20px}
+.site-search-field .site-search-emblem{position:static;width:30px;height:30px;flex:0 0 30px;margin:0}
+.site-header .site-search-field{min-height:56px;padding:6px 8px 6px 14px;gap:10px;border:1px solid transparent;background:var(--line)}
+.site-header .site-search-field input,.site-header.is-search-open .site-search-field input{flex:1;width:0;min-width:0;min-height:40px;padding:8px 0;border:0;border-radius:0;background:transparent;font-size:15px;outline:none}
+.site-search-field:focus-within{outline:2px solid var(--ink);outline-offset:2px}
+.site-header .leaderboard-link{background:var(--ink);color:var(--paper);border-color:var(--ink);min-height:48px;padding:12px 22px;font-size:14px;font-weight:600}
+.site-header .leaderboard-link:hover{background:var(--ink)}
+.site-header .leaderboard-link.profile-link{color:var(--ink)}
+.site-menu{box-shadow:none}
+.site-menu>a,.site-menu>button{color:var(--ink);font-size:20px;font-weight:600;min-height:66px;border:0;padding:16px 8px}
+@media(min-width:761px){
+ .site-header,.site-header.is-search-open{height:104px;max-width:1600px;padding:0 32px;gap:32px}
+ .site-header .site-search,.site-header.is-search-open .site-search{max-width:600px;min-width:180px;flex:1}
+ .site-header .site-navigation{gap:28px}
+ .site-header .site-desktop-links{order:1;gap:24px;margin:0}
+ .site-header .leaderboard-link{order:2}
+ .site-header .site-text-link{font-size:14px;color:var(--ink)}
+ .site-search-shortcut{font-size:12px;min-width:20px;border-color:var(--muted)}
+}
+@media(min-width:761px) and (max-width:1100px){
+ .site-header.has-product-search .site-desktop-links{display:none}
+ .site-header,.site-header.is-search-open{padding:0 24px;gap:24px}
+}
+@media(max-width:760px){
+ .site-header,.site-header.is-search-open{display:grid;grid-template-columns:36px minmax(0,1fr) auto;grid-template-rows:60px auto;align-items:center;column-gap:8px;row-gap:0;height:auto;min-height:76px;padding:8px 16px;border-bottom:0}
+ .site-header .site-navigation,.site-header.is-search-open .site-navigation{display:contents}
+ .site-header .site-menu-toggle,.site-header.is-search-open .site-menu-toggle{display:inline-flex;grid-column:1;grid-row:1;min-width:36px;width:36px;padding:6px;margin:0}
+ .site-header .site-brand-group,.site-header.is-search-open .site-brand-group{display:flex;grid-column:2;grid-row:1;min-width:0}
+ .site-header .wordmark{font-size:30px;letter-spacing:-2px}
+ .site-header .leaderboard-link,.site-header.is-search-open .leaderboard-link,.site-header.is-menu-open .leaderboard-link{display:inline-flex;grid-column:3;grid-row:1;min-width:0;min-height:44px;padding:10px 16px;font-size:12px}
+ .site-header .leaderboard-link.profile-link{padding:0}
+ .site-header .site-search,.site-header.is-search-open .site-search{display:block;grid-column:1 / -1;grid-row:2;position:static;width:100%;max-width:none;min-width:0;margin:4px 0 12px}
+ .site-header .site-search-toggle,.site-header.is-search-open .site-search-toggle{display:none}
+ .site-header.is-menu-open .site-search{display:none}
+ .site-header .site-search-field,.site-header.is-search-open .site-search-field{padding:6px 8px 6px 10px;gap:8px;background:var(--line);border:1px solid transparent;min-height:56px}
+ .site-header .site-search-field input,.site-header.is-search-open .site-search-field input{font-size:16px}
+ .site-header.is-search-open .site-search-close{display:inline-flex;min-width:40px;width:40px;min-height:40px;height:40px;padding:10px;border-radius:50%;background:var(--paper)}
+ .site-header.is-search-open .site-search-action{display:none}
+ .site-search-popover{max-height:calc(100dvh - 152px);border:0;padding:16px;background:var(--paper)}
+ .site-menu{padding:16px 24px 24px;max-height:calc(100dvh - 76px)}
+ .site-header.voting-header{grid-template-rows:60px;min-height:76px}
+ .site-header.voting-header .site-search,.site-header.voting-header .site-menu-toggle{display:none}
+ .site-header.voting-header .site-brand-group{grid-column:1 / 3}
+}
+/* Preserve the signed-out navigation restrictions with the new mobile layout. */
+.site-header[data-account-nav-locked] .site-navigation,.site-header[data-account-nav-locked]>.site-menu-toggle{display:none}
+@media(max-width:760px){
+ .site-header[data-account-nav-locked] .site-brand-group,.site-header[data-home-nav-locked] .site-brand-group{grid-column:1 / 3}
+}
+
+/* Intermediate widths retain navigation through the same menu as phones. */
+@media(min-width:761px) and (max-width:1100px){
+ .site-header>.site-menu-toggle{display:inline-flex;flex:none;order:3}
+ .site-header.is-search-open>.site-menu-toggle{display:inline-flex}
+ .site-header.is-menu-open .leaderboard-link{display:inline-flex}
+ .site-header.is-menu-open .site-search-toggle{display:none}
+ .site-header .site-navigation{gap:18px}
+ .site-header .site-search,.site-header.is-search-open .site-search{min-width:140px}
+ .site-menu{padding:16px 24px 24px}
+}
+
+
+/* On phones the search shares the top row with the menu and profile. */
+@media(max-width:760px){
+ .site-header.has-product-search,.site-header.has-product-search.is-search-open{grid-template-columns:36px minmax(0,1fr) 44px;grid-template-rows:60px;height:76px;min-height:76px;column-gap:8px}
+ .site-header.has-product-search .site-brand-group,.site-header.has-product-search.is-search-open .site-brand-group{display:none}
+ .site-header.has-product-search .leaderboard-link{display:inline-flex;grid-column:3;grid-row:1;justify-self:end;min-width:44px;width:44px;height:44px;min-height:44px;padding:0;overflow:hidden;border-radius:50%;font-size:0}
+ .site-header.has-product-search .leaderboard-link.profile-link{font-size:16px}
+ .site-header.has-product-search .leaderboard-link:not(.profile-link)::before{content:"";display:block;width:22px;height:22px;background:currentColor;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'%3E%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21v-2a8 8 0 0 1 16 0v2'/%3E%3C/svg%3E") center/contain no-repeat}
+
+ .site-header.has-product-search .site-search,.site-header.has-product-search.is-search-open .site-search,.site-header.has-product-search.is-menu-open .site-search{display:block;grid-column:2;grid-row:1;margin:0;min-width:0}
+ .site-header.has-product-search .site-search-field{min-height:48px;padding:6px 8px;gap:8px}
+ .site-header.has-product-search .site-search-emblem{width:26px;height:26px;flex-basis:26px}
+ .site-header.has-product-search .site-search-field input{min-height:34px}
+ .site-header.has-product-search .site-search-action,.site-header.has-product-search .site-search-close{flex-basis:34px;min-width:34px;width:34px;min-height:34px;height:34px;padding:7px}
+ .site-header.has-product-search .site-search-popover{max-height:calc(100dvh - 76px)}
+ /* The focused voting flow keeps its Board shortcut and omits navigation search. */
+ .site-header.has-product-search.voting-header .site-brand-group{display:flex;grid-column:1}
+ .site-header.has-product-search.voting-header .leaderboard-link{display:inline-flex;grid-column:2 / 4;justify-self:end;width:auto;padding:0 12px;font-size:12px}
+ .site-header.has-product-search.voting-header .leaderboard-link::before{display:none}
+ .site-header.has-product-search.voting-header .site-search{display:none}
+}

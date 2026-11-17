@@ -15,3 +15,11 @@ Validation: 248 tests passed including phrase matching, exclusions, unsupported 
 Scaling limit: this prototype scans public collection records and computes fit at request time. Before a large catalog, migrate discovery to a dedicated indexed product/search store with cached public aggregates and per-request private reranking. Richer semantic retrieval, typo tolerance and price filtering require additional implementation and grounded product data.
 
 Live verification exposed a pre-existing browser-identity rotation failure: Cloudflare could not clone the framework Request wrapper. Rotation now constructs a native Request from its URL, method, headers and body, retaining the privacy boundary and supporting expired/switched accounts.
+
+## Header search — November 16, 2026
+
+The shared Edit header searches `/api/discover` across public Vouch categories alongside the current Edit’s catalog lookup. Discovery results show their category and open their canonical product page; catalog-only results retain the existing nomination flow for the current Edit. Missing-name nominations also remain scoped to that Edit, which is stated in the search status. No nomination or scoring storage changes are involved.
+
+The placeholder and accessible search name are “Search vouch” at every width. The mobile wordmark is hidden on Edit search headers, leaving one row for the menu, search and right-side profile control. At intermediate widths (761–1100px), the menu button remains available when inline links are hidden. Search and navigation use the existing deployment and storage; no data migration is required.
+
+`test/vouch-pill-browser-smoke.mjs` covers responsive controls, static search copy, cross-category product navigation, and the existing nomination handoff using isolated local fixtures.

@@ -62,3 +62,7 @@ yarn-error.log*
 
 # Local navigation review screenshots
 /output/nav-*.png
+
+# Local search and responsive navigation verification screenshots
+/output/vouch-nav-*.png
+/output/vouch-pill-*.png

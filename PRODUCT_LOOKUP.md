@@ -156,3 +156,44 @@ Category-scoped lookup follow-up, November 6: the owner deferred Shopify. The ru
 The owner approved production deployment and Notion documentation after reviewing the local preview. Version 38 deployed but live provider requests failed because Cloudflare Workers rejects `redirect: error`. Version 39 uses manual redirects and rejects 3xx without forwarding credentials; an actual Cloudflare-runtime test covers the fix ([Cloudflare request docs](https://developers.cloudflare.com/workers/runtime-apis/request/)). All 110 automated tests and final build pass. Production searches returned five sunscreen results and eighteen water-bottle results with Channel3 status `ok`; identical repeats hit the query cache. Current-offer endpoints returned 200 with an offer for each category. The deployed search UI shows 18 water-bottle matches and no saved synthetic nominations or votes were added. Six public assets match source. Production health/config are 200 and anonymous organizer access stays 401.
 
 Production enables Channel3, link paste, barcode, photo search and Where to buy, with a 300-attempt daily cap and server-only key. Shopify is disabled. Existing sunscreen/water-bottle experiments remain; empty shampoo/TV demo boards and all preview data remain local. Thirteen Notion pages were successfully created/updated, including the release log, production guide and eleven affected working pages. Local documentation/checkpoints advanced afterward. Device camera/accessibility, production product-photo upload, inbox sign-in/profile-photo upload, exact-variant coverage and measured speed/outcome gains remain unverified.
+
+## Global search and product vouches — November 17, 2026
+
+Global Channel3 requests use a separate filtering profile, 20 results, US country,
+and no category scope. Legitimate sets, packs, kits, twin products and gift editions
+are retained; clear multi-product bundles are excluded. Edit-specific filtering
+continues unchanged. Shared query cache: `query:v3:global:<normalized tokens>`,
+10 minutes; identical in-flight requests coalesce. `CATALOG_GLOBAL_SEARCH_DAILY_BUDGET`
+defaults to 250 and is capped at 250, **inside** the existing overall daily budget
+(default 300). A global reservation is consumed before the overall reservation;
+if the overall cap is reached, a global reservation can be unused. This conservative
+accounting cannot increase the overall cap. Both counters use durable D1/file-store
+transactions. Existing snapshot TTL remains six hours.
+
+Outside product pages resolve through the catalog snapshot cache without writing
+account data on view. Provider aliases render canonical Vouch identity. New pages
+show “New to Vouch,” omit a score, and add a noindex meta tag in the client. An
+unavailable product gets a friendly search-again page. Offers remain on-demand
+behind the existing switch and commission disclosure.
+
+`POST /api/account/vouch` requires a signed-in account, same origin, and JSON.
+It saves identity fields only and a `yes` opinion with `source: search`, preserving
+existing visibility. The durable account transaction limits new vouches to 30/hour;
+repeats are idempotent. The existing inline email-code flow resumes a pending vouch
+held only in page memory. Refreshing during sign-in clears that pending action.
+
+`matchEdits` deterministically matches category titles, verified taxonomy aliases,
+and organizer aliases. Settings now include a comma-separated category-alias field.
+Only open public Edits qualify. Multiple matches prompt a choice after profile save;
+zero matches remain profile-only. Nomination reuses `saveNominations`, the mutation
+used by Edit submissions, in append mode. Account-linked browser identity prevents
+repeat taps from adding nominators; the existing two-person threshold and board
+brand-selection rule remain unchanged. Responses distinguish `nominated`,
+`already_nominated`, `already_on_edit`, `choose_edit`, `no_eligible_edit`, and
+`retryable`. A failed nomination never reverses or misreports a saved profile vouch.
+
+Validation: `test/search-next.test.mjs` adds offline fixtures for global filtering,
+matching, aliases, product pages, account saves, concurrency, limits and recovery.
+Live Channel3 coverage and browser smoke remain unverified in this execution
+sandbox: outbound Git DNS and local listener permissions are unavailable. See the
+implementation report for final check counts and publication state.

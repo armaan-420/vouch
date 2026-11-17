@@ -23,3 +23,32 @@ The shared Edit header searches `/api/discover` across public Vouch categories a
 The placeholder and accessible search name are “Search vouch” at every width. The mobile wordmark is hidden on Edit search headers, leaving one row for the menu, search and right-side profile control. At intermediate widths (761–1100px), the menu button remains available when inline links are hidden. Search and navigation use the existing deployment and storage; no data migration is required.
 
 `test/vouch-pill-browser-smoke.mjs` covers responsive controls, static search copy, cross-category product navigation, and the existing nomination handoff using isolated local fixtures.
+
+## Global search implementation — November 17, 2026
+
+`/search` remains the filterable product library. `/find?q=` is the full global
+results route. The header works outside Edits and shares the accessible product
+picker with `/find`; all rows open product pages. Both clients debounce 250 ms,
+abort obsolete requests, render the Vouch phase first, and append catalog results.
+The header shows at most eight rows and links to full results.
+
+`GET /api/search` accepts `source=vouch` (2+ characters) or `source=catalog`
+(3+ characters); the combined request starts both jobs concurrently. Public
+inventory is cached for 60 seconds per store/D1 binding in the worker isolate.
+Successful application POSTs invalidate that isolate's index; other isolates can
+remain stale for up to 60 seconds. D1 remains authoritative. No personal opinions
+are cached: fit is computed only for returned rows with the current account.
+Provider hydration at this endpoint is cache-only, including the Vouch phase.
+
+Local matching folds accents and plurals and supports token prefixes and compact
+brands. Outside rows preserve provider order and require a matching brand term or
+at least half the meaningful query terms. Provider references (including aliases)
+precede the brand/name/variant key for identity reconciliation. Existing matches
+retain Vouch evidence and canonical links. New rows have `vouchStatus: new`, no
+invented score, and `action: {type: view, href: /products/...}`.
+
+Offline measurement with 1,000 synthetic products and 200 warm queries reported
+Vouch p50 2.28 ms and p95 2.76 ms on the development host. This measures endpoint
+logic and an in-memory fixture, **not production D1, HTTP, or cold-isolate latency**.
+Reproduce with `node scripts/search-latency-check.mjs`; the script also reports a
+catalog fixture baseline. Production p95 remains unverified.

@@ -1,3 +1,10 @@
+// Shared loading treatment for header and full global results.
+window.VouchSearchStatus=function(node,{loading=false,count=0,partial=false}={}){
+ node.classList.toggle('catalog-searching',loading);
+ node.setAttribute('aria-busy',String(loading));
+ node.textContent=loading?'Searching the catalog':count?count+' results.':partial?'Some results are unavailable. Please try again.':'No matches. Try the brand and product name.';
+ if(!loading&&partial&&count)node.textContent+=' Some results are unavailable.';
+};
 // Shared selection interaction for nominations and the organizer product picker.
 window.VouchProductPicker=function({input,results,more,clear,another,esc,isSelected,isUnavailable=()=>false,onChoose,onClear,boardLabel="Already on the board · View product",unselectedLabel=null,resultLabel=()=>null,enhance=true,focusAfterChoose=true,maxVisible=null}){
  const media=matchMedia('(max-width:600px)'),pageSize=()=>maxVisible||(media.matches?3:5);

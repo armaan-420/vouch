@@ -204,10 +204,10 @@ async function mountBoardPeople(){
  const load=async batch=>{
   try{const query=new URLSearchParams();batch.forEach(id=>query.append('id',id));const data=await api('/api/people-summary?'+query);
    for(const host of hosts.filter(h=>batch.includes(h.dataset.boardPeople))){if(!host.isConnected)continue;const summary=data.summaries[host.dataset.boardPeople];
-    host.innerHTML=summary?.total?`<div class="board-people-avatars">${summary.people.map((p,i)=>window.VouchPeople.avatar(p,i,{className:'board-person'})).join('')}</div><a class="board-people-link" href="${esc(host.dataset.path.split('#')[0]+'#item-people')}">${summary.people[0]?.isYou?'You':esc(window.VouchPeople.shortName(summary.people[0].displayName))}${summary.total>1?' + '+(summary.total-1)+' others':''} vouch${summary.total===1&&!summary.people[0]?.isYou?'es':''} <span aria-hidden="true">→</span></a>`:'<span class="account-help">No named vouches yet</span>';
-    host.setAttribute('aria-busy','false');
+    host.innerHTML=summary?.total?`<div class="board-people-avatars">${summary.people.map((p,i)=>window.VouchPeople.avatar(p,i,{className:'board-person'})).join('')}</div><a class="board-people-link" href="${esc(host.dataset.path.split('#')[0]+'#item-people')}">${summary.people[0]?.isYou?'You':esc(window.VouchPeople.shortName(summary.people[0].displayName))}${summary.total>1?' + '+(summary.total-1)+' others':''} vouch${summary.total===1&&!summary.people[0]?.isYou?'es':''} <span aria-hidden="true">→</span></a>`:'';
+    host.hidden=!summary?.total;host.setAttribute('aria-busy','false');
    }
-  }catch{for(const host of hosts.filter(h=>batch.includes(h.dataset.boardPeople))){if(!host.isConnected)continue;host.setAttribute('aria-busy','false');host.innerHTML='<button class="text-button" type="button">People could not load. Retry</button>';host.querySelector('button').onclick=()=>load(batch);}}
+  }catch{for(const host of hosts.filter(h=>batch.includes(h.dataset.boardPeople))){if(!host.isConnected)continue;host.hidden=false;host.setAttribute('aria-busy','false');host.innerHTML='<button class="text-button" type="button">People could not load. Retry</button>';host.querySelector('button').onclick=()=>load(batch);}}
  };
  for(let i=0;i<ids.length;i+=100)await load(ids.slice(i,i+100));
 }

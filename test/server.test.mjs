@@ -72,3 +72,16 @@ test('pre-existing persisted item and community verdicts use the new model witho
   if(!restart)await f.restart();
  }
 });
+
+test('comments accompany votes without score inflation, survive restart and clear on verdict change',async t=>{
+ const f=await fixture(t),a=browser(f);
+ assert.equal((await a('/api/events',{type:'answer',productId:'boj',value:'yes',comment:'My daily SPF'})).status,200);
+ let board=(await a('/api/board')).data.products.find(p=>p.id==='boj');assert.equal(board.voteCounts.yes,1);
+ assert.equal((await a('/api/me')).data.comments.boj,'My daily SPF');
+ await a('/api/events',{type:'answer',productId:'boj',value:'yes',comment:'Updated note'});
+ board=(await a('/api/board')).data.products.find(p=>p.id==='boj');assert.equal(board.voteCounts.total,1);
+ assert.equal((await a('/api/events',{type:'answer',productId:'boj',value:'yes',comment:'x'.repeat(241)})).status,400);
+ await f.restart();assert.equal((await a('/api/me')).data.comments.boj,'Updated note');
+ await a('/api/events',{type:'answer',productId:'boj',value:'brand'});assert.equal((await a('/api/me')).data.comments.boj,'');
+ const exported=(await a('/api/admin/export')).data.data;assert.equal(exported.sessions[Object.keys(exported.sessions)[0]].comment,undefined);
+});

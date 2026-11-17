@@ -313,3 +313,20 @@ test('Board summaries count only named public item vouches and bound previews',a
  assert.equal((await f.call('/api/people-summary?id=sku-one')).data.summaries['sku-one'].total,0);
  assert.equal((await f.call('/api/people-summary?'+new URLSearchParams(Array.from({length:101},(_,i)=>['id',String(i)])))).status,400);
 });
+
+test('comments survive claims, private notes stay private, and account edits resist stale snapshots',async t=>{
+ const f=await setup(t);f.answer('sku-one','yes');f.answer('sku-two','no');
+ f.states.first.baseComments={'sku-one':{[browser]:{text:'Keeps my water cold',updatedAt:when}},'sku-two':{[browser]:{text:'Private negative note',updatedAt:when}}};
+ const claimed=await f.claim(await f.preview(),'alice',undefined,{displayName:'Alice'});
+ await f.call('/api/account/profile',{identity:'alice',body:{visibility:'public',opinions:[{productId:'sku-one',visibility:'public'},{productId:'sku-two',visibility:'public'}]}});
+ assert.equal((await f.call('/api/products/sku-one')).data.contributors[0].comment,'Keeps my water cold');
+ assert.equal((await f.call('/api/products/sku-two')).data.contributors[0].comment,undefined);
+ const edited=await f.call('/api/account/profile',{identity:'alice',body:{opinions:[{productId:'sku-one',comment:'Better after a month'}]}});
+ assert.equal(edited.data.profile.opinions.find(o=>o.productId==='sku-one').updatedAt,when);
+ await f.api.syncAccountOpinions(f.request('/api/events',{identity:'alice'}),'first','sku-one');
+ assert.equal((await f.call('/api/products/sku-one')).data.contributors[0].comment,'Better after a month');
+ const removed=await f.call('/api/account/profile',{identity:'alice',body:{opinions:[{productId:'sku-one',comment:''}]}});
+ assert.equal(removed.status,200);assert.equal((await f.call('/api/products/sku-one')).data.contributors[0].comment,undefined);
+ assert.equal((await f.call('/api/account/profile',{identity:'alice',body:{opinions:[{productId:'sku-one',comment:'x'.repeat(241)}]}})).status,400);
+ assert.equal((await f.call('/api/admin/comment-remove',{body:{handle:claimed.data.profile.handle,productId:'sku-one'}})).status,403);
+});

@@ -75,15 +75,15 @@ function updateHeader(){
  document.body.dataset.screen=screen==='game'&&index<products.length?'rating':screen;
  const button=document.querySelector('header .leaderboard-link'),voting=screen==='game';
  document.querySelector('header').classList.toggle('voting-header',voting);
- button.classList.toggle('profile-link',!voting&&accountSignedIn);
- button.dataset.action=voting?'board':'account';
- button.href=voting?experimentPath+'?board=1':'/account?experiment='+encodeURIComponent(experimentId)+(accountSignedIn?'':'&signin=1');
+ button.classList.toggle('profile-link',accountSignedIn);
+ button.dataset.action='account';
+ button.href='/account?experiment='+encodeURIComponent(experimentId)+(accountSignedIn?'':'&signin=1');
  const profileName=accountProfile?.displayName||'Vouch member';
  const photo=accountProfile?.photo;
  const safePhoto=typeof photo==='string'&&photo.startsWith('/api/account/photos/');
- const headerContent=voting?'The Board':accountProfile?.verificationRequired?'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg>':accountSignedIn?(safePhoto?'<img src="'+esc(photo)+'" alt="">':'<span aria-hidden="true">'+esc(profileName.trim().charAt(0).toUpperCase()||'V')+'</span>'):'Sign in';
+ const headerContent=accountProfile?.verificationRequired?'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg>':accountSignedIn?(safePhoto?'<img src="'+esc(photo)+'" alt="">':'<span aria-hidden="true">'+esc(profileName.trim().charAt(0).toUpperCase()||'V')+'</span>'):'Sign in';
  if(button.innerHTML!==headerContent)button.innerHTML=headerContent;
- button.setAttribute('aria-label',voting?'The Board':accountSignedIn?'My profile':'Sign in');
+ button.setAttribute('aria-label',accountSignedIn?'My profile':'Sign in');
  const footerLink=document.getElementById('landing-standings');
  footerLink.hidden=screen!=='home'||hasAnsweredAll()||experimentStatus()!=='open';
  footerLink.href=experimentPath+'?board=1';
@@ -161,7 +161,7 @@ async function refreshSchedule(){if(!experiment||scheduleRefreshing)return;sched
 setInterval(refreshSchedule,30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){refreshSchedule();refreshAccountStatus()}});
 boot();
-function flowProgress(){const total=products.length,current=Math.min(index+1,total),optional=index===total;return `<div class="game-top"><span>${optional?'Nominations · Optional':'Your take'}</span><div class="game-position">${index>0?'<button class="previous-arrow" data-action="back" aria-label="Previous product" title="Previous product">←</button>':''}<span>${current} of ${total}</span></div></div><div class="progress" role="progressbar" aria-label="Product progress" aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${current}" aria-valuetext="${optional?'All products answered. Nominations are optional.':'Product '+current+' of '+total}">${Array.from({length:total},(_,i)=>`<i class="${i<current?'done':''}"></i>`).join('')}</div>`}
+function flowProgress(){const total=products.length,current=Math.min(index+1,total),optional=index===total;return `<div class="game-top"><span>${optional?'Nominations · Optional':'Your take'}${!optional?` <a class="rating-board-link" href="${experimentPath}?board=1" data-action="board">The Board →</a>`:''}</span><div class="game-position">${index>0?'<button class="previous-arrow" data-action="back" aria-label="Previous product" title="Previous product">←</button>':''}<span>${current} of ${total}</span></div></div><div class="progress" role="progressbar" aria-label="Product progress" aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${current}" aria-valuetext="${optional?'All products answered. Nominations are optional.':'Product '+current+' of '+total}">${Array.from({length:total},(_,i)=>`<i class="${i<current?'done':''}"></i>`).join('')}</div>`}
 function nominationCard(){app.innerHTML=`<section class="game nomination-step">${flowProgress()}${nominationView({inFlow:true})}<div class="nomination-actions"><button class="primary nomination-continue" id="nomination-continue" type="submit" form="nomination-form">See the board →</button></div></section>`;mountNomination();watchEnd();const announcement=document.getElementById('voting-announcement');if(announcement)announcement.textContent=`All ${products.length} products answered. Nominations are optional.`;}
 
 function attribution(){

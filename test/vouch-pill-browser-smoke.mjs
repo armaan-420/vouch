@@ -14,7 +14,7 @@ await registry.transaction(data=>{
  data.experiments.closed={...DEFAULT_EXPERIMENT,id:'closed',closed:true};
  data.experiments.draft={...DEFAULT_EXPERIMENT,id:'draft',status:'draft'};
 });
-const product={id:'catalog-pill-fixture',brand:'Fixture',name:'Daily SPF',source:'fixture'};
+const product={id:'catalog-pill-fixture',brand:'Fixture',name:'Daily SPF',category:'Sunscreen',source:'fixture'};
 const server=await createVouchServer({directory,productSearch:{search:async query=>({products:query.includes('nomatch')?[]:[product]}),find:async id=>id===product.id?product:null}});
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const origin='http://127.0.0.1:'+server.address().port;
@@ -25,7 +25,7 @@ page.on('pageerror',error=>errors.push(error.message));
 const output=path.resolve('output');await fs.mkdir(output,{recursive:true});
 const visible=selector=>page.locator(selector).isVisible();
 const emblemFits=()=>page.locator('.site-search-field').evaluate(field=>{
- const emblem=field.querySelector('.site-search-emblem').getBoundingClientRect(),input=field.querySelector('input').getBoundingClientRect(),bounds=field.getBoundingClientRect();
+ const emblem=field.querySelector(':scope>svg').getBoundingClientRect(),input=field.querySelector('input').getBoundingClientRect(),bounds=field.getBoundingClientRect();
  return emblem.left>=bounds.left&&emblem.right<input.left&&input.right<=bounds.right&&emblem.top>=bounds.top&&emblem.bottom<=bounds.bottom;
 });
 const active=selector=>page.locator(selector).evaluate(node=>node===document.activeElement);
@@ -35,11 +35,11 @@ try{
  for(const width of [375,360,320]){
   console.log('Checking phone width',width);await page.setViewportSize({width,height:812});await board();
   assert.ok(await visible('.vouch-pill'));assert.ok(await visible('.vouch-pill-label'));
-  assert.equal(await visible('.site-brand-group'),false,'mobile wordmark leaves room for search');
-  assert.ok(await visible('.leaderboard-link'));
-  assert.ok(await page.locator('.leaderboard-link').evaluate(node=>node.getBoundingClientRect().left>=document.querySelector('.site-search').getBoundingClientRect().right),'profile sits to the right of search');
+  assert.ok(await visible('.site-brand-group'),'brand emblem remains visible');
+  assert.equal(await visible('.leaderboard-link'),false);
+  assert.ok(await visible('.site-search-toggle'));
+  assert.equal(await visible('.site-search'),false,'search opens only on request');
   assert.equal(await page.locator('#site-search-input').getAttribute('placeholder'),'Search vouch');
-  assert.ok(await page.locator('.site-search').evaluate(node=>{const header=node.closest('header').getBoundingClientRect(),search=node.getBoundingClientRect();return header.height<=80&&search.top>=header.top&&search.bottom<=header.bottom;}),'search stays in the single top row');assert.ok(await emblemFits(),'emblem fits in search without overlapping text');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal overflow');
   if(width===375)await page.screenshot({path:path.join(output,'vouch-pill-mobile-rest.png')});
   await page.evaluate(()=>{document.activeElement.blur();window.scrollTo(0,700);});
@@ -52,9 +52,9 @@ try{
   assert.ok(await active('#site-search-input'));assert.equal(await visible('.vouch-pill'),false);assert.ok(await emblemFits(),'expanded search emblem does not overlap text');
   if(width===375)await page.screenshot({path:path.join(output,'vouch-pill-mobile-search.png')});
   await closeTo('.vouch-pill');
-  await page.locator('.vouch-pill').click();await page.locator('.site-search-close').click();assert.ok(await active('.vouch-pill'));
+  await page.locator('.vouch-pill').click();await page.locator('.site-search-dismiss').click();assert.ok(await active('.vouch-pill'));
   await page.locator('.board-vouch-card').click();assert.ok(await active('#site-search-input'));assert.equal(await page.locator('#site-search-input').inputValue(),'');await closeTo('.board-vouch-card');
-  await page.locator('.site-menu-toggle').click();assert.ok(await visible('.leaderboard-link'),'profile stays visible on the right');assert.ok(await visible('.site-search'),'search stays in top nav with menu open');if(width===375)await page.screenshot({path:path.join(output,'vouch-nav-mobile-menu.png')});assert.equal(await visible('.vouch-pill'),false);await page.keyboard.press('Escape');assert.ok(await visible('.vouch-pill'));
+  await page.locator('.site-search-toggle').click();assert.ok(await visible('.site-search-shortcuts'));assert.equal(await visible('.vouch-pill'),false);await page.keyboard.press('Escape');assert.ok(await visible('.vouch-pill'));
   await page.locator('#info').evaluate(node=>node.showModal());assert.equal(await visible('.vouch-pill'),false);await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.querySelector('.vouch-pill').hidden);
   await page.locator('#nomination-name').focus();assert.equal(await visible('.vouch-pill'),false);
   await page.keyboard.press('Escape');await page.evaluate(()=>document.activeElement.blur());
@@ -64,23 +64,22 @@ try{
  await page.emulateMedia({reducedMotion:'reduce'});await board();
  assert.equal(await page.locator('.vouch-pill-label').evaluate(node=>getComputedStyle(node).transitionDuration),'0s');
  await page.evaluate(()=>window.scrollTo(0,700));await page.waitForFunction(()=>document.querySelector('.vouch-pill').classList.contains('is-collapsed'));await page.emulateMedia({reducedMotion:'no-preference'});
- // A real result must still select a product in the existing nomination form.
+ // Global search opens product details; the explicit no-match action still hands off to nominations.
  await page.locator('.vouch-pill').click();await page.locator('#site-search-input').fill('fixture');
  await page.locator('#site-search-results .product-result').filter({hasText:'Daily SPF'}).waitFor();
- assert.match(await page.locator('#site-search-results').innerText(),/Not on board · Vouch for it/);
+ assert.match(await page.locator('#site-search-results').innerText(),/New to Vouch · Sunscreen · No Vouch opinions/);
  await page.locator('#site-search-results .product-result').filter({hasText:'Daily SPF'}).click();
- await page.waitForFunction(()=>document.querySelector('#selected-product')?.textContent.includes('Daily SPF'));
- await page.waitForFunction(()=>document.querySelector('#nomination-name')===document.activeElement);assert.equal(await visible('.vouch-pill'),false,'nomination keyboard/dialog hides pill');
+ await page.waitForURL(origin+'/products/catalog-pill-fixture');assert.equal(await page.locator('#nomination-form').count(),0);
  await board();await page.locator('.vouch-pill').click();
  const query='nomatch '+ 'a'.repeat(50);await page.locator('#site-search-input').fill(query);
  await page.locator('.site-search-nominate').waitFor();
- assert.match(await page.locator('#site-search-status').innerText(),/No match. Vouch for it by name/);
+ assert.match(await page.locator('#site-search-status').innerText(),/No matches/);
  assert.equal(await page.locator('.site-search-nominate').innerText(),'Vouch for “'+query.slice(0,40)+'…”');
  await page.locator('.site-search-nominate').click();
  await page.waitForFunction(query=>document.querySelector('#nomination-name')?.value===query,query);
  for(const width of [768,1280]){
   await page.setViewportSize({width,height:850});await board();
-  assert.equal(await visible('.vouch-pill'),false);assert.ok(await emblemFits());assert.ok(await visible('.site-search-emblem'));assert.ok(await visible('.site-search-shortcut'));
+  assert.equal(await visible('.vouch-pill'),false);assert.ok(await emblemFits());assert.equal(await page.locator('.site-search-emblem').count(),0);assert.ok(await visible('.site-search-shortcut'));
   assert.equal(await page.locator('#site-search-input').getAttribute('aria-label'),'Search vouch');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.evaluate(()=>document.activeElement.blur());await page.keyboard.press('/');assert.ok(await active('#site-search-input'));await page.keyboard.press('Escape');
@@ -103,7 +102,7 @@ try{
  await page.locator('#site-search-input').focus();
  await page.locator('#site-search-input').fill('Quiet');
  const globalResult=page.locator('#site-search-results .product-result').filter({hasText:'Quiet headphones'});
- await globalResult.waitFor();assert.match(await globalResult.innerText(),/Headphones · View product/);
+ await globalResult.waitFor();assert.match(await globalResult.innerText(),/On Vouch · No ratings yet · View product/);
  await globalResult.click();await page.waitForURL(origin+'/products/sku-global-headphones');
  assert.equal(await page.locator('#nomination-form').count(),0,'global result is never nominated to sunscreen');
  await page.setViewportSize({width:375,height:812});

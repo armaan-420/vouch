@@ -10,8 +10,8 @@ try{
    await page.goto(origin+route);await page.locator('.site-header.has-product-search').waitFor();await page.waitForTimeout(100);
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,route+' '+width);
    const brand=await page.locator('.site-brand-group').boundingBox();assert.ok(brand.width>=36);
-   if(width<=760){assert.equal(await page.locator('.site-search').isVisible(),false);assert.equal(await page.locator('.site-search-toggle').isVisible(),true);assert.equal(await page.locator('.leaderboard-link').isVisible(),false);assert.equal(await page.locator('.site-menu-toggle').isVisible(),true);
-    const icon=await page.locator('.site-search-toggle').boundingBox();assert.ok(brand.x+brand.width<icon.x);const menu=await page.locator('.site-menu-toggle').boundingBox();assert.ok(icon.x+icon.width<=menu.x,'menu sits to right of search');assert.equal(Math.round((await page.locator('.site-header').boundingBox()).height),64);
+   if(width<=760){assert.equal(await page.locator('.site-search').isVisible(),false);assert.equal(await page.locator('.site-search-toggle').isVisible(),true);assert.equal(await page.locator('.leaderboard-link').isVisible(),true);assert.equal(await page.locator('.site-menu-toggle').isVisible(),true);
+    const icon=await page.locator('.site-search-toggle').boundingBox();assert.ok(brand.x+brand.width<icon.x);const menu=await page.locator('.site-menu-toggle').boundingBox();const profile=await page.locator('.leaderboard-link').boundingBox();assert.ok(icon.x+icon.width<=profile.x&&profile.x+profile.width<=menu.x,'profile between search and menu');assert.equal(await page.locator('.vouch-pill').count(),0);assert.equal(Math.round((await page.locator('.site-header').boundingBox()).height),64);
    }else{assert.equal(await page.locator('#site-search-input').isVisible(),true);const field=await page.locator('.site-search').boundingBox();assert.ok(field.x>=brand.x+brand.width);assert.equal(await page.locator('.site-search-emblem').count(),0);}
   }
   await page.goto(origin+'/waterbottle?start=1');await page.locator('[data-vote=yes]').waitFor();

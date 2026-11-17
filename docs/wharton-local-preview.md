@@ -96,3 +96,7 @@ Continue opens the existing rating flow at the first unanswered product and skip
 Board layout centers rank and score/vote total across product plus endorser chips. People remain aligned to the product image; empty endorser rows remain hidden. Ratings, score calculations, tags and comments are unchanged.
 
 Validation: 337 tests pass, including new participation tests for new/partial/complete, Skip, another category, cross-device recovery, isolated visitors and bounded queries. Production build passes; full lint has zero errors and existing warnings. Local browser checks at 390px and 1440px cover live (synthetic local account) new/partial/complete states, first-unanswered resume, category switching, pending Running shoes, full-row rank/score centering, no overflow and no page errors. Existing Wharton flow smoke also passes. Screenshots are in output/board-category-implementation at the workspace root. Local only; no push or deployment.
+
+### Profile action and floating pill removal
+
+Mobile header actions now appear in order: Search → Profile/sign-in → Menu. Signed-in users retain their existing avatar/initial; signed-out users see a person icon. Removed floating Vouch pill creation, observers, scroll behavior and reserved page padding, while keeping the in-page nomination card and search nomination handoff. The old pill smoke command now forwards to shared navigation coverage. Category chips wrap on very narrow phones to avoid overflow. Navigation checks pass at 320–1440px; the signed-in Wharton flow and production build pass. Local only.

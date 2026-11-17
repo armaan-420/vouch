@@ -13,11 +13,6 @@
  let context={},picker=null,menuOpen=false,searchOpen=false,scrollBefore=null,scrim=null,controller=null,timer=null,version=0,feedbackDialog=null,feedbackFocus=null;
  const emblem=header.querySelector('.wordmark-emblem');
  const emblemMarkup=emblem?.outerHTML.replace('wordmark-emblem','vouch-action-emblem')||'';
- const pill=document.createElement('button');
- pill.type='button';pill.className='vouch-pill';pill.hidden=true;
- pill.setAttribute('aria-label','Vouch for a product');pill.setAttribute('data-vouch-search','');
- pill.innerHTML=emblemMarkup+'<span class="vouch-pill-label">Vouch</span>';
- document.body.append(pill);
  const overlayHeading=document.createElement('div');overlayHeading.className='site-search-heading';
  overlayHeading.innerHTML=emblemMarkup+'<h2 id="site-search-title">Search Vouch</h2><button type="button" class="site-icon-button site-search-dismiss" aria-label="Close search">'+closeIcon+'</button>';
  search.prepend(overlayHeading);
@@ -39,26 +34,16 @@
 
  const allResults=document.createElement('a');allResults.className='site-search-all';allResults.hidden=true;allResults.innerHTML='<span>See all results</span><span class="site-search-all-arrow" aria-hidden="true">↗</span>';popover.append(allResults);
  const textField=node=>!!node?.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"])');
- function syncPill(){
-  const eligible=!!(context?.experimentId&&!context.draft&&context.canNominate&&!context.voting);
-  const visible=eligible&&!menuOpen&&!searchOpen&&!document.querySelector('dialog[open]')&&!(textField(document.activeElement)&&!header.contains(document.activeElement));
-  if(pill.hidden===visible)pill.hidden=!visible;
-  // Keep the reserved space stable while overlays or the keyboard temporarily hide the button.
-  document.body.classList.toggle('has-vouch-pill',eligible);
- }
- new MutationObserver(syncPill).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open']});
- document.addEventListener('focusin',syncPill);
- document.addEventListener('focusout',()=>queueMicrotask(syncPill));
  document.addEventListener('click',event=>{
   const trigger=event.target.closest('[data-vouch-search]');
   if(trigger)openSearch(trigger,true);
  });
  function lock(){if(scrollBefore===null){scrollBefore=document.body.style.overflow;document.body.style.overflow='hidden';}}
  function unlock(){if(!menuOpen&&!searchOpen&&scrollBefore!==null){document.body.style.overflow=scrollBefore;scrollBefore=null;}}
- function syncScrim(){syncPill();scrim?.remove();scrim=null;if(menuOpen||searchOpen){scrim=document.createElement('div');scrim.className='site-nav-scrim';scrim.style.top=Math.max(0,header.getBoundingClientRect().bottom)+'px';scrim.setAttribute('aria-hidden','true');scrim.onclick=()=>closePanels();document.body.append(scrim);}}
+ function syncScrim(){scrim?.remove();scrim=null;if(menuOpen||searchOpen){scrim=document.createElement('div');scrim.className='site-nav-scrim';scrim.style.top=Math.max(0,header.getBoundingClientRect().bottom)+'px';scrim.setAttribute('aria-hidden','true');scrim.onclick=()=>closePanels();document.body.append(scrim);}}
  function closeMenu(focus=true){if(!menuOpen)return;menuOpen=false;menu.hidden=true;header.classList.remove('is-menu-open');menuToggle.setAttribute('aria-expanded','false');menuToggle.setAttribute('aria-label','Menu');menuToggle.innerHTML=menuIcon;syncScrim();unlock();if(focus)menuToggle.focus({preventScroll:true});}
  function hideResults(){allResults.hidden=true;popover.hidden=true;input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');}
- function closeSearch(focus=true){modalSearch(false);const wasOpen=searchOpen;searchOpen=false;header.classList.remove('is-search-open');searchToggle.setAttribute('aria-expanded','false');version++;clearTimeout(timer);controller?.abort();hideResults();syncScrim();unlock();if(wasOpen&&focus){syncPill();const target=searchFocus?.isConnected&&searchFocus.getClientRects().length?searchFocus:window.innerWidth>760?input:searchToggle;restoringSearchFocus=true;target.focus({preventScroll:true});restoringSearchFocus=false;}}
+ function closeSearch(focus=true){modalSearch(false);const wasOpen=searchOpen;searchOpen=false;header.classList.remove('is-search-open');searchToggle.setAttribute('aria-expanded','false');version++;clearTimeout(timer);controller?.abort();hideResults();syncScrim();unlock();if(wasOpen&&focus){const target=searchFocus?.isConnected&&searchFocus.getClientRects().length?searchFocus:window.innerWidth>760?input:searchToggle;restoringSearchFocus=true;target.focus({preventScroll:true});restoringSearchFocus=false;}}
  function closePanels(focus=true){closeMenu(focus);closeSearch(focus);}
  function toggleMenu(){const account=header.querySelector('.leaderboard-link');menuAccount.href=account.href;menuAccount.textContent=account.getAttribute('aria-label')||'Your account';if(menuOpen){closeMenu();return;}closeSearch(false);menuOpen=true;menu.hidden=false;header.classList.add('is-menu-open');menuToggle.setAttribute('aria-expanded','true');menuToggle.setAttribute('aria-label','Close menu');menuToggle.innerHTML=closeIcon;lock();syncScrim();}
  function openSearch(trigger=searchToggle,clear=false){if(!searchOpen)searchFocus=trigger instanceof HTMLElement?trigger:searchToggle;if(clear){input.value='';lastQuery=null;picker?.clear();hideResults();}closeMenu(false);showHeader();searchOpen=true;header.classList.add('is-search-open');searchToggle.setAttribute('aria-expanded','true');lock();syncScrim();modalSearch(true);syncSearchShortcuts();input.focus();if(input.value.trim().length>=2)runSearch();}
@@ -74,13 +59,13 @@
  window.addEventListener('resize',()=>{if(window.innerWidth>1100&&menuOpen)closeMenu(false);if(menuOpen||searchOpen){syncScrim();modalSearch(searchOpen);}});
  // Keep the header reachable while reading without covering the page on descent.
  let lastScroll=Math.max(0,window.scrollY),scrollTravel=0,scrollFrame=false;
- const showHeader=()=>{header.classList.remove('is-scroll-hidden');pill.classList.remove('is-collapsed');scrollTravel=0;};
+ const showHeader=()=>{header.classList.remove('is-scroll-hidden');scrollTravel=0;};
  function updateScrollHeader(){
   scrollFrame=false;const y=Math.max(0,Math.min(window.scrollY,Math.max(0,document.documentElement.scrollHeight-window.innerHeight))),delta=y-lastScroll;lastScroll=y;
   if(y<=header.offsetHeight||menuOpen||searchOpen||header.contains(document.activeElement)||document.querySelector('dialog[open]')){showHeader();return;}
   if(!delta)return;
   scrollTravel=Math.sign(delta)===Math.sign(scrollTravel)?scrollTravel+delta:delta;
-  if(scrollTravel>18){header.classList.add('is-scroll-hidden');pill.classList.add('is-collapsed');}else if(scrollTravel< -8)showHeader();
+  if(scrollTravel>18){header.classList.add('is-scroll-hidden');}else if(scrollTravel< -8)showHeader();
  }
  window.addEventListener('scroll',()=>{if(!scrollFrame){scrollFrame=true;requestAnimationFrame(updateScrollHeader);}},{passive:true});
  header.addEventListener('focusin',showHeader);
@@ -114,7 +99,7 @@
  input.addEventListener('focus',()=>{if(!searchOpen&&!restoringSearchFocus)openSearch(window.innerWidth<=760?searchToggle:input);if(input.value.trim().length>=2&&results.children.length){popover.hidden=false;input.setAttribute('aria-expanded','true');}});
  nominate.onclick=()=>{const query=input.value.trim();closePanels();context?.nominate(null,query);};
  input.maxLength=2048;input.placeholder='Search vouch';input.setAttribute('aria-label','Search vouch');
- function configure(value){context=value;const enabled=true;search.hidden=!enabled;searchToggle.hidden=!enabled;header.classList.toggle('has-product-search',enabled);if(enabled&&window.VouchProductPicker)initializePicker();if(!enabled&&(searchOpen||menuOpen))closePanels(false);syncPill();}
+ function configure(value){context=value;const enabled=true;search.hidden=!enabled;searchToggle.hidden=!enabled;header.classList.toggle('has-product-search',enabled);if(enabled&&window.VouchProductPicker)initializePicker();if(!enabled&&(searchOpen||menuOpen))closePanels(false);}
 
  async function refreshAccount(){if(document.body.classList.contains('collection-flow'))return;try{const response=await fetch('/api/account/me');if(!response.ok)return;const me=await response.json(),link=header.querySelector('.leaderboard-link');if(document.body.classList.contains('account-page'))header.removeAttribute('data-account-nav-locked');header.removeAttribute('data-home-nav-locked');menuToggle.disabled=false;link.classList.toggle('profile-link',!!me.authenticated);link.href=me.authenticated?'/account':'/account?signin=1';link.setAttribute('aria-label',me.authenticated?'My profile':'Sign in');link.textContent=me.authenticated?(me.profile?.displayName||'V').trim().charAt(0).toUpperCase():'Sign in';if(me.profile?.verificationRequired)link.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg>';const photo=me.profile?.photo;if(me.authenticated&&typeof photo==='string'&&photo.startsWith('/api/account/photos/')){const image=document.createElement('img');image.src=photo;image.alt='';link.replaceChildren(image);}}catch{/* Keep the account link available during a transient failure. */}}
  function openFeedback(trigger){

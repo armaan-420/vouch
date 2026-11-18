@@ -19,6 +19,8 @@ test('inventory reads public categories concurrently and merges votes in registr
  const gates=[],started=[];
  const store={scope(key){return {async read(){
   if(key==='experiment-registry')return {experiments};if(key==='product-tags')return {products:{}};
+  if(key==='accounts-v1')return {accounts:{},products:{}};
+
   const i=Number(key.slice('experiment:e'.length));started.push(i);
   await new Promise(resolve=>{gates[i]=resolve;});
   return {...fresh(),baseVotes:{shared:{visitor:i===7?'no':'yes'}},baseVoteTimes:{shared:{visitor:'2026-11-'+String(i+1).padStart(2,'0')}}};

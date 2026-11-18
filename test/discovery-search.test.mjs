@@ -6,6 +6,8 @@ import path from 'node:path';
 import {interpretQuery,personalFit,rankProducts,discoverySearch} from '../lib/discovery-search.mjs';
 import {createFileStore} from '../lib/file-store.mjs';
 import {initialRegistry} from '../lib/experiment-api.mjs';
+import {initialAccounts,productKey} from '../lib/account-records.mjs';
+import {globalSearch,invalidateSearchIndex} from '../lib/global-search.mjs';
 import {initialTags} from '../lib/product-tags.mjs';
 const tags=[{id:'light',label:'Lightweight'},{id:'grease',label:'Non-greasy'},{id:'fragrance',label:'Fragrance-free'},{id:'leak',label:'Leak-proof'}];
 const p=(id,extra={})=>({id,name:id,brand:'Brand',category:'Sunscreen',formula:'',tags:tags.slice(0,2),score:'7.5',voteCounts:{total:1},...extra});
@@ -47,5 +49,55 @@ test('API excludes drafts/disabled collections, deduplicates latest votes, and n
   assert.equal(response.headers.get('cache-control'),'private, no-store');
   const data=await response.json();assert.equal(data.catalogueCount,1);assert.equal(data.products[0].score,'2.5');assert.equal(data.products[0].voteCounts.total,1);assert.ok(!JSON.stringify(data).includes('private-browser'));assert.ok(!JSON.stringify(data).includes('secret'));
   assert.equal((await discoverySearch({store,accounts,request:new Request('https://vouch.test/api/discover?q='+ 'x'.repeat(241))})).status,400);
+ }finally{await rm(directory,{recursive:true,force:true})}
+});
+
+test('standalone public Vouches are discoverable by category and stay separate from Edit votes',async()=>{
+ const directory=await mkdtemp(path.join(os.tmpdir(),'vouch-library-'));
+ try{
+  const store=await createFileStore(directory);
+  const registry=await store.scope('experiment-registry',initialRegistry);
+  await registry.transaction(d=>{d.experiments={tv:{id:'tv',category:'Televisions',products:[]}}});
+  const records=await store.scope('accounts-v1',initialAccounts);
+  const sony={id:'c3-sony',provider:'channel3',providerId:'sony',name:'Bravia 7',brand:'Sony',category:'Televisions'};
+  const mug={id:'c3-mug',provider:'channel3',providerId:'mug',name:'Studio mug',category:'Mugs & Cups',categorySlug:'coffee-mugs'};
+  const mystery={id:'unknown',name:'Mystery product'};
+  const privateProduct={id:'private',name:'Private product'};
+  const opinion=(product,visibility='public',verdict='yes')=>({productId:product.id,product,visibility,verdict,source:'search',comment:'private test payload'});
+  await records.transaction(d=>{
+   for(const product of [sony,mug,mystery,privateProduct])d.products[productKey(product.id)]=product;
+   d.accounts.public={visibility:'public',opinions:{sony:opinion(sony),mug:opinion(mug),mystery:opinion(mystery),private:opinion(privateProduct,'private')}};
+   d.accounts.private={visibility:'private',opinions:{private:opinion(privateProduct)}};
+   d.accounts.other={visibility:'public',opinions:{sony:opinion(sony,'public','no'),private:opinion(privateProduct,'public','brand')}};
+   d.accounts.removed={visibility:'public',deletedAt:'2026-11-17',opinions:{private:opinion(privateProduct)}};
+  });
+  const accounts=async()=>Response.json({profile:null});
+  const req=path=>new Request('https://vouch.test'+path);
+  const discover=async query=>(await discoverySearch({store,accounts,request:req('/api/discover?'+query)})).json();
+  const data=await discover('reviewed=1');
+  assert.equal(data.total,3);
+  assert.deepEqual(data.categoryOptions,[{id:'coffee-mugs',label:'Mugs & Cups'},{id:'televisions',label:'Televisions'},{id:'uncategorized',label:'Uncategorized'}]);
+  assert.ok(!JSON.stringify(data).includes('private test payload'));
+  const [product]=(await discover('category=televisions&reviewed=1')).products;
+  assert.equal(product.id,sony.id);
+  assert.equal(product.reviewCounts.total,2);
+  assert.equal(product.reviewScore,'5.0');
+  assert.equal(product.voteCounts.total,0);
+  assert.equal(product.score,null);
+  assert.equal((await discover('category=Televisions')).total,1);
+  const search=async()=>(await globalSearch({store,accounts,request:req('/api/search?q=Sony+Bravia&source=vouch')})).json();
+  assert.equal((await search()).products[0].vouchStatus,'rated');
+  await records.transaction(d=>{d.accounts.public.opinions.sony.visibility='private'});
+  assert.equal((await search()).total,0);
+  await records.transaction(d=>{d.accounts.public.opinions.sony.visibility='public'});
+  await registry.transaction(d=>{d.experiments.tv.products=[{...sony,id:'edit-sony'}]});
+  await (await store.scope('experiment:tv')).transaction(d=>{d.baseVotes={'edit-sony':{visitor:'yes'}}});
+  invalidateSearchIndex(store);
+  const joined=(await discover('category=televisions')).products;
+  assert.equal(joined.length,1);
+  assert.equal(joined[0].id,'edit-sony');
+  assert.equal(joined[0].voteCounts.total,1);
+  assert.equal(joined[0].reviewCounts.total,2);
+  assert.equal(joined[0].score,'7.5');
  }finally{await rm(directory,{recursive:true,force:true})}
 });

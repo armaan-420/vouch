@@ -38,3 +38,19 @@
 .pilot-demo-pill{align-self:start;margin-top:auto;color:var(--green);background:var(--ink);padding:5px 12px;border-radius:99px;font-size:.8rem}
 @media(min-width:768px){.wharton-onboarding .wharton-layout{padding:28px 16px}.pilot-intro{min-height:0;border:1px solid var(--line);border-radius:18px;padding:18px 24px 24px}.pilot-intro-art{height:min(44dvh,260px)}}
 @media(prefers-reduced-motion:reduce){.pilot-progress span{transition:none}}
+[data-pilot-next]:empty{display:none}
+.pilot-board-card{padding:20px;margin:22px 0;border:1px solid var(--line);border-radius:18px;background:var(--paper)}
+.pilot-board-card h2,.pilot-dialog h2{font:400 2rem/1.05 'Instrument Serif',serif;margin:0 0 12px}
+.pilot-board-card .pilot-progress{max-width:180px;margin-bottom:16px}
+.pilot-next-primary,.pilot-next-secondary{display:grid;gap:8px}
+.pilot-next-primary:not(:empty){margin-bottom:8px}
+.pilot-next-secondary>*{margin:0}
+.pilot-suggestion-thanks{align-self:center;color:var(--muted)}
+.pilot-dialog{width:min(480px,calc(100% - 32px));max-height:calc(100dvh - 32px);margin:auto;border:1px solid var(--line);border-radius:18px;background:var(--paper);color:var(--ink);padding:20px;overflow:auto}
+.pilot-dialog::backdrop{background:color-mix(in srgb,var(--ink) 60%,transparent)}
+.pilot-dialog form{display:grid;gap:8px}
+.pilot-dialog input,.pilot-dialog textarea{width:100%;min-height:44px;padding:8px;color:var(--ink);background:var(--paper);border:1px solid var(--muted);border-radius:8px;font:inherit}
+.pilot-dialog [role="status"]:empty{display:none}
+.pilot-dialog-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.pilot-dialog :focus-visible,.pilot-board-card :focus-visible{outline:3px solid var(--pilot-olive);outline-offset:4px}
+@media(min-width:768px){.pilot-next-secondary{grid-template-columns:repeat(2,minmax(0,1fr))}}

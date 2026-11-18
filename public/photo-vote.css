@@ -1,0 +1,18 @@
+.photo-vote-bar{position:absolute;z-index:3;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:2px;width:max-content;max-width:calc(100% - 16px);padding:6px;border:1px solid var(--line);border-radius:24px;background:color-mix(in srgb,var(--paper) 95%,transparent);box-shadow:0 3px 14px #292d240a;backdrop-filter:blur(12px);color:var(--ink)}
+.photo-vote-option{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:54px;min-height:60px;padding:0 3px;border:0;border-radius:16px;background:transparent;font-size:10.5px;font-weight:600;line-height:1.3}
+.photo-vote-option:last-child{margin-left:5px;padding-left:9px;border-left:1px solid var(--line);border-radius:0 16px 16px 0;font-weight:400;color:var(--muted)}
+.photo-vote-icon{display:grid;place-items:center;flex-shrink:0;width:40px;height:40px;border-radius:50%}
+.photo-vote-icon svg{width:22px;height:22px}
+.photo-vote-icon[data-verdict="no"]{background:#f5ddcd;color:#712b13}
+.photo-vote-icon[data-verdict="brand"]{background:#e6ebc9;color:#27500a;border:1px solid #c8d39b}
+.photo-vote-icon[data-verdict="yes"]{background:var(--green);color:#27500a}
+.photo-vote-icon[data-verdict="skip"]{background:var(--paper);border:1px dashed var(--muted);color:var(--muted)}
+.photo-vote-option[aria-pressed="true"] .photo-vote-icon{outline:2px solid currentColor;outline-offset:2px}
+.photo-vote-option:hover .photo-vote-icon{filter:brightness(.96)}
+.photo-vote-bar button:focus-visible,.photo-vote-summary:focus-visible{outline:3px solid #828e31;outline-offset:2px}
+.photo-vote-bar button:disabled{cursor:wait;opacity:.6}
+.photo-vote-bar.is-collapsed{gap:6px;padding:5px 9px 5px 5px;border-radius:99px}
+.photo-vote-summary{display:flex;align-items:center;gap:7px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+.photo-vote-summary .photo-vote-icon{width:34px;height:34px}
+.photo-vote-summary .photo-vote-icon svg{width:19px;height:19px}
+.photo-vote-change{min-width:44px;min-height:44px;border:0;border-radius:99px;padding:0 3px;background:transparent;text-decoration:underline;text-underline-offset:3px;font-size:11px;color:var(--muted)}

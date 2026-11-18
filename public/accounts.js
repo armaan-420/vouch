@@ -315,13 +315,7 @@
   let pendingProductVouch=null;
   try{pendingProductVouch=JSON.parse(sessionStorage.getItem('vouch-pending-product')||'null')}catch{}
   function setPendingProduct(value){pendingProductVouch=value;try{if(value)sessionStorage.setItem('vouch-pending-product',JSON.stringify(value));else sessionStorage.removeItem('vouch-pending-product')}catch{}}
-  const photoVoteChoices=[['no','Nope',"Nope, wouldn't recommend"],['brand','Brand','Brand vouch, trust the brand only'],['yes','Vouch','Vouch, would recommend'],['skip','Not tried','Not tried']];
   const photoVoteText={yes:'You vouched',brand:'You trust the brand',no:'You said nope',skip:'Not tried'};
-  function photoVoteIcon(verdict){
-    const thumb='<path d="M7 10v11H3V10h4Zm0 0 5-7c1-1 3 0 2 3l-1 4h6c2 0 2 2 1 4l-2 6H7"/>';
-    const paths=verdict==='skip'?'<path d="M5 12h14"/>':verdict==='brand'?'<path d="m3 7 4-3 4 2 3-2 7 4-4 8-4 4-6-4-4-9Zm5 0 4-1 4 4-3 3-3-2-2 2M3 7l-2 2 4 9 2-2M21 8l2 2-4 9-2-2m-6-2 4 3m-6-1 3 3"/>':`<g${verdict==='no'?' transform="rotate(180 12 12)"':''}>${thumb}</g>`;
-    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
-  }
   async function renderProduct(id){
     document.body.classList.remove('signin-page');
     let data;try{data=await request('/api/products/'+encodeURIComponent(id));}catch{shell('<h1>This product isn’t available anymore.</h1><p>Try searching for it again.</p><a href="/find">Search products</a>');return}const p=data.product||{},contributors=data.contributors||[];
@@ -355,7 +349,7 @@
     let selected=data.myVerdict||null,collapsed=!!selected,saving=false;
     function paintVoteBar(focus=false){
       bar.classList.toggle('is-collapsed',collapsed);bar.setAttribute('aria-busy',String(saving));
-      bar.innerHTML=collapsed?`<span class="photo-vote-summary" tabindex="-1"><span class="photo-vote-icon" data-verdict="${selected}">${photoVoteIcon(selected)}</span><span>${photoVoteText[selected]}</span></span><button type="button" class="photo-vote-change">${selected==='skip'?'Undo':'Change'}</button>`:photoVoteChoices.map(([verdict,label,name])=>`<button type="button" class="photo-vote-option" data-verdict="${verdict}" aria-label="${esc(name)}" aria-pressed="${selected===verdict}"><span class="photo-vote-icon" data-verdict="${verdict}">${photoVoteIcon(verdict)}</span><span>${label}</span></button>`).join('');
+      bar.innerHTML=collapsed?`<span class="photo-vote-summary" tabindex="-1"><span class="photo-vote-icon" data-verdict="${selected}">${window.VouchPhotoVote.icon(selected)}</span><span>${photoVoteText[selected]}</span></span><button type="button" class="photo-vote-change">${selected==='skip'?'Undo':'Change'}</button>`:window.VouchPhotoVote.options(selected);
       bar.querySelectorAll('button').forEach(button=>button.disabled=saving);
       bar.querySelector('.photo-vote-change')?.addEventListener('click',()=>{collapsed=false;paintVoteBar(true)});
       bar.querySelectorAll('.photo-vote-option').forEach(button=>button.addEventListener('click',()=>choose(button.dataset.verdict)));

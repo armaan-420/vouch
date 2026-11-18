@@ -162,3 +162,28 @@ test('saved-email Wharton participant verifies their name and appears automatica
  const board=(await participant('/api/community-leaderboard')).data;assert.equal(board.viewer.requiresSignup,false);assert.equal(board.total,1);assert.equal(board.viewer.entry.displayName,'Wharton Preview');assert.equal(board.viewer.entry.count,products.length);
  assert.equal((await observer('/api/profiles/'+board.viewer.entry.handle)).status,200);
 });
+
+test('Wharton intro is offered only to a new profile and either exit persists across browsers',async t=>{
+ const {browser,advanceAuth}=await fixture(t);
+ for(const exit of ['intro_done','intro_skipped']){
+  const email=exit+'@wharton.upenn.edu',first=browser();
+  await signin(first,email);
+  const signup=async client=>{
+   const {data: {claimToken}}=await client('/api/account/edit');
+   return client('/api/account/signup',{displayName:'Pilot Member',email,claimToken,whartonPilot:true});
+  };
+  const created=await signup(first);
+  assert.equal(created.status,200,JSON.stringify(created.data));
+  assert.equal(created.data.pilotIntro,true);
+  assert.equal(created.data.profile.introSeenAt,null);
+  const saved=await first('/api/account/pilot-intro',{});
+  assert.equal(saved.status,200);
+  assert.ok(saved.data.introSeenAt);
+  assert.equal((await first('/api/pilot-events',{type:exit,step:exit==='intro_done'?3:1})).status,204);
+  const other=browser();advanceAuth();await signin(other,email);
+  assert.equal((await other('/api/account/me')).data.profile.introSeenAt,saved.data.introSeenAt);
+  assert.equal((await signup(other)).data.pilotIntro,false);
+  const publicProfile=await other('/api/profiles/'+created.data.profile.handle);
+  assert.equal(publicProfile.data.profile.introSeenAt,undefined);
+ }
+});

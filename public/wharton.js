@@ -13,8 +13,8 @@
   if(!status.identity){join();return;}
   if(!/@wharton\.upenn\.edu$/i.test(status.identity.email||'')){frame('<h1>This one’s for Wharton.</h1><p>Use your Wharton email to join this experiment.</p><button class="primary" data-switch>Use another email</button>');root.querySelector('[data-switch]').onclick=async()=>{try{await api('/api/auth/logout',{});attempt={};remember();join()}catch(e){error(e)}};return;}
   const me=await api('/api/account/me');
-  if(!me.profile||me.profile.verificationRequired){if(attempt.name){await createProfile(status.identity.email,attempt.name);await ready();}else nameForm(status.identity.email);return;}
-  attempt={};sessionStorage.removeItem(key);categories(me.profile.displayName);
+  if(!me.profile||me.profile.verificationRequired){if(attempt.name){await createProfile(status.identity.email,attempt.name);}else nameForm(status.identity.email);return;}
+  openCategories(me.profile);
  }
  function join(){
   const resume=attempt.challengeId&&attempt.expiresAt>Date.now();
@@ -32,13 +32,38 @@
   const resend=root.querySelector('[data-resend]');const tick=()=>{const seconds=Math.max(0,Math.ceil((attempt.resendAt-Date.now())/1000));resend.disabled=seconds>0;resend.textContent=seconds?'Resend in '+seconds+'s':'Send a new code';if(Date.now()>attempt.expiresAt){root.querySelector('form button').disabled=true;root.querySelector('[role=alert]').textContent='This code expired. Request a new code.';}};tick();timer=setInterval(tick,1000);
   resend.onclick=async()=>{resend.disabled=true;try{await send()}catch(e){error(e);tick()}};
   root.querySelector('[data-change]').onclick=()=>{delete attempt.challengeId;remember();join()};
-  root.querySelector('form').onsubmit=async e=>{e.preventDefault();const button=e.target.querySelector('button');button.disabled=true;try{await api('/api/auth/verify',{challengeId:attempt.challengeId,code:new FormData(e.target).get('code')});window.VouchPilot.track('code_verified');delete attempt.challengeId;remember();await ready()}catch(e){error(e);button.disabled=false;root.querySelector('input').setAttribute('aria-invalid','true')}};
+  root.querySelector('form').onsubmit=async e=>{e.preventDefault();const button=e.target.querySelector('button');button.disabled=true;try{await api('/api/auth/verify',{challengeId:attempt.challengeId,code:new FormData(e.target).get('code')});window.VouchPilot.track('code_verified');delete attempt.challengeId;remember();await ready()}catch(e){error(e);button.disabled=false;root.querySelector('input')?.setAttribute('aria-invalid','true')}};
  }
  function nameForm(email){
   frame(`<p class="eyebrow">PUT YOUR NAME TO GOOD TASTE</p><h1 tabindex="-1">Who’s behind<br><em>your picks?</em></h1><form><label for="wharton-name">Full name</label><input id="wharton-name" name="name" autocomplete="name" minlength="2" maxlength="60" value="${esc(attempt.name||'')}" required><button class="primary" type="submit">Choose my first category →</button></form>`);
-  root.querySelector('form').onsubmit=async e=>{e.preventDefault();const button=e.target.querySelector('button');button.disabled=true;try{await createProfile(email,new FormData(e.target).get('name'));await ready()}catch(e){error(e);button.disabled=false}};
+  root.querySelector('form').onsubmit=async e=>{e.preventDefault();const button=e.target.querySelector('button');button.disabled=true;try{await createProfile(email,new FormData(e.target).get('name'))}catch(e){error(e);button.disabled=false}};
  }
- async function createProfile(email,name){const items=(await api('/api/categories')).categories;if(!items.length)throw Error('No experiments are open yet. Please check back soon.');const query='?experiment='+encodeURIComponent(items[0].id),preview=await api('/api/account/edit'+query);await api('/api/account/signup'+query,{displayName:name,email,claimToken:preview.claimToken,whartonPilot:true});}
+ function openCategories(profile){
+  attempt={};try{sessionStorage.removeItem(key);}catch{}
+  categories(profile.displayName);
+ }
+ async function createProfile(email,name){
+  const items=(await api('/api/categories')).categories;
+  if(!items.length)throw Error('No experiments are open yet. Please check back soon.');
+  const query='?experiment='+encodeURIComponent(items[0].id),preview=await api('/api/account/edit'+query);
+  const {profile,pilotIntro}=await api('/api/account/signup'+query,{displayName:name,email,claimToken:preview.claimToken,whartonPilot:true});
+  const fallback='vouch-intro-seen:'+profile.handle;
+  let seen=profile.introSeenAt;
+  try{seen ||= localStorage.getItem(fallback);}catch{}
+  if(pilotIntro&&!seen){
+   const intro=await import('/wharton-intro.js').catch(()=>null);
+   if(intro){
+    intro.mountIntro(root,(type,step)=>{
+     window.VouchPilot.track(type,{step});
+     try{localStorage.setItem(fallback,new Date().toISOString());}catch{}
+     fetch('/api/account/pilot-intro',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}',keepalive:true}).catch(()=>{});
+     openCategories(profile);
+    });
+    return;
+   }
+  }
+  openCategories(profile);
+ }
  async function categories(name){
   document.body.classList.add('wharton-choosing');
   frame(`<p class="eyebrow">YOUR TASTE BELONGS HERE</p><h1 tabindex="-1">What do you<br><em>know and love?</em></h1><p class="wharton-intro">Welcome, ${esc(name.split(' ')[0])}. Start with one category. Explore the rest whenever you like.</p><div data-categories aria-busy="true"></div>`);

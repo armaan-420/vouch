@@ -120,8 +120,12 @@
     return `<span class="contributor-avatar" aria-hidden="true">${safeImage(person.photo)?`<img src="${esc(person.photo)}" alt="" loading="lazy">`:esc((person.displayName||'V').charAt(0).toUpperCase())}</span>`;
   }
   function contributorRow(row){
+    const badges=row.badges||[];
+    const verified=badges.some(badge=>badge.id==='wharton-verified');
+    const chips=badges.filter(badge=>badge.id!=='wharton-verified');
+    const avatar=`<span class="contributor-row-avatar">${contributorAvatar(row)}${verified?'<img class="contributor-wharton-mark" src="/brand/wharton-circle.png" alt="Wharton verified" title="Wharton verified" width="24" height="24">':''}</span>`;
     const topCategory=row.topCategory?`<span class="contributor-badge contributor-badge--category">${esc(row.topCategory.label)} ${row.topCategory.count}</span>`:'';
-    return `<li class="contributor-row ${row.isYou?'is-you':''}"><a href="/profiles/${encodeURIComponent(row.handle)}"><span class="contributor-rank" aria-label="Rank ${row.rank}">${row.rank}</span>${contributorAvatar(row)}<span class="contributor-person"><strong>${esc(row.displayName)}${row.isYou?' <small>You</small>':''}</strong>${badgeMarkup(row.badges)}${topCategory}</span><span class="contributor-count"><strong>${row.count.toLocaleString()}</strong><span>${row.count===1?'vouch':'vouches'}</span></span></a></li>`;
+    return `<li class="contributor-row ${row.isYou?'is-you':''}"><a href="/profiles/${encodeURIComponent(row.handle)}"><span class="contributor-rank" aria-label="Rank ${row.rank}">${row.rank}</span>${avatar}<span class="contributor-person"><strong>${esc(row.displayName)}${row.isYou?' <small>You</small>':''}</strong>${chips.length?badgeMarkup(chips):''}${topCategory}</span><span class="contributor-count"><strong>${row.count.toLocaleString()}</strong><span>${row.count===1?'vouch':'vouches'}</span></span></a></li>`;
   }
   function topContributorsLabel(top){
     const people=top.map(({displayName,count})=>`${displayName}, ${plural(count,'vouch','vouches')}`);

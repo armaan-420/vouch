@@ -110,3 +110,18 @@
 @media(width < 760px) and (prefers-reduced-motion:no-preference){
   html:has(#leaderboard-rankings:target){scroll-behavior:smooth}
 }
+
+.contributor-row-avatar{position:relative;display:block;width:fit-content}
+.contributor-wharton-mark{
+  position:absolute;
+  right:-3px;
+  bottom:-3px;
+  width:24px;
+  height:24px;
+  border:2px solid var(--paper);
+  border-radius:50%;
+  background:var(--paper);
+}
+@media(width < 900px){
+  .contributor-wharton-mark{width:20px;height:20px}
+}

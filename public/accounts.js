@@ -121,7 +121,7 @@
   }
   function contributorRow(row){
     const topCategory=row.topCategory?`<span class="contributor-badge contributor-badge--category">${esc(row.topCategory.label)} ${row.topCategory.count}</span>`:'';
-    return `<li class="contributor-row ${row.isYou?'is-you':''}"><a href="/profiles/${encodeURIComponent(row.handle)}"><span class="contributor-rank" aria-label="Rank ${row.rank}">${row.rank}</span>${contributorAvatar(row)}<span class="contributor-person"><strong>${esc(row.displayName)}${row.isYou?' <small>You</small>':''}</strong>${badgeMarkup(row.badges)}${topCategory}</span><span class="contributor-count"><strong>${row.count.toLocaleString()}</strong><span>${row.count===1?'vouch':'vouches'} shared</span></span></a></li>`;
+    return `<li class="contributor-row ${row.isYou?'is-you':''}"><a href="/profiles/${encodeURIComponent(row.handle)}"><span class="contributor-rank" aria-label="Rank ${row.rank}">${row.rank}</span>${contributorAvatar(row)}<span class="contributor-person"><strong>${esc(row.displayName)}${row.isYou?' <small>You</small>':''}</strong>${badgeMarkup(row.badges)}${topCategory}</span><span class="contributor-count"><strong>${row.count.toLocaleString()}</strong><span>${row.count===1?'vouch':'vouches'}</span></span></a></li>`;
   }
   function topContributorsLabel(top){
     const people=top.map(({displayName,count})=>`${displayName}, ${plural(count,'vouch','vouches')}`);
@@ -271,11 +271,6 @@
     try{
       const data=await request('/api/community-leaderboard?community=wharton&offset='+offset),viewer=data.viewer;
       const categories=data.whoToAsk?.categories||[], top=data.top||[];
-      const participation=viewer.authenticated
-        ? viewer.eligible
-          ? `<button type="button" class="profile-outline" data-leaderboard-toggle>${viewer.optedIn?'Leave leaderboard':'Join leaderboard'}</button><p data-participation-status role="status"></p>`
-          : `<p>${esc(viewer.reason)}</p><a class="profile-outline" href="/account">Manage your profile</a>`
-        : '<a class="profile-outline" href="/account?signin=1">Sign in to join</a>';
       shell(`<div class="contributor-layout">
         <div class="contributor-overview">
           <div class="contributor-heading">
@@ -286,7 +281,7 @@
           </div>
           ${whoToAskCard(categories)}
         </div>
-        <div class="contributor-main">${viewer.entry&&!data.entries.some(r=>r.isYou)?`<aside class="contributor-your-place" aria-label="Your position"><p class="eyebrow">YOUR PLACE</p><ol class="contributor-list">${contributorRow(viewer.entry)}</ol></aside>`:''}<div class="contributor-table-heading" id="leaderboard-rankings" tabindex="-1" role="group" aria-label="Leaderboard rankings"><span>Contributor</span><span>Public vouches</span></div><ol class="contributor-list" aria-label="Wharton contributors ranked by public vouches">${data.entries.map(contributorRow).join('')}</ol>${!data.entries.length?`<div class="contributor-empty"><span aria-hidden="true"><img src="/brand/vouch-emblem.svg" alt="" class="brand-emblem"></span><h2>${data.total?'No contributors on this page':'Be one of the first'}</h2><p>${data.total?'Return to the previous page to see contributors.':'The first shared recommendations start here. Join to help others discover your picks.'}</p></div>`:''}<nav class="contributor-pagination" aria-label="Leaderboard pages">${offset?'<button class="profile-outline" data-previous>← Previous</button>':''}${data.hasMore?'<button class="profile-outline" data-next>Next →</button>':''}</nav><div class="contributor-participation" id="leaderboard-participation">${participation}</div></div></div>`);
+        <div class="contributor-main">${viewer.entry&&!data.entries.some(r=>r.isYou)?`<aside class="contributor-your-place" aria-label="Your position"><p class="eyebrow">YOUR PLACE</p><ol class="contributor-list">${contributorRow(viewer.entry)}</ol></aside>`:''}<div class="contributor-table-heading" id="leaderboard-rankings" tabindex="-1" role="group" aria-label="Leaderboard rankings"><span>Contributor</span><span>Public vouches</span></div><ol class="contributor-list" aria-label="Wharton contributors ranked by public vouches">${data.entries.map(contributorRow).join('')}</ol>${!data.entries.length?`<div class="contributor-empty"><span aria-hidden="true"><img src="/brand/vouch-emblem.svg" alt="" class="brand-emblem"></span><h2>${data.total?'No contributors on this page':'Be one of the first'}</h2><p>${data.total?'Return to the previous page to see contributors.':'The first shared recommendations start here. Join to help others discover your picks.'}</p></div>`:''}<nav class="contributor-pagination" aria-label="Leaderboard pages">${offset?'<button class="profile-outline" data-previous>← Previous</button>':''}${data.hasMore?'<button class="profile-outline" data-next>Next →</button>':''}</nav></div></div>`);
       const rankings=root.querySelector('#leaderboard-rankings');
       const strip=root.querySelector('.contributor-top-strip');
       if(strip)stopMeasuringTopStrip=wireTopContributors(strip,rankings,top);
@@ -312,11 +307,7 @@
         rankings.scrollIntoView();
         rankings.focus({preventScroll:true});
       }
-      if(restoreFragment&&location.hash==='#leaderboard-participation'){
-        root.querySelector('#leaderboard-participation').scrollIntoView();
-      }
       if(viewer.requiresSignup)await openLeaderboardSignup();
-      root.querySelector('[data-leaderboard-toggle]')?.addEventListener('click',async event=>{const button=event.target;button.disabled=true;try{await request('/api/account/profile',{leaderboardOptIn:!viewer.optedIn});await renderLeaderboard(0)}catch(error){root.querySelector('[data-participation-status]').textContent=error.message;button.disabled=false;}});
     }catch(error){shell(`<a href="/">← Vouch home</a><h1>Wharton leaderboard</h1><p class="account-error" role="alert">${esc(error.message)}</p><button class="profile-outline" data-retry-leaderboard>Try again</button>`);root.querySelector('[data-retry-leaderboard]').onclick=()=>renderLeaderboard(offset,{restoreFragment});}
   }
   function renderProfile(profile,owner=false,saved=false,showMoreCategories=false){

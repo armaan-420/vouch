@@ -209,3 +209,18 @@ test('overall top includes only eligible members and handles fewer than three',(
  assert.deepEqual(whartonLeaderboard({optedOut,ineligible,a}).top.map(row=>row.handle),['a']);
  assert.deepEqual(whartonLeaderboard({optedOut,ineligible,a,b}).top.map(row=>row.handle),['a','b']);
 });
+
+test('leaderboard combines Wharton badges and awards category badges before pagination',()=>{
+ const person=(handle,count,extra={})=>categoryMember(handle,Array.from({length:count},(_,i)=>
+  categoryVouch(handle+i,handle==='b'?'headphones':'Headphones')),extra);
+ const a=person('a',10,{whartonEarlyTester:true});
+ const b=person('b',7),c=person('c',6),d=person('d',6);
+ const below=categoryMember('below',Array.from({length:6},(_,i)=>categoryVouch('below'+i,'Headphones',i===5?{visibility:'private'}:{})));
+ const opted=person('opted',12,{leaderboardOptIn:false});
+ const accounts={a,b,c,d,below,opted};
+ const board=whartonLeaderboard(accounts);
+ assert.deepEqual(board.entries[0].badges.map(badge=>badge.label),['Wharton ✅','Headphones expert']);
+ assert.deepEqual(board.entries.filter(row=>row.badges.some(badge=>badge.id==='category-expert-headphones')).map(row=>row.handle),['a','b','c']);
+ assert.deepEqual(whartonLeaderboard(accounts,{offset:2,limit:1}).entries[0].badges,board.entries[2].badges);
+ assert.deepEqual(board.entries.find(row=>row.handle==='below').badges.map(badge=>badge.label),['Wharton ✅']);
+});

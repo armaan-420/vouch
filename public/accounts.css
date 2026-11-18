@@ -328,3 +328,6 @@
 #item-share-dialog .pilot-dialog-actions{margin-top:12px}
 @media(min-width:701px){.item-navigation{width:calc((100% - 40px) / 2.16)}}
 @media(min-width:701px) and (max-width:950px){.item-navigation{width:calc((100% - 26px) * .9 / 2.1)}}
+.item-vote-feedback:has([data-share-saved-vouch]){display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.item-vote-feedback [data-item-vote-controls]{display:flex;flex-wrap:wrap;gap:8px}
+#item-product-vote{scroll-margin-top:100px}

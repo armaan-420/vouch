@@ -9,11 +9,11 @@
     return control;
   }
 
-  async function open(trigger,{kind,experimentId}) {
+  async function open(trigger,{kind,experimentId,productId,onUnavailable}) {
     const {showPilotDialog}=await import('/pilot-dialog.js');
     if(document.querySelector('.pilot-share-dialog[open]'))return;
-    const path=kind==='winner'?'board/'+encodeURIComponent(experimentId):kind;
-    const title={picks:'Share your picks',winner:'Share the Board',leaderboard:'Share the leaderboard'}[kind];
+    const path=kind==='winner'?'board/'+encodeURIComponent(experimentId):kind==='vouch'?'vouch/'+encodeURIComponent(productId):kind;
+    const title={picks:'Share your picks',winner:'Share the Board',leaderboard:'Share the leaderboard',vouch:'Share your vouch'}[kind];
     const dialog=document.createElement('dialog');
     dialog.className='pilot-dialog pilot-share-dialog';
     dialog.setAttribute('aria-labelledby','pilot-share-heading');
@@ -30,12 +30,14 @@
     showPilotDialog(dialog,trigger,()=>{if(object)URL.revokeObjectURL(object);});
     const track=method=>window.VouchPilot.track('share_created',{kind,method,experimentId});
     try{
-      const [cards,response]=await Promise.all([import('/share-cards.js'),fetch('/api/pilot-share/'+path)]);
+      const [cards,response]=await Promise.all([import('/share-cards.js'),fetch('/api/pilot-share/'+path,{method:kind==='vouch'?'POST':'GET'})]);
+      if(response.status===404&&onUnavailable){dialog.close();await onUnavailable();return;}
       const card=await response.json();
       if(!response.ok)throw Error(card.error||'Could not make this card.');
       const blob=await cards.makeCard(card);
       if(!dialog.open)return;
-      const name='vouch-wharton-'+kind+'.png',file=new File([blob],name,{type:'image/png'});
+      const slug=kind==='vouch'?[card.product.brand,card.product.name].join(' ').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,80):'';
+      const name=kind==='vouch'?'vouch-share-'+(slug||'product')+'.png':'vouch-wharton-'+kind+'.png',file=new File([blob],name,{type:'image/png'});
       const link=new URL(card.link,location.origin).href;
       object=URL.createObjectURL(blob);
       const preview=dialog.querySelector('img');

@@ -82,3 +82,18 @@ test('a Wharton pulse answer is counted once across categories and only organize
   assert.equal(pulse.events.filter(e=>e.accountKey==='other').length,1);
   assert.equal(pulse.events.at(-1).type,'pulse_dismissed');
 });
+
+test('vouch share events preserve channel and referral while old purchase events still validate',()=>{
+  const ref='v-0123456789abcdef';
+  assert.deepEqual(cleanPilotEvent({type:'share_created',kind:'vouch',method:'native'}),{type:'share_created',kind:'vouch',method:'native'});
+  assert.deepEqual(cleanPilotEvent({type:'buy_click',productId:'boj',source:'share',ref}),{type:'buy_click',productId:'boj',source:'share',ref});
+  assert.deepEqual(cleanPilotEvent({type:'buy_click',productId:'boj'}),{type:'buy_click',productId:'boj'});
+  assert.throws(()=>cleanPilotEvent({type:'buy_click',productId:'boj',source:'unknown'}));
+  const at=new Date().toISOString();
+  const events=[
+    {type:'share_opened',kind:'vouch',at},{type:'share_opened',kind:'picks',at},
+    {type:'buy_click',source:'share',at},{type:'buy_click',source:'product',at},{type:'buy_click',at}
+  ];
+  const {sections}=calculatePilotMetrics({events,accountsData:{accounts:{}},categories:[]});
+  assert.equal(sections.flatMap(s=>s.metrics).find(m=>m.key==='buy-vouch-share').value,1);
+});

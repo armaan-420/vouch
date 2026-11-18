@@ -218,3 +218,41 @@ test('public share pages recheck picks privacy and attribute signup through the 
  await sharer('/api/account/profile',{visibility:'private'});
  assert.equal((await recipient(link)).status,404);
 });
+
+test('an item vouch share requires its owner’s opt-in and follows current visibility and verdict',async t=>{
+ const {browser}=await fixture(t),owner=browser(),reader=browser();
+ await owner('/api/events',{type:'answer',productId:'boj',value:'yes',comment:'Works <well>.'});
+ await signin(owner,'card-d@wharton.upenn.edu');
+ const {data:{claimToken}}=await owner('/api/account/edit');
+ const signup=await owner('/api/account/signup',{displayName:'Priya <Tester>',email:'card-d@wharton.upenn.edu',claimToken});
+ assert.equal(signup.status,200);
+ const {handle}=signup.data.profile;
+ const page='/share/vouch/'+handle+'/boj',api='/api/pilot-share/vouch/boj';
+ assert.equal((await reader(page)).status,404);
+ assert.equal((await reader(api,{})).status,404);
+ const tags=(await owner('/api/products/boj')).data.tags.slice(0,4).map(tag=>tag.id);
+ assert.equal((await owner('/api/products/boj',{tagIds:tags})).status,200);
+ const shared=await owner(api,{});
+ assert.equal(shared.status,200);
+ const card=shared.data,item=(await owner('/api/products/boj')).data;
+ assert.equal(card.score,Number(item.community.score));
+ assert.equal(card.ratings,item.community.voteCounts.total);
+ assert.equal(card.review,'Works <well>.');
+ assert.deepEqual(card.tags,item.tags.slice(0,3).map(tag=>tag.label));
+ const html=(await reader(card.link)).data;
+ assert.match(html,/summary_large_image/);
+ assert.match(html,/property="og:image" content="http:\/\/127.0.0.1:/);
+ assert.match(html,/Works &lt;well&gt;\./);
+ assert.match(html,/Join the Wharton experiments/);
+ assert.match((await owner(page)).data,/See it on Vouch/);
+ for(const changes of [{showName:false},{showName:true,visibility:'private'},{visibility:'public',opinions:[{productId:'boj',visibility:'private'}]}]){
+   assert.equal((await owner('/api/account/profile',changes)).status,200);
+   assert.equal((await owner(api,{})).status,404);
+   assert.equal((await reader(page)).status,404);
+ }
+ for(const verdict of ['no','brand','skip']){
+   await owner('/api/account/profile',{opinions:[{productId:'boj',visibility:'public',verdict}]});
+   assert.equal((await owner(api,{})).status,404);
+   assert.equal((await reader(page)).status,404);
+ }
+});

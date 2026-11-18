@@ -60,3 +60,21 @@ test('leaderboard share uses the canonical ranked public entries and pins an eli
   assert.equal(leaderboardShare(accounts,groups,'member0').rows[0].isYou,true);
   assert.ok(leaderboardShare(accounts,groups,'member2').rows.every(r=>!r.isYou));
 });
+
+test('vouch preview describes all rating and review combinations and only includes safe escaped metadata',async()=>{
+  const {vouchDescription}=await import('../lib/vouch-share-data.mjs');
+  const {shareHtml}=await import('../lib/pilot-share.mjs');
+  assert.equal(vouchDescription({review:null,score:null},'Product'),'Product on Vouch');
+  assert.equal(vouchDescription({review:'Good',score:null},'Product'),'“Good”');
+  assert.equal(vouchDescription({review:null,score:8.6,ratings:2},'Product'),'Vouch score 8.6 · 2 ratings');
+  const card={kind:'vouch',title:'A <B> vouches for this',headline:'A vouches for this.',link:'/share/vouch/a/b',productPath:'/products/b',
+    author:{handle:'a',name:'A'},product:{name:'<Product>',image:'/assets/photo.png'},tags:[],offers:[],review:'Great & cheap',score:8.6,ratings:1};
+  card.description=vouchDescription(card,'Product');
+  assert.equal(card.description,'“Great & cheap” · Vouch score 8.6 · 1 rating');
+  const html=shareHtml(card,{origin:'https://vouch.test'});
+  assert.match(html,/og:image" content="https:\/\/vouch.test\/assets\/photo.png"/);
+  assert.match(html,/Great &amp; cheap/);
+  assert.match(html,/A &lt;B&gt; vouches for this/);
+  card.product.image=null;
+  assert.match(shareHtml(card,{origin:'https://vouch.test'}),/twitter:card" content="summary"/);
+});

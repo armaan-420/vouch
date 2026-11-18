@@ -93,3 +93,16 @@
 .pilot-share-ranks li>span:first-child{min-width:2ch;text-align:center}
 .pilot-share-ranks .pilot-share-count{margin-left:auto;font-variant-numeric:tabular-nums}
 .pilot-share-ranks img,.pilot-share-ranks .pilot-share-placeholder{width:42px;height:42px;border-radius:50%;object-fit:cover}
+.vouch-share-byline,.vouch-share-byline a,.vouch-share-score{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.vouch-share-byline{color:var(--muted)}
+.vouch-share-byline a{color:var(--ink)}
+.vouch-share-byline img,.vouch-share-byline .pilot-share-placeholder{width:38px;height:38px;object-fit:cover;border-radius:50%}
+.vouch-share-card figcaption small{color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.vouch-share-card blockquote{margin:20px 0;font:italic 400 1.65rem/1.2 'Instrument Serif',serif}
+.vouch-share-tags{display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding:0}
+.vouch-share-tags li{border:1px solid var(--line);border-radius:999px;padding:5px 10px}
+.vouch-share-score{border-top:1px solid var(--line);padding-top:12px;--item-score-color:var(--olive)}
+.vouch-share-card .pilot-share-list a{width:100%;overflow-wrap:anywhere}
+.pilot-share-page :focus-visible{outline:3px solid var(--olive);outline-offset:4px}
+
+.pilot-share-page:has(.vouch-share-card)>.wordmark{color:var(--ink);text-decoration:none}

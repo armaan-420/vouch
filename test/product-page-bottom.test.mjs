@@ -1,3 +1,4 @@
+import {retailerOffers as itemOffers,retailerUrl} from '../public/retailer-offers.js';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import test from 'node:test';
@@ -9,10 +10,11 @@ const context={
   location:{pathname:'/products/current',search:'',hash:''},
   document:{getElementById(){},body:{classList:{add(){}}}},
 };
-const {itemBuyMarkup,itemOffers,itemCategoryHeading,itemCategoryPicks,plural}=vm.runInNewContext(
-  source.replace('  load();\n})();','  return {itemBuyMarkup,itemOffers,itemCategoryHeading,itemCategoryPicks,plural};\n})();'),
+const {itemBuyMarkup:buyMarkup,itemCategoryHeading,itemCategoryPicks,plural}=vm.runInNewContext(
+  source.replace('  load();\n})();','  return {itemBuyMarkup,itemCategoryHeading,itemCategoryPicks,plural};\n})();'),
   context,
 );
+const itemBuyMarkup=(product,offers,options={})=>buyMarkup(product,offers,{...options,retailerUrl});
 const product={id:'current',url:'https://fallback.example/',variantLabel:'Guava SPF 46',retailerCount:19};
 const offer=(retailer,price)=>({retailer,price,currency:'USD',url:'https://'+retailer.toLowerCase()+'.example/'});
 

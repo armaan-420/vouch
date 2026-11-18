@@ -27,26 +27,26 @@ function ellipsis(ctx,text,maxWidth,force=false) {
   return letters.join('').trimEnd()+'…';
 }
 
-function wrap(ctx,text,maxWidth) {
+function wrap(ctx,text,maxWidth,maxLines=2) {
   const words=String(text).trim().split(/\s+/);
   const lines=[];
   let line='';
   for(const [i,word] of words.entries()){
     const candidate=(line+' '+word).trim();
     if(ctx.measureText(candidate).width<=maxWidth){line=candidate;continue;}
-    if(lines.length===1)return [lines[0],ellipsis(ctx,line||word,maxWidth,!!line||i<words.length-1)];
+    if(lines.length===maxLines-1)return [...lines,ellipsis(ctx,line||word,maxWidth,!!line||i<words.length-1)];
     if(line){lines.push(line);line=word;}
     else lines.push(ellipsis(ctx,word,maxWidth));
   }
-  if(line&&lines.length<2)lines.push(ellipsis(ctx,line,maxWidth));
+  if(line&&lines.length<maxLines)lines.push(ellipsis(ctx,line,maxWidth));
   return lines;
 }
 
-function text(ctx,label,x,y,{size=36,font=sans,weight=400,color,align='left',maxWidth}={}) {
+function text(ctx,label,x,y,{size=36,font=sans,weight=400,color,align='left',maxWidth,maxLines}={}) {
   ctx.font=`${weight} ${size}px ${font}`;
   ctx.fillStyle=color;
   ctx.textAlign=align;
-  const lines=maxWidth?wrap(ctx,label,maxWidth):[label];
+  const lines=maxWidth?wrap(ctx,label,maxWidth,maxLines):[label];
   lines.forEach((line,i)=>ctx.fillText(line,x,y+i*size*1.03));
   return lines.length*size*1.03;
 }
@@ -92,13 +92,13 @@ function avatar(ctx,img,name,cx,cy,r,colors,stroke=colors.paper) {
   ctx.stroke();
 }
 
-function footer(ctx,logo,colors,dark=false) {
+function footer(ctx,logo,colors,dark=false,vouch=false) {
   const tone=dark?colors.paper:colors.ink;
   ctx.strokeStyle=dark?colors.olive:colors.line;
   ctx.lineWidth=2;
   ctx.beginPath();
   ctx.moveTo(inset,1725);ctx.lineTo(width-inset,1725);ctx.stroke();
-  text(ctx,dark?'Settle it at v4ch.app':'v4ch.app/wharton',inset,1821,{color:tone,weight:700});
+  text(ctx,dark?'Settle it at v4ch.app':vouch?'v4ch.app':'v4ch.app/wharton',inset,1821,{color:tone,weight:700});
   if(logo)ctx.drawImage(logo,width-inset-83,1764,83,83);
 }
 
@@ -146,10 +146,57 @@ async function drawLeaderboard(ctx,card,colors) {
   text(ctx,'Public vouches',inset,y+54,{size:36,color:colors.oliveText});
 }
 
+async function drawVouch(ctx,card,colors) {
+  const maxWidth=width-2*inset,p=card.product;
+  const segments=card.review?[...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(card.review)]:[];
+  const quote=segments.length?'“'+segments.slice(0,120).map(part=>part.segment).join('').trimEnd()+(segments.length>120?'…':'')+'”':'';
+  ctx.font='600 55px '+sans;
+  const nameHeight=wrap(ctx,p.name,maxWidth).length*56.65;
+  ctx.font='italic 400 49px '+serif;
+  const reviewHeight=quote?wrap(ctx,quote,maxWidth,4).length*50.47+28:0;
+  ctx.font='500 30px '+sans;
+  let x=0,row=0;
+  const pills=card.tags.map(tag=>{
+    const label=ellipsis(ctx,tag,(maxWidth-28)/2-36),w=ctx.measureText(label).width+36;
+    if(x+w>maxWidth){x=0;row++;}
+    const position={label,w,x,row};
+    x+=w+14;
+    return position;
+  });
+  const tagsHeight=pills.length?(row+1)*58+16:0;
+  const scoreHeight=card.score==null?0:105;
+  const tileTop=520,tileEnd=1665-nameHeight-reviewHeight-tagsHeight-scoreHeight-112;
+  product(ctx,await image(p.image),p.name,inset,tileTop,maxWidth,tileEnd-tileTop,colors);
+  let y=tileEnd+50;
+  text(ctx,p.brand.toUpperCase(),inset,y,{size:28,weight:700,color:colors.oliveText,maxWidth,maxLines:1});
+  y+=text(ctx,p.name,inset,y+60,{size:55,weight:600,color:colors.ink,maxWidth})+63;
+  if(quote)y+=text(ctx,quote,inset,y,{font:serif,weight:'italic 400',size:49,color:colors.ink,maxWidth,maxLines:4})+28;
+  for(const pill of pills){
+    const py=y-33+pill.row*58;
+    box(ctx,inset+pill.x,py,pill.w,48,24,colors.paper,colors.line);
+    text(ctx,pill.label,inset+pill.x+18,py+34,{size:30,weight:500,color:colors.ink});
+  }
+  y+=tagsHeight;
+  if(card.score==null)return;
+  ctx.fillStyle=colors.line;
+  ctx.fillRect(inset,y-25,maxWidth,2);
+  const cx=inset+38,cy=y+35;
+  ctx.lineWidth=6;
+  for(const [arc,color] of [[1,colors.line],[card.score/10,colors.olive]]){
+    ctx.beginPath();
+    ctx.strokeStyle=color;
+    ctx.arc(cx,cy,34,-Math.PI/2,-Math.PI/2+arc*2*Math.PI);
+    ctx.stroke();
+  }
+  text(ctx,card.score.toFixed(1),cx,cy+10,{size:29,weight:700,color:colors.oliveText,align:'center'});
+  text(ctx,'Vouch score · '+card.ratings+(card.ratings===1?' rating':' ratings'),inset+96,cy+13,{size:37,weight:600,color:colors.ink,maxWidth:maxWidth-96,maxLines:1});
+}
+
 export async function makeCard(card) {
   const styles=getComputedStyle(document.documentElement);
   const colors=Object.fromEntries(Object.entries({paper:'--paper',ink:'--ink',lime:'--green',olive:'--pilot-olive',oliveText:'--pilot-olive-text',line:'--line'}).map(([key,token])=>[key,styles.getPropertyValue(token).trim()]));
   const [logo]=await Promise.all([image(emblem),document.fonts.load("400 104px 'Instrument Serif'"),document.fonts.load("400 36px 'DM Sans'"),document.fonts.load("700 43px 'DM Sans'")]);
+  if(card.kind==='vouch')await document.fonts.load("italic 400 49px 'Instrument Serif'");
   const canvas=document.createElement('canvas');
   canvas.width=width;canvas.height=height;
   const ctx=canvas.getContext('2d');
@@ -162,12 +209,14 @@ export async function makeCard(card) {
   text(ctx,card.headline,inset,391,{size:104,font:serif,color:dark?colors.paper:colors.ink,maxWidth:width-2*inset});
   if(dark)await drawWinner(ctx,card,colors);
   else if(card.kind==='leaderboard')await drawLeaderboard(ctx,card,colors);
+  else if(card.kind==='vouch')await drawVouch(ctx,card,colors);
   else await drawPicks(ctx,card,colors);
-  footer(ctx,logo,colors,dark);
+  footer(ctx,logo,colors,dark,card.kind==='vouch');
   return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(Error('Could not make this image.')),'image/png'));
 }
 
 export function cardAlt(card) {
+  if(card.kind==='vouch')return 'Share card: '+card.firstName+' vouches for '+[card.product.brand,card.product.name].filter(Boolean).join(' ')+(card.score==null?'':', Vouch score '+card.score.toFixed(1)+' from '+card.ratings+(card.ratings===1?' rating':' ratings'));
   if(card.kind==='winner')return `Share card: ${card.title}, ${card.winner.name}, vouched by ${card.winner.count} classmates`;
   if(card.kind==='leaderboard')return 'Share card: Wharton leaderboard, '+card.rows.map(row=>`${row.rank}. ${row.name}, ${row.count} public vouches`).join('; ');
   const [first,...rest]=card.rows;

@@ -76,7 +76,8 @@ try{
   const board=async (edit,flow=true)=>{
     await page.goto(origin+'/'+edit.id+'?board=1'+(flow?'&wharton=1':''));
     await page.locator('.board-category-chips').waitFor();
-    if(flow)await page.locator('#pilot-next-heading').waitFor();
+    await page.locator('[data-pilot-next] button').first().waitFor();
+    if(flow)await page.locator('[data-pilot-state]').waitFor();
   };
   const complete=async (edit,first='yes')=>{
     for(const [index,p] of edit.products.entries())await post('/api/events?experiment='+edit.id,{type:'answer',productId:p.id,value:index===0?first:'skip'});
@@ -151,16 +152,13 @@ try{
   await page.locator('[data-vote="yes"]').waitFor();
   await check('rating');
   await board(lineup[0]);
-  assert.match(await page.locator('#pilot-next-heading').textContent(),/0 of 3/);
   assert.equal(await page.locator('.pilot-pulse').count(),0);
-  await page.locator('#pilot-next-heading').scrollIntoViewIfNeeded();
+  await page.locator('[data-pilot-next]').scrollIntoViewIfNeeded();
   await check('next 0');
   await shot('next-0');
   await complete(lineup[0]);
   await post('/api/events?experiment='+lineup[1].id,{type:'answer',productId:lineup[1].products[0].id,value:'skip'});
   await board(lineup[0]);
-  assert.match(await page.locator('#pilot-next-heading').textContent(),/1 of 3/);
-  assert.match(await page.getByRole('link',{name:/Continue Lip balm/}).getAttribute('href'),/resume=1/);
   const question=page.locator('.pilot-pulse');
   await question.waitFor();
   assert.equal(await question.evaluate(el=>Array.from(el.parentElement.children).slice(0,[...el.parentElement.children].indexOf(el)).filter(s=>s.matches('.rank-row')).length),3);
@@ -180,7 +178,7 @@ try{
     await shot('pulse-thanks');
   }
   await question.waitFor({state:'detached'});
-  const suggest=page.locator('[data-pilot-next]').getByRole('button',{name:'Suggest a category'});
+  const suggest=page.locator('[data-pilot-next]').getByRole('button',{name:'Suggest the next category'});
   await suggest.scrollIntoViewIfNeeded();
   await check('next 1');
   await shot('next-1');
@@ -197,21 +195,19 @@ try{
   await suggest.click();
   await dialog.getByRole('textbox').fill('Travel umbrellas');
   await dialog.getByRole('button',{name:'Send suggestion'}).click();
-  await page.getByText('Thanks. The most requested category opens next.').waitFor();
+  await page.getByText('Thanks for suggesting a category.').waitFor();
   await check('suggested');
   await shot('suggested');
   await complete(lineup[1]);
   await board(lineup[1]);
-  assert.match(await page.locator('#pilot-next-heading').textContent(),/2 of 3/);
   assert.equal(await page.locator('.pilot-pulse').count(),0);
-  assert.ok(await page.getByText('Thanks. The most requested category opens next.').isVisible());
-  await page.locator('#pilot-next-heading').scrollIntoViewIfNeeded();
+  assert.ok(await page.getByText('Thanks for suggesting a category.').isVisible());
+  await page.locator('[data-pilot-next]').scrollIntoViewIfNeeded();
   await check('next 2');
   await shot('next-2');
   await complete(lineup[2]);
   await board(lineup[0]);
-  assert.match(await page.locator('#pilot-next-heading').textContent(),/all 3/);
-  await page.locator('#pilot-next-heading').scrollIntoViewIfNeeded();
+  await page.locator('[data-pilot-next]').scrollIntoViewIfNeeded();
   await check('next 3');
   await shot('next-3');
   await share(page.getByRole('button',{name:'Share your picks'}),'picks');
@@ -223,7 +219,7 @@ try{
   await page.locator('.wharton-category[href]').first().waitFor();
   assert.equal(await page.locator('.pilot-intro').count(),0);
   await board(lineup[0],false);
-  assert.equal(await page.locator('[data-pilot-next],.pilot-pulse').count(),0);
+  assert.equal(await page.locator('.pilot-pulse').count(),0);
   await page.goto(origin+'/admin#wharton-pilot');
   await page.getByRole('heading',{name:'Signup funnel'}).waitFor();
   await page.locator('#pilot-category').selectOption(lineup[0].id);
@@ -258,7 +254,11 @@ try{
  const signedOut=await browser.newPage();
  await signedOut.goto(origin+'/'+lineup[0].id+'?board=1');
  await signedOut.locator('.board-category-chips').waitFor();
- assert.equal(await signedOut.locator('[data-pilot-next],.pilot-pulse').count(),0);
+ assert.equal(await signedOut.locator('.pilot-pulse').count(),0);
+ await signedOut.getByRole('button',{name:'Share your picks'}).waitFor();
+ await signedOut.getByRole('button',{name:'Suggest the next category'}).waitFor();
+ await signedOut.getByRole('link',{name:'See the leaderboard'}).waitFor();
+ assert.equal(await signedOut.locator('[data-pilot-next] [role=progressbar]').count(),0);
  await signedOut.locator('[data-winner-share] button').waitFor();
  await signedOut.close();
 }finally{

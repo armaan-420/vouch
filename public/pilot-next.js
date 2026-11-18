@@ -1,8 +1,4 @@
 import {showPilotDialog} from './pilot-dialog.js';
-import {progressMarkup,showProgress} from './pilot-progress.js';
-
-const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
 export function nextStep({items,states,pilot,profile}) {
   if(!pilot||!profile?.whartonEmailVerified)return null;
   const state=items.filter(group=>states[group.experiment?.id]?.status==='done').length;
@@ -10,12 +6,12 @@ export function nextStep({items,states,pilot,profile}) {
   return {state,next,partial:states[next?.experiment.id]?.status==='partial',suggested:pilot.suggested,canShare:pilot.canShare};
 }
 
-function suggestionDialog(trigger,onSaved) {
+function suggestionDialog(trigger,onSaved,whartonPilot) {
   const dialog=document.createElement('dialog');
   dialog.className='pilot-dialog';
   dialog.setAttribute('aria-labelledby','pilot-suggestion-title');
   dialog.innerHTML=`<h2 id="pilot-suggestion-title">Suggest a category</h2>
-    <form><label for="pilot-suggestion">What should Wharton vouch for next?</label>
+    <form><label for="pilot-suggestion">${whartonPilot?'What should Wharton vouch for next?':'What should we vouch for next?'}</label>
     <input required minlength="2" maxlength="60" id="pilot-suggestion" name="category" autofocus>
     <p role="status"></p>
     <div class="pilot-dialog-actions"><button type="button" class="pilot-button is-outline" data-cancel>Cancel</button>
@@ -27,7 +23,7 @@ function suggestionDialog(trigger,onSaved) {
     button.disabled=true;
     try{
       const category=new FormData(event.target).get('category').trim();
-      const response=await fetch('/api/suggestions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({category,whartonPilot:true})});
+      const response=await fetch('/api/suggestions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({category,whartonPilot})});
       const result=await response.json();
       if(!response.ok)throw Error(result.error||'Could not save your suggestion.');
       dialog.close();
@@ -40,40 +36,63 @@ function suggestionDialog(trigger,onSaved) {
   showPilotDialog(dialog,trigger);
 }
 
-export function mountNext(host,{items,states,pilot,experimentId,profile,onShow}) {
-  const model=nextStep({items,states,pilot,profile});
-  if(!model)return;
-  const {state,next,partial,canShare}=model,complete=state===3;
-  const key='vouch-pilot-suggested:'+profile.handle;
-  let suggested=model.suggested;
-  try{suggested ||= !!sessionStorage.getItem(key);}catch{}
-  const track=action=>window.VouchPilot.track('next_step_click',{state,action,experimentId});
-  const button=(label,action,primary=false)=>`<button type="button" class="pilot-button${primary?'':' is-outline'}" data-next-action="${action}">${label}</button>`;
-  const share=canShare?(window.VouchShare?button('Share your picks','share_picks',complete):''):'<a class="pilot-button is-outline" href="/account?visibility=1">Make a vouch public to share it</a>';
-  const nextLink=next?`<a class="pilot-button" data-next-action="next_category" href="/${encodeURIComponent(next.experiment.id)}?start=1${partial?'&resume=1':''}&amp;wharton=1">${partial?'Continue '+esc(next.name):'Vouch for '+esc(next.name.toLowerCase())} →</a>`:'';
-  const thanks='<p class="pilot-suggestion-thanks" role="status" tabindex="-1">Thanks. The most requested category opens next.</p>';
-  host.innerHTML=`<section class="pilot-board-card" aria-labelledby="pilot-next-heading">
-    <h2 id="pilot-next-heading">${complete?'You’ve vouched all 3.':`You’ve vouched ${state} of 3.`}</h2>
-    ${progressMarkup(state,'Wharton categories completed')}
-    <div class="pilot-next-primary">${complete?share:nextLink}</div>
+export function mountNext(host,{experimentId,profile}) {
+  const key='vouch-board-suggested:'+(profile?.handle||'visitor');
+  const thanks='<p class="pilot-suggestion-thanks" role="status" tabindex="-1">Thanks for suggesting a category.</p>';
+  let suggested=false;
+  try{suggested=!!sessionStorage.getItem(key);}catch{}
+  host.innerHTML=`<section class="pilot-board-card" aria-label="More from Vouch">
+    <div class="pilot-next-primary"><button type="button" class="pilot-button" data-next-action="share_picks">Share your picks</button></div>
     <div class="pilot-next-secondary">
-      ${complete?'':share}
-      ${suggested?thanks:button(complete?'Suggest the next category':'Suggest a category','suggest')}
-      ${complete?'<a class="pilot-button is-outline" href="/community-leaderboard" data-next-action="leaderboard">See the leaderboard</a>':''}
-    </div>
+      ${suggested?thanks:'<button type="button" class="pilot-button is-outline" data-next-action="suggest">Suggest the next category</button>'}
+      <a class="pilot-button is-outline" href="/community-leaderboard" data-next-action="leaderboard">See the leaderboard</a>
+    </div><p role="status" data-board-share-status hidden></p>
   </section>`;
-  showProgress(host.querySelector('.pilot-progress'),state,'Wharton categories completed');
-  onShow(state);
-  host.addEventListener('click',event=>{
+  host.addEventListener('click',async event=>{
     const trigger=event.target.closest('[data-next-action]');
     if(!trigger)return;
     const action=trigger.dataset.nextAction;
-    track(action);
+    const state=host.dataset.pilotState;
+    if(state!==undefined)window.VouchPilot.track('next_step_click',{state:Number(state),action,experimentId});
     if(action==='suggest')suggestionDialog(trigger,()=>{
       try{sessionStorage.setItem(key,'1');}catch{}
       trigger.outerHTML=thanks;
       host.querySelector('.pilot-suggestion-thanks')?.focus();
-    });
-    if(action==='share_picks')window.VouchShare?.open(trigger,{kind:'picks',experimentId});
+    },state!==undefined);
+    if(action!=='share_picks')return;
+    if(host.dataset.pilotShare==='true'&&window.VouchShare){
+      window.VouchShare.open(trigger,{kind:'picks',experimentId});
+      return;
+    }
+    if(!profile||profile.browserProfile){
+      location.href='/account?signin=1'+(experimentId?'&experiment='+encodeURIComponent(experimentId):'');
+      return;
+    }
+    const status=host.querySelector('[data-board-share-status]');
+    status.hidden=false;
+    let current;
+    try{
+      const response=await fetch('/api/account/me');
+      if(!response.ok)throw Error();
+      current=(await response.json()).profile;
+    }catch{
+      status.textContent='Could not load your picks. Try again.';
+      return;
+    }
+    if(current?.visibility!=='public'||current.showName===false||!current.opinions?.some(item=>item.verdict==='yes'&&item.visibility==='public')){
+      location.href='/account?visibility=1';
+      return;
+    }
+    const url=new URL('/profiles/'+encodeURIComponent(current.handle),location.origin).href;
+    try{
+      await navigator.clipboard.writeText(url);
+      status.textContent='Link to your public picks copied.';
+    }catch{
+      const link=document.createElement('a');
+      link.href=url;
+      link.textContent='Open your public picks';
+      status.replaceChildren(link);
+      link.focus();
+    }
   });
 }

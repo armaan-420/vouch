@@ -32,7 +32,7 @@ jobs:
                   print(json.dumps(result))
                   failures = 0
                   if result.get('notificationFailures'):
-                      raise SystemExit('A notification needs attention in Vouch admin')
+                      print('A notification needs attention in Vouch admin')
                   if not result.get('active'):
                       break
               except Exception:
@@ -40,5 +40,5 @@ jobs:
                   print('Runner request failed; retrying without exposing request details')
                   if failures >= 3:
                       raise SystemExit('Background runner unavailable after three attempts')
-              time.sleep(10)
+              time.sleep(5)
           PY

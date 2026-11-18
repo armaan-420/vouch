@@ -29,7 +29,7 @@ export async function hostedApi(request:Request){
     await send({email:env.SUGGESTION_NOTIFY_EMAIL,category:'Notification setup test',state:'ready',key:'',idempotencyKey:'vouch-notification-setup-v1'});
     return Response.json({ok:true,accepted:true},{headers:{'Cache-Control':'no-store'}});
    }
-   return Response.json(await advanceHostedSuggestions(),{headers:{'Cache-Control':'no-store'}});
+   return Response.json(await advanceHostedSuggestions({maxMs:50000,maxSteps:60}),{headers:{'Cache-Control':'no-store'}});
   }
   const adminAuth=hostedAdminAuth();
   const authResponse=await adminAuth.handle(request);
@@ -44,10 +44,10 @@ export async function hostedApi(request:Request){
   return createApplicationApi({store,search:requestSearch,authorizeAdmin:isOrganizer,photoStorage:bucketPhotoStorage(env.BUCKET),autoOptions:{env,notify:createSuggestionDelivery({apiKey:env.RESEND_API_KEY,from:env.VOUCH_EMAIL_FROM,adminUrl:env.SUGGESTION_ADMIN_URL||new URL('/admin',request.url).href}),development:import.meta.env.DEV,waitUntil:ctx?(p:Promise<unknown>)=>ctx.waitUntil(p):undefined},authOptions:{secret:env.VOUCH_AUTH_SECRET,sendCode:createResendDelivery({apiKey:env.RESEND_API_KEY,from:env.VOUCH_EMAIL_FROM}),previewDelivery:import.meta.env.DEV&&!env.RESEND_API_KEY}})(request);
 }
 
-export async function advanceHostedSuggestions(){
+export async function advanceHostedSuggestions(limits:{maxMs?:number,maxSteps?:number}={}){
  if(!env.DB)return;
  const store=createD1Store(env.DB);
  searchPromise??=initializeSearch(store).catch(error=>{searchPromise=undefined;throw error});
  const search=await searchPromise;
- return runSuggestions({store,auto:createSuggestions({store,search,env,development:import.meta.env.DEV,notify:createSuggestionDelivery({apiKey:env.RESEND_API_KEY,from:env.VOUCH_EMAIL_FROM,adminUrl:env.SUGGESTION_ADMIN_URL})})});
+ return runSuggestions({store,...limits,auto:createSuggestions({store,search,env,development:import.meta.env.DEV,notify:createSuggestionDelivery({apiKey:env.RESEND_API_KEY,from:env.VOUCH_EMAIL_FROM,adminUrl:env.SUGGESTION_ADMIN_URL})})});
 }

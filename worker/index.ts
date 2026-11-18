@@ -6,7 +6,7 @@ import type { ConnectorBinding } from "../lib/connector-contract.mjs";
 
 const worker = {
   scheduled(_event: ScheduledController, _env: Cloudflare.Env, ctx: ExecutionContext) {
-    ctx.waitUntil(advanceHostedSuggestions());
+    ctx.waitUntil(advanceHostedSuggestions({maxMs:50000,maxSteps:60}));
   },
   fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
     let binding = ctx.props?.CONNECTORS;

@@ -24,18 +24,18 @@ async function setup(t,overrides={}){
 }
 
 test('every requested source is attempted; inaccessible coverage never fails a private draft',async t=>{
- const s=await setup(t),j=await s.run();assert.deepEqual(s.calls.map(c=>c.id),['editorial','wirecutter','google','tiktok','reddit','manufacturer']);
- assert.equal(j.draft.status,'draft');assert.equal(j.draft.products.length,6);assert.equal(j.workspace.tasks[3].status,'inaccessible');assert.equal(j.state,'needs_attention');assert.equal(j.readiness.quality.advisory,true);assert.equal(j.readiness.quality.recommendationCount,0);
+ const s=await setup(t),j=await s.run();assert.deepEqual(s.calls.map(c=>c.id),['editorial','google','tiktok','reddit']);
+ assert.equal(j.draft.status,'draft');assert.equal(j.draft.products.length,6);assert.equal(j.workspace.tasks[2].status,'inaccessible');assert.equal(j.state,'needs_attention');assert.equal(j.readiness.quality.advisory,true);assert.equal(j.readiness.quality.recommendationCount,0);
 });
 test('a source veto is advisory and preserves candidates while other sources finish',async t=>{
- const s=await setup(t,{startSource:async(category,task)=>({result:task.id==='wirecutter'?{...result(),allowed:false,rejectReason:'Publisher is inaccessible',status:'inaccessible',candidates:[]}:result(task.id)})});
+ const s=await setup(t,{startSource:async(category,task)=>({result:task.id==='google'?{...result(),allowed:false,rejectReason:'Publisher is inaccessible',status:'inaccessible',candidates:[]}:result(task.id)})});
  const j=await s.run();assert.equal(j.state,'needs_attention');assert.equal(j.draft.products.length,6);
  assert.equal(j.workspace.tasks[1].status,'needs_review');assert.match(j.workspace.tasks[1].notes,/Publisher is inaccessible/);
  assert.ok(j.workspace.tasks.every(t=>!['queued','searching'].includes(t.status)));
 });
 test('every source declining coverage stays actionable instead of rejected',async t=>{
  const s=await setup(t,{startSource:async()=>({result:{...result(),allowed:false,rejectReason:'No accessible sources',candidates:[],evidence:[]}})});
- const j=await s.run();assert.equal(j.state,'needs_attention');assert.equal(j.draft,null);assert.equal(j.workspace.tasks.length,6);assert.ok(j.workspace.tasks.every(t=>t.status==='needs_review'));
+ const j=await s.run();assert.equal(j.state,'needs_attention');assert.equal(j.draft,null);assert.equal(j.workspace.tasks.length,4);assert.ok(j.workspace.tasks.every(t=>t.status==='needs_review'));
 });
 test('old automatic source rejections resume saved responses without another start',async t=>{
  let polls=0;const s=await setup(t,{pollSource:async()=>{polls++;return {result:{...result(),allowed:false,rejectReason:'No coverage',candidates:[]}};}});
@@ -50,6 +50,27 @@ test('automatic recovery preserves organizer rejections and pauses',async t=>{
   assert.equal((await s.auto.advance()).advanced,false);assert.equal((await s.list()).state,'rejected');
  }
 });
+test('pending editorial work does not block other sources or resume retired provider requests',async t=>{
+ const started=[],polled=[];
+ const s=await setup(t,{
+  startSource:async(category,task)=>{started.push(task.id);return task.id==='editorial'?{pending:true,responseId:'editorial-response'}:{result:result(task.id)};},
+  pollSource:async id=>{polled.push(id);return {pending:true,responseId:id};},
+ });
+ const jobs=await s.store.scope('suggestion-jobs',()=>({jobs:{},budget:{}}));
+ await jobs.transaction(d=>{
+  const j=Object.values(d.jobs)[0];j.workspace=createWorkspace(j.category);
+  j.workspace.tasks.unshift({id:'wirecutter',status:'searching',responseId:'retired-response'});
+  j.workspace.tasks.push({id:'manufacturer',status:'complete',notes:'Historical result'});
+ });
+ await s.auto.advance();
+ assert.deepEqual(started,['editorial','google','tiktok']);
+ await s.auto.advance();
+ const j=await s.list();
+ assert.deepEqual(started,['editorial','google','tiktok','reddit']);
+ assert.deepEqual(polled,[]);
+ assert.equal(j.workspace.tasks.find(t=>t.id==='wirecutter').status,'limited');
+ assert.equal(j.workspace.tasks.find(t=>t.id==='manufacturer').notes,'Historical result');
+});
 test('source-only gaps allow approval once product count and photos are ready',async t=>{
  const s=await setup(t),j=await s.run();
  const products=j.draft.products.map(p=>({...p,image:'https://images.example/photo.jpg'}));
@@ -63,14 +84,14 @@ test('a source retry preserves draft identity, title, photos, order and unrelate
  await s.auto.handle(req('/edit',{key:j.key,id:j.draft.id,title:'Organizer title',category:j.draft.category,customProducts:products,productIds:[]}));
  const count=s.calls.length;assert.equal((await s.auto.handle(req('/retry-source',{key:j.key,source:'tiktok'}))).status,200);
  const after=await s.run(8);assert.deepEqual(s.calls.slice(count).map(c=>c.id),['tiktok']);assert.deepEqual(after.draft.products,products);assert.equal(after.draft.title,'Organizer title');
- assert.equal(after.workspace.tasks[0].attempts,1);assert.equal(after.workspace.tasks[3].attempts,2);
+ assert.equal(after.workspace.tasks[0].attempts,1);assert.equal(after.workspace.tasks[2].attempts,2);
 });
 test('pausing stops processing and resume continues the same saved tasks',async t=>{
  const s=await setup(t);await s.run(1);const j=await s.list();await s.auto.handle(req('/pause-research',{key:j.key}));const count=s.calls.length;await s.run(3);assert.equal(s.calls.length,count);assert.equal((await s.list()).progress.label,'Research paused');
  await s.auto.handle(req('/continue-research',{key:j.key}));assert.equal((await s.run()).draft.status,'draft');
 });
 test('failed source requests reuse an idempotency key and other tasks still complete',async t=>{
- const seen=[];const s=await setup(t,{startSource:async(category,task,w,key)=>{if(task.id==='wirecutter'){seen.push(key);throw new TypeError('Transient failure');}return {result:result(task.id)};}});
+ const seen=[];const s=await setup(t,{startSource:async(category,task,w,key)=>{if(task.id==='google'){seen.push(key);throw new TypeError('Transient failure');}return {result:result(task.id)};}});
  const j=await s.run(30);assert.equal(new Set(seen).size,1);assert.equal(seen.length,3);assert.equal(j.workspace.tasks[1].status,'failed');assert.equal(j.draft.status,'draft');
 });
 test('partial lineups below five remain drafts for review instead of failing source criteria',async t=>{
@@ -87,7 +108,7 @@ test('pin and exclusion affect the proposal only until the organizer applies it'
 });
 test('workspace actions and metrics require organizer access',async t=>{
  const s=await setup(t),j=await s.run();for(const action of ['retry-source','candidate-exclude','research-plan','pause-research','add-source'])assert.equal((await s.auto.handle(req('/'+action,{key:j.key},false))).status,401);
- assert.equal((await s.auto.handle(req('/metrics',null,false))).status,401);const metrics=await(await s.auto.handle(req('/metrics'))).json();assert.equal(metrics.jobs[0].metrics.sourceTasks,6);assert.doesNotMatch(JSON.stringify(metrics),/submittedBy|entries|visitor/);
+ assert.equal((await s.auto.handle(req('/metrics',null,false))).status,401);const metrics=await(await s.auto.handle(req('/metrics'))).json();assert.equal(metrics.jobs[0].metrics.sourceTasks,4);assert.doesNotMatch(JSON.stringify(metrics),/submittedBy|entries|visitor/);
 });
 test('a discovered link alone never becomes an AI content check',()=>{
  const w=createWorkspace('Backpacks'),task=w.tasks[0],e={brand:'A Brand',productName:'Exact Model',url:'https://review.example/model',role:'recommendation',claim:'Recommended for everyday use',passage:'A short supporting passage',query:'best backpack',publishedAt:null};
@@ -100,8 +121,8 @@ test('exact-model failures and TikTok-only links do not satisfy the new evidence
 });
 test('source adapter uses dedicated domain filtering and independent verification requests',async()=>{
  const bodies=[];const provider=createResearch({env:{OPENAI_API_KEY:'test'},fetcher:async(url,options)=>{bodies.push(JSON.parse(options.body));return Response.json({id:'response-1',status:'in_progress'});}}),w=createWorkspace('Backpacks');
- await provider.startSource('Backpacks',w.tasks[1],w,'key');assert.deepEqual(bodies[0].tools[0].filters.allowed_domains,['nytimes.com','thewirecutter.com']);assert.match(bodies[0].instructions,/Explicitly search Wirecutter/);
- await provider.startSource('Backpacks',w.tasks[3],w,'key2');assert.deepEqual(bodies[1].tools[0].filters.allowed_domains,['tiktok.com']);
+ await provider.startSource('Backpacks',w.tasks[0],w,'key');assert.equal(bodies[0].tools[0].filters,undefined);assert.match(bodies[0].instructions,/Wirecutter is optional/);
+ await provider.startSource('Backpacks',w.tasks[2],w,'key2');assert.deepEqual(bodies[1].tools[0].filters.allowed_domains,['tiktok.com']);
 });
 
 test('Reddit searches original discussions with a one-result preference and optional coverage',async()=>{

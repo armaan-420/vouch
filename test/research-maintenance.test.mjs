@@ -18,3 +18,19 @@ test('Google positions come only from returned organic results with region/query
  const r=await captureGoogleResults({category:'Backpacks',scope:'everyday backpacks',apiKey:'test-key',now:()=>0,fetcher:async url=>{assert.match(url,/serpapi.com/);return Response.json({organic_results:[{position:2,link:'https://review.example/best',title:'Best picks'},{position:1,link:'http://localhost/private',title:'Invalid'}]});}});
  assert.equal(r.status,'captured');assert.equal(r.captures.length,2);assert.deepEqual(r.captures[0].results,[{position:2,url:'https://review.example/best',title:'Best picks'}]);assert.equal(r.captures[0].region,'US');assert.equal(r.captures[0].capturedAt,'1970-01-01T00:00:00.000Z');
 });
+
+test('a hosted pass waits for a saved source retry that fits its remaining time',async()=>{
+ const {runSuggestions}=await import('../lib/auto-experiments/runner.mjs');
+ let now=1000;
+ const job={state:'researching',nextAttemptAt:31000};
+ const records={'suggestion-jobs':{jobs:{test:job}},'suggestion-runner':{}};
+ const store={scope:async name=>({read:async()=>records[name],transaction:async fn=>fn(records[name])})};
+ const auto={advance:async()=>{
+  if(job.state!=='researching'||now<job.nextAttemptAt)return {advanced:false};
+  job.state='needs_attention';return {advanced:true};
+ }};
+ const result=await runSuggestions({store,auto,now:()=>now,maxMs:50000,sleep:async ms=>{now+=ms;}});
+ assert.equal(result.steps,1);
+ assert.equal(result.active,0);
+ assert.equal(now,31000);
+});

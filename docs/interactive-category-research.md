@@ -4,7 +4,7 @@ Category suggestions build private drafts. Research is now a saved workspace wit
 
 ## Review policy
 
-Source breadth, exact-model checks, independent editorial support and official model/availability checks guide review. Missing sources, inaccessible publishers, unverified trends and fewer than three checked editorial publishers are warnings. They do not fail a draft or block approval. Approval still requires five distinct brands, a photo for every selected product, and an explicit organizer action. An automatic research result never publishes a category.
+Source breadth, exact-model checks, independent editorial support guide review. Missing sources, inaccessible publishers, unverified trends and fewer than three checked editorial publishers are warnings. They do not fail a draft or block approval. Approval still requires five distinct brands, a photo for every selected product, and an explicit organizer action. An automatic research result never publishes a category.
 
 A partial lineup with fewer than five products remains a private draft for editing. If no suitable products are found, the suggestion needs attention and offers manual lineup creation; the system does not invent products to make a draft.
 
@@ -13,13 +13,11 @@ Individual sources cannot reject a category. A source returning `allowed=false` 
 ## Source tasks
 
 - Independent editorial: seek original recommendations across at least three publishers.
-- Wirecutter: explicitly search the original publisher; record missing coverage or access limits.
 - Google discovery: seek leading review sources. Without `SERPAPI_API_KEY`, use general web discovery and explicitly show that Google positions were not captured. With the optional server-only key, record up to ten organic US results for each of two queries, including region, query, capture time and observed position. This is not a product-quality ranking.
 - TikTok & trends: seek original dated content. A mention is not proof of a trend; record sampling, access and sponsorship limitations. No TikTok Research API access is assumed.
-- Reddit discussions: explicitly search original threads/comments. Prefer one useful exact-model recommendation, allow at most two candidates/evidence records, and accept zero when no relevant original discussion is accessible. Save dates, ownership context and disagreement; treat Reddit as community anecdotes rather than editorial testing or consensus. Existing saved plans keep their original tasks until the organizer starts a new research revision.
-- Manufacturer checks: establish exact model, variant and availability; manufacturer marketing is not independent endorsement.
+- Reddit discussions: explicitly search original threads/comments. Prefer one useful exact-model recommendation, allow at most two candidates/evidence records, and accept zero when no relevant original discussion is accessible. Save dates, ownership context and disagreement; treat Reddit as community anecdotes rather than editorial testing or consensus.
 
-Source tasks are independent background Responses requests using the existing configured model (default `gpt-5.4`). Wirecutter, TikTok and Reddit use domain filters. A second pass explicitly opens batches of up to six original source URLs and checks exact-model and claim support. A URL appearing in search metadata alone is never an AI content check. The UI distinguishes link recorded, page opened, AI content checked and organizer checked. AI checks remain fallible and carry the actual passage and limitations for review.
+Source tasks are independent background Responses requests using the existing configured model (default `gpt-5.4`). Up to three independent sources advance together. TikTok and Reddit use domain filters. General editorial search may include Wirecutter when it can retrieve the original article and verify an exact-model claim. Dedicated Wirecutter and manufacturer tasks are retired; old completed evidence is kept and pending retired tasks are skipped. A second pass explicitly opens batches of up to six original source URLs and checks exact-model and claim support. A URL appearing in search metadata alone is never an AI content check. The UI distinguishes link recorded, page opened, AI content checked and organizer checked. AI checks remain fallible and carry the actual passage and limitations for review.
 
 The initial cycle allows up to 16 model requests, 60,000 observed output tokens and 30 minutes. Each model request caps output at 6,000 tokens and tools at six calls. Limits are bounds on work, not a dollar estimate. Reaching a limit preserves candidates and marks remaining checks for review. Explicit source repairs create a fresh bounded cycle; they do not run indefinitely. The existing Eastern-day category start budget remains in place.
 
@@ -39,7 +37,7 @@ Read-only organizer metrics are available at `/api/admin/suggestions/metrics`. T
 
 ## Unattended processing
 
-The durable job workspace, leases and saved provider request IDs remain in D1. Request starts have saved idempotency keys. Short runner invocations wait for imminent saved polls within their bounded execution window. New suggestions get a request-context kickoff where supported. GitHub Actions remains a fallback, now allowing up to 17.5 minutes of queue advancement per invocation; its cron configuration is not a timing guarantee.
+The durable job workspace, leases and saved provider request IDs remain in D1. Request starts have saved idempotency keys. Runner invocations wait for saved polls and retries that fit within their execution window. The Worker requests a one-minute cron, subject to hosting support; the protected GitHub fallback and scheduled Worker run up to 50 seconds of steps per pass. New suggestions get a request-context kickoff where supported. GitHub Actions remains a fallback, now allowing up to 17.5 minutes of queue advancement per invocation; its cron configuration is not a timing guarantee.
 
 The Site exposes two organizer-only MCP maintenance tools, `vouch_research_status` and `vouch_process_research`, for a linked cloud recovery schedule. Sites authenticates requests; tool execution additionally requires a verified caller email in the existing `ADMIN_EMAILS` allowlist and a Site-scoped authenticated user ID. Public discovery lists only tool schemas. The maintenance tools cannot create suggestions, approve drafts or publish categories. They return aggregate health only. A schedule must be registered and its authenticated access verified separately after deployment.
 

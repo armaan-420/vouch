@@ -10,3 +10,27 @@ test('drafts cannot contribute fake activity to product totals',async t=>{const 
 test('inventory is not capped at sixty products and contains no browser/session records',async t=>{const f=await fixture(t),products=Array.from({length:75},(_,i)=>({id:'sku-test-'+i,brand:'Brand '+i,name:'Model '+i}));f.registry.experiments.sunscreen.products=products;await f.store.transaction(d=>{d.baseVotes=Object.fromEntries(products.map(p=>[p.id,{'private-browser-id':'yes'}]));});const result=await adminInventory(f);assert.equal(result.products.filter(p=>p.voteCounts.total).length,75);assert.doesNotMatch(JSON.stringify(result),/private-browser-id|baseVotes|latest|sessions/);});
 test('inventory endpoint requires organizer authorization and preserves tag metadata',async t=>{const f=await fixture(t),registry=await f.store.scope('experiment-registry',initialRegistry);await registry.transaction(d=>Object.assign(d,f.registry));const tags=await f.store.scope('product-tags',initialTags);await tags.transaction(d=>{d.products[shoe.id]={category:'Running shoes',tagIds:['value']};});const api=createExperimentApi({store:f.store,search:{search:async()=>({products:[]}),find:async()=>null},authorizeAdmin:r=>r.headers.get('x-admin')==='yes'});assert.equal((await api(new Request('http://localhost/api/admin/inventory'))).status,401);const r=await api(new Request('http://localhost/api/admin/inventory',{headers:{'x-admin':'yes'}}));assert.equal(r.status,200);const row=(await r.json()).products.find(p=>p.id===shoe.id);assert.equal(row.category,'Running shoes');assert.deepEqual(row.tagIds,['value']);});
 test('reviewed community products outside the SKU registry can still have tags saved',async t=>{const f=await fixture(t),product={id:'sku-community-tag',brand:'Community',name:'Community sunscreen'};await f.store.transaction(d=>{d.nominations=[{key:'catalog:sku-community-tag',name:product.name,visitorId:'a',product,createdAt:'2026-11-01T00:00:00Z'}];d.reviews={'catalog:sku-community-tag':{canonicalKey:'catalog:sku-community-tag',canonicalName:product.name,product}};d.communityVotes={'community-catalog:sku-community-tag':{a:'yes'}};});const reg=await f.store.scope('experiment-registry',initialRegistry);await reg.transaction(d=>Object.assign(d,f.registry));const api=createExperimentApi({store:f.store,search:{search:async()=>({products:[]}),find:async()=>null},authorizeAdmin:()=>true});const r=await api(new Request('http://localhost/api/admin/product-tags',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId:product.id,category:'Sunscreen',tagIds:['value']})}));assert.equal(r.status,200);assert.deepEqual((await r.json()).tagIds,['value']);});
+
+test('organizer inventory includes standalone public Vouches and keeps product reviews separate from Edit votes',async t=>{
+ const f=await fixture(t);
+ const sony={id:'c3-sony',provider:'channel3',providerId:'sony',name:'Bravia 7',brand:'Sony',category:'Televisions'};
+ const hidden={id:'private-tv',name:'Private television'};
+ const review=(product,visibility='public')=>({productId:product.id,product,source:'search',visibility,verdict:'yes',comment:'private-comment'});
+ const records=await f.store.scope('accounts-v1',()=>({accounts:{},products:{}}));
+ await records.transaction(d=>{
+  d.accounts['private-account-id']={visibility:'public',opinions:{sony:review(sony),shoe:review(shoe),hidden:review(hidden,'private')}};
+ });
+ await f.store.transaction(d=>{d.baseVotes={[shoe.id]:{visitor:'no'}}});
+ const result=await adminInventory(f);
+ const tv=result.products.find(p=>p.id===sony.id);
+ assert.equal(tv.category,'Televisions');
+ assert.equal(tv.reviewCounts.yes,1);
+ assert.equal(tv.voteCounts.total,0);
+ assert.deepEqual(tv.experiments,[]);
+ const runner=result.products.find(p=>p.id===shoe.id);
+ assert.equal(runner.reviewCounts.yes,1);
+ assert.equal(runner.voteCounts.pass,1);
+ assert.equal(result.experiments.find(e=>e.id==='sunscreen').votes,1);
+ assert.ok(!result.products.some(p=>p.id===hidden.id));
+ assert.doesNotMatch(JSON.stringify(result),/private-account-id|private-comment/);
+});

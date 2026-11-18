@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 test('Board people load in one batch and errors remain distinct from zero endorsers',async()=>{
  const source=await fs.readFile(new URL('../public/app.js',import.meta.url),'utf8');
- const start=source.indexOf('async function mountBoardPeople()'),end=source.indexOf("\ndocument.addEventListener('click'",start);
+ const start=source.indexOf('async function mountBoardPeople('),end=source.indexOf("\ndocument.addEventListener('click'",start);
  const controller=source.slice(start,end);
  let fail=false,calls=0,retry;
  const hosts=['one','two'].map(id=>({dataset:{boardPeople:id,path:'/products/'+id},isConnected:true,innerHTML:'',setAttribute(){},querySelector(){return {set onclick(fn){retry=fn}}}}));

@@ -162,3 +162,59 @@ test('saved-email Wharton participant verifies their name and appears automatica
  const board=(await participant('/api/community-leaderboard')).data;assert.equal(board.viewer.requiresSignup,false);assert.equal(board.total,1);assert.equal(board.viewer.entry.displayName,'Wharton Preview');assert.equal(board.viewer.entry.count,products.length);
  assert.equal((await observer('/api/profiles/'+board.viewer.entry.handle)).status,200);
 });
+
+test('Wharton intro is offered only to a new profile and either exit persists across browsers',async t=>{
+ const {browser,advanceAuth}=await fixture(t);
+ for(const exit of ['intro_done','intro_skipped']){
+  const email=exit+'@wharton.upenn.edu',first=browser();
+  await signin(first,email);
+  const signup=async client=>{
+   const {data: {claimToken}}=await client('/api/account/edit');
+   return client('/api/account/signup',{displayName:'Pilot Member',email,claimToken,whartonPilot:true});
+  };
+  const created=await signup(first);
+  assert.equal(created.status,200,JSON.stringify(created.data));
+  assert.equal(created.data.pilotIntro,true);
+  assert.equal(created.data.profile.introSeenAt,null);
+  const saved=await first('/api/account/pilot-intro',{});
+  assert.equal(saved.status,200);
+  assert.ok(saved.data.introSeenAt);
+  assert.equal((await first('/api/pilot-events',{type:exit,step:exit==='intro_done'?3:1})).status,204);
+  const other=browser();advanceAuth();await signin(other,email);
+  assert.equal((await other('/api/account/me')).data.profile.introSeenAt,saved.data.introSeenAt);
+  assert.equal((await signup(other)).data.pilotIntro,false);
+  const publicProfile=await other('/api/profiles/'+created.data.profile.handle);
+  assert.equal(publicProfile.data.profile.introSeenAt,undefined);
+ }
+});
+
+test('public share pages recheck picks privacy and attribute signup through the referral cookie',async t=>{
+ const {WATER_BOTTLES}=await import('../lib/water-bottles.mjs');
+ const {browser}=await fixture(t),admin=browser(),sharer=browser(),recipient=browser();
+ await admin('/api/admin/experiments',{id:'bottles-pilot',title:'Wharton bottles',category:'Water bottles',productIds:WATER_BOTTLES.map(p=>p.id)});
+ async function sign(client,email,name){
+  await signin(client,email);
+  const {data:{claimToken}}=await client('/api/account/edit?experiment=bottles-pilot');
+  const response=await client('/api/account/signup?experiment=bottles-pilot',{displayName:name,email,whartonPilot:true,claimToken});
+  assert.equal(response.status,200);
+  return response.data.profile;
+ }
+ const owner=await sign(sharer,'pilot-owner@wharton.upenn.edu','Pilot Sharer');
+ const link='/share/picks/'+owner.handle+'?ref='+owner.handle;
+ assert.equal((await recipient(link)).status,404);
+ assert.equal((await sharer('/api/events?experiment=bottles-pilot',{type:'answer',productId:WATER_BOTTLES[0].id,value:'yes',comment:'Omit comments from share pages'})).status,200);
+ const {data:card}=await sharer('/api/pilot-share/picks');
+ assert.equal(card.link,link);
+ const opened=await recipient(link);
+ assert.equal(opened.status,200);
+ assert.match(opened.data,/property="og:title"/);
+ assert.match(opened.data,/Join the Wharton experiments/);
+ assert.doesNotMatch(opened.data,/Omit comments|@wharton.upenn.edu/);
+ await sign(recipient,'pilot-recipient@wharton.upenn.edu','Pilot Recipient');
+ const {data:report}=await admin('/api/admin/pilot-metrics');
+ const metrics=Object.fromEntries(report.reports.all.sections.flatMap(s=>s.metrics).map(m=>[m.key,m.value]));
+ assert.equal(metrics['share-opens'],1);
+ assert.equal(metrics['share-signups'],1);
+ await sharer('/api/account/profile',{visibility:'private'});
+ assert.equal((await recipient(link)).status,404);
+});

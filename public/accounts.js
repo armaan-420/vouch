@@ -278,13 +278,18 @@
         <div class="contributor-overview">
           <div class="contributor-heading">
             <p class="eyebrow">THE PEOPLE BEHIND THE PICKS</p>
-            <h1>Wharton leaderboard</h1>
+            <div class="pilot-leaderboard-title"><h1>Wharton leaderboard</h1><span data-leaderboard-share></span></div>
             <p class="account-intro">See who's vouching for what, and who to ask before you buy.</p>
             ${categories.length&&top.length?topContributorsStrip(top):''}
           </div>
           ${whoToAskCard(categories)}
         </div>
         <div class="contributor-main">${viewer.entry&&!data.entries.some(r=>r.isYou)?`<aside class="contributor-your-place" aria-label="Your position"><p class="eyebrow">YOUR PLACE</p><ol class="contributor-list">${contributorRow(viewer.entry)}</ol></aside>`:''}<div class="contributor-table-heading" id="leaderboard-rankings" tabindex="-1" role="group" aria-label="Leaderboard rankings"><span>Contributor</span><span>Public vouches</span></div><ol class="contributor-list" aria-label="Wharton contributors ranked by public vouches">${data.entries.map(contributorRow).join('')}</ol>${!data.entries.length?`<div class="contributor-empty"><span aria-hidden="true"><img src="/brand/vouch-emblem.svg" alt="" class="brand-emblem"></span><h2>${data.total?'No contributors on this page':'Be one of the first'}</h2><p>${data.total?'Return to the previous page to see contributors.':'The first shared recommendations start here. Join to help others discover your picks.'}</p></div>`:''}<nav class="contributor-pagination" aria-label="Leaderboard pages">${offset?'<button class="profile-outline" data-previous>← Previous</button>':''}${data.hasMore?'<button class="profile-outline" data-next>Next →</button>':''}</nav></div></div>`);
+      if(data.total>=3&&window.VouchShare){
+        const trigger=window.VouchShare.button();
+        trigger.addEventListener('click',()=>window.VouchShare.open(trigger,{kind:'leaderboard'}));
+        root.querySelector('[data-leaderboard-share]').append(trigger);
+      }
       const rankings=root.querySelector('#leaderboard-rankings');
       const strip=root.querySelector('.contributor-top-strip');
       if(strip)stopMeasuringTopStrip=wireTopContributors(strip,rankings,top);
@@ -673,13 +678,22 @@
       }catch(error){saving=false;message.textContent=error.message;paintVoteBar(true)}
     }
     paintVoteBar();
-    loadWhereToBuy(id,p,root.querySelector('[data-item-buy]'));
+    const buy=root.querySelector('[data-item-buy]');
+    const pilotEdit=data.pilotExperimentId;
+    if(pilotEdit){
+      const trackBuy=event=>{
+        if(event.target.closest('.item-buy,#item-buy-offers a')&&(event.type!=='auxclick'||event.button===1))window.VouchPilot.track('buy_click',{experimentId:pilotEdit,productId:id});
+      };
+      buy?.addEventListener('click',trackBuy);
+      buy?.addEventListener('auxclick',trackBuy);
+    }
+    loadWhereToBuy(id,p,buy);
     loadItemCategoryPicks(picksHost,p,requestedId,!!data.newToVouch);
     if(pendingProductVouch?.id===id){me=await request('/api/account/me');if(me.authenticated&&!me.browserProfile&&!me.profile?.browserProfile)await save(pendingProductVouch.verdict);else{auth=await request('/api/auth/status');renderAnonymous();return;}}
     wireProductTags(id,data);
     if(location.hash==='#item-people')root.querySelector('#item-people')?.scrollIntoView({block:'start'});
   }
   function pendingPicks(){const current=new Map((me?.profile?.opinions||[]).map(o=>[o.productId,o]));return (edit?.opinions||[]).filter(o=>o.claimable!==false&&(!current.has(o.productId)||current.get(o.productId).updatedAt<o.updatedAt));}
-  async function load(){if(location.pathname.startsWith('/community-leaderboard')){await renderLeaderboard(0,{restoreFragment:true});return}if(verificationToken){shell(`${topLine()}<h1>Verify your email.</h1><p>Confirm this email address and sign in to your Vouch account.</p><button type="button" class="primary" id="confirm-email-link">Verify email and sign in</button>${statusMarkup()}`);root.querySelector('#confirm-email-link').onclick=async event=>{event.target.disabled=true;try{await request('/api/auth/verify-email',{token:verificationToken});verificationToken=null;clearAttempt();await load();}catch(error){event.target.disabled=false;failure(error);}};return;}window.VouchSiteNav?.refreshAccount();try{const parts=location.pathname.split('/').filter(Boolean);if(parts[0]==='profiles'){const data=await request('/api/profiles/'+encodeURIComponent(decodeURIComponent(parts.slice(1).join('/'))));renderProfile(data.profile,false);return}if(parts[0]==='products'){await renderProduct(decodeURIComponent(parts.slice(1).join('/')));return}me=await request('/api/account/me');auth=await request('/api/auth/status');edit=null;if(experimentId||!me.authenticated||params.get('review')==='1'||!me.profile)edit=await request('/api/account/edit'+experimentQuery);if(me.profile?.verificationRequired){if(challenge&&authEmail!==me.profile.email)clearAttempt();if(challenge)renderAnonymous();else renderPendingVerification();return}if(!me.authenticated){renderAnonymous();return}if(edit&&!me.profile){if(!auth?.identity?.email){renderAnonymous();return}renderSignup();return}if(edit&&params.get('review')==='1'){renderReview();return}if(!me.profile){edit={opinions:[],counts:{yes:0,no:0,brand:0},claimToken:null};renderReview();return}renderProfile(me.profile,true)}catch(error){failure(error)}}
+  async function load(){if(location.pathname.startsWith('/community-leaderboard')){await renderLeaderboard(0,{restoreFragment:true});return}if(verificationToken){shell(`${topLine()}<h1>Verify your email.</h1><p>Confirm this email address and sign in to your Vouch account.</p><button type="button" class="primary" id="confirm-email-link">Verify email and sign in</button>${statusMarkup()}`);root.querySelector('#confirm-email-link').onclick=async event=>{event.target.disabled=true;try{await request('/api/auth/verify-email',{token:verificationToken});verificationToken=null;clearAttempt();await load();}catch(error){event.target.disabled=false;failure(error);}};return;}window.VouchSiteNav?.refreshAccount();try{const parts=location.pathname.split('/').filter(Boolean);if(parts[0]==='profiles'){const data=await request('/api/profiles/'+encodeURIComponent(decodeURIComponent(parts.slice(1).join('/'))));renderProfile(data.profile,false);return}if(parts[0]==='products'){await renderProduct(decodeURIComponent(parts.slice(1).join('/')));return}me=await request('/api/account/me');auth=await request('/api/auth/status');edit=null;if(experimentId||!me.authenticated||params.get('review')==='1'||!me.profile)edit=await request('/api/account/edit'+experimentQuery);if(me.profile?.verificationRequired){if(challenge&&authEmail!==me.profile.email)clearAttempt();if(challenge)renderAnonymous();else renderPendingVerification();return}if(!me.authenticated){renderAnonymous();return}if(edit&&!me.profile){if(!auth?.identity?.email){renderAnonymous();return}renderSignup();return}if(edit&&params.get('review')==='1'){renderReview();return}if(!me.profile){edit={opinions:[],counts:{yes:0,no:0,brand:0},claimToken:null};renderReview();return}if(params.get('visibility')==='1')renderOpinionSettings(me.profile,false);else renderProfile(me.profile,true)}catch(error){failure(error)}}
   load();
 })();

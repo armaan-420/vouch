@@ -15,6 +15,7 @@ try{
   if(await page.locator('code').count()){
    const code=await page.locator('code').textContent();await page.locator('#wharton-code').fill(code);await page.locator('#wharton-verify button').click();
   }
+  await page.locator('.pilot-intro').getByRole('button',{name:'Skip',exact:true}).click();
   await page.locator('.wharton-category[href]').first().waitFor();
   assert.equal(await page.locator('.wharton-category').count(),3);assert.equal(await page.locator('.wharton-category[href]').filter({hasText:'Lip balm'}).count(),1);assert.equal(await page.locator('.wharton-category.is-upcoming').filter({hasText:'Carry-on luggage'}).count(),1);assert.equal(await page.getByText('Only recommend what you’ve actually tried.',{exact:true}).count(),0);assert.equal(await page.getByRole('link',{name:'Your collection'}).count(),0);
   assert.equal(await page.locator('.wharton-story').isVisible(),false);

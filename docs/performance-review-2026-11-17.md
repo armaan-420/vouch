@@ -1,5 +1,7 @@
 # Performance review — November 17, 2026
 
+**November 17 deployment update.** The changes below shipped in Sites version 121. The controlled results below remain synthetic. Production latency has yet to be measured.
+
 ## Implemented
 
 - `lib/discovery-search.mjs`: read registry and tags together; read public category states in batches of six instead of sequentially. Merge in registry order to preserve metadata and vote tie handling. Release each batch's raw state before loading the next. Discovery also loads preferences alongside inventory.

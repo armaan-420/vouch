@@ -1,5 +1,7 @@
 # Global search implementation — November 17, 2026
 
+**November 17 deployment update.** The search implementation described below is included in deployed Sites version 121. The publication blocker and test environment notes below document the earlier implementation session.
+
 Implementation is local. Production publication is **blocked**, not complete.
 Armaan authorized production on November 17. Current Sites version remains 108;
 no new version was saved or deployed during this work.

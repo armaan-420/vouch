@@ -1,5 +1,7 @@
 # Product details and quick tags
 
+**November 17 deployment update.** Version 121 places verdict controls on the photo, offers retailer comparison on demand, and shows related rated products where there are at least two. The purchase card keeps the direct link if offers are unavailable. See the [release notes](releases/2026-11-17-v121.md).
+
 Implemented November 12, 2026. Product links on each collection board open `/products/<canonical-id>?experiment=<collection-id>`. The page shows the source board’s score in a circle filled to score / 10, with the same ranking thresholds and colors (green ≥8, black ≥6.5, yellow ≥5, red below 5). Score and counts come from that collection, not public account-opinion counts. Empty/unavailable results are distinct. Consenting public item-vouch identities appear as compact initials linking to profiles; hidden names remain anonymous. Images retain manual gallery controls. Buy now uses the product’s HTTPS merchant URL.
 
 Desktop/tablet information and image share a grid row height. The purchase action stays at the bottom; expanded disclosures grow both columns. Phones stack the content.

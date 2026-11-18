@@ -1,5 +1,7 @@
 # Wharton experiment — local implementation
 
+**November 17 deployment update.** The Wharton entry and category journey are included in deployed Sites version 121. The instructions and validation below describe the original isolated preview.
+
 Built November 17, 2026 on branch `local/wharton-people-experiment` from `00a8713`. Local only: no push, Sites save, deployment, Notion write, production migration or live visitor changes.
 
 ## Open the preview

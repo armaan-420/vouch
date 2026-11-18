@@ -69,7 +69,7 @@ function initial(name) {return Array.from((name||'').trim())[0]?.toUpperCase()||
 function product(ctx,img,name,x,y,w,h,colors) {
   box(ctx,x,y,w,h,32,colors.paper,colors.line);
   if(img)fit(ctx,img,x+22,y+22,w-44,h-44);
-  else text(ctx,initial(name),x+w/2,y+h/2+h*.13,{font:serif,size:Math.min(w,h)*.42,color:colors.olive,align:'center'});
+  else text(ctx,initial(name),x+w/2,y+h/2+h*.13,{font:serif,size:Math.min(w,h)*.42,color:colors.oliveText,align:'center'});
 }
 
 function avatar(ctx,img,name,cx,cy,r,colors,stroke=colors.paper) {
@@ -77,7 +77,7 @@ function avatar(ctx,img,name,cx,cy,r,colors,stroke=colors.paper) {
   ctx.beginPath();
   ctx.arc(cx,cy,r,0,Math.PI*2);
   ctx.clip();
-  ctx.fillStyle=colors.olive;
+  ctx.fillStyle=colors.oliveText;
   ctx.fillRect(cx-r,cy-r,2*r,2*r);
   if(img){
     const scale=2*r/Math.min(img.naturalWidth,img.naturalHeight);
@@ -110,7 +110,7 @@ async function drawPicks(ctx,card,colors) {
     product(ctx,images[i],row.name,inset,y,176,176,colors);
     const x=inset+204,maxWidth=width-inset-x;
     const lineHeight=text(ctx,row.name,x,y+63,{size:43,weight:700,color:colors.ink,maxWidth});
-    text(ctx,row.category+' · '+(row.others?'+ '+row.others+' classmates':'First to vouch'),x,y+79+lineHeight,{size:30,color:colors.olive,maxWidth});
+    text(ctx,row.category+' · '+(row.others?'+ '+row.others+' classmates':'First to vouch'),x,y+79+lineHeight,{size:30,color:colors.oliveText,maxWidth});
   });
   const y=630+card.rows.length*spacing;
   ctx.font='500 48px '+sans;
@@ -128,9 +128,27 @@ async function drawWinner(ctx,card,colors) {
   text(ctx,'Vouched by '+row.count+' classmates',inset+(row.people.length?row.people.length*75+44:0),1582,{size:36,color:colors.paper});
 }
 
+async function drawLeaderboard(ctx,card,colors) {
+  const images=await Promise.all(card.rows.map(row=>image(row.photo)));
+  let y=543;
+  for(const [i,row] of card.rows.entries()){
+    if(row.separate)y+=28;
+    const w=width-2*inset;
+    box(ctx,inset,y,w,146,24,row.isYou?colors.lime:colors.paper,row.isYou?null:colors.line);
+    text(ctx,String(row.rank),inset+50,y+88,{size:43,font:serif,color:colors.ink,align:'center'});
+    avatar(ctx,images[i],row.name,inset+137,y+73,42,colors,row.isYou?colors.lime:colors.paper);
+    ctx.font='700 40px '+sans;
+    const lines=wrap(ctx,row.name,565);
+    text(ctx,row.name,inset+203,y+(lines.length===2?64:87),{size:40,weight:700,color:colors.ink,maxWidth:565});
+    text(ctx,String(row.count),width-inset-28,y+88,{size:40,weight:700,color:colors.ink,align:'right'});
+    y+=163;
+  }
+  text(ctx,'Public vouches',inset,y+54,{size:36,color:colors.oliveText});
+}
+
 export async function makeCard(card) {
   const styles=getComputedStyle(document.documentElement);
-  const colors=Object.fromEntries(Object.entries({paper:'--paper',ink:'--ink',lime:'--green',olive:'--pilot-olive',line:'--line'}).map(([key,token])=>[key,styles.getPropertyValue(token).trim()]));
+  const colors=Object.fromEntries(Object.entries({paper:'--paper',ink:'--ink',lime:'--green',olive:'--pilot-olive',oliveText:'--pilot-olive-text',line:'--line'}).map(([key,token])=>[key,styles.getPropertyValue(token).trim()]));
   const [logo]=await Promise.all([image(emblem),document.fonts.load("400 104px 'Instrument Serif'"),document.fonts.load("400 36px 'DM Sans'"),document.fonts.load("700 43px 'DM Sans'")]);
   const canvas=document.createElement('canvas');
   canvas.width=width;canvas.height=height;
@@ -140,9 +158,10 @@ export async function makeCard(card) {
   ctx.fillStyle=dark?colors.ink:colors.paper;
   ctx.fillRect(0,0,width,height);
   if(logo)ctx.drawImage(logo,inset,81,104,104);
-  text(ctx,card.eyebrow,inset,263,{size:34,weight:700,color:dark?colors.lime:colors.olive,maxWidth:width-2*inset});
+  text(ctx,card.eyebrow,inset,263,{size:34,weight:700,color:dark?colors.lime:colors.oliveText,maxWidth:width-2*inset});
   text(ctx,card.headline,inset,391,{size:104,font:serif,color:dark?colors.paper:colors.ink,maxWidth:width-2*inset});
   if(dark)await drawWinner(ctx,card,colors);
+  else if(card.kind==='leaderboard')await drawLeaderboard(ctx,card,colors);
   else await drawPicks(ctx,card,colors);
   footer(ctx,logo,colors,dark);
   return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(Error('Could not make this image.')),'image/png'));
@@ -150,6 +169,7 @@ export async function makeCard(card) {
 
 export function cardAlt(card) {
   if(card.kind==='winner')return `Share card: ${card.title}, ${card.winner.name}, vouched by ${card.winner.count} classmates`;
+  if(card.kind==='leaderboard')return 'Share card: Wharton leaderboard, '+card.rows.map(row=>`${row.rank}. ${row.name}, ${row.count} public vouches`).join('; ');
   const [first,...rest]=card.rows;
   return `Share card: ${card.title}, ${first.name}${rest.length?' and '+rest.length+' more':''}`;
 }

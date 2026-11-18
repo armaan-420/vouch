@@ -1,4 +1,4 @@
-:root{--pilot-olive:var(--olive)}
+:root{--pilot-olive:var(--olive);--pilot-olive-text:color-mix(in srgb,var(--pilot-olive) 88%,var(--ink))}
 .pilot-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border:1px solid var(--ink);border-radius:10px;background:var(--ink);color:var(--paper);font-weight:700;text-align:center;text-decoration:none}
 .pilot-button.is-outline{background:transparent;color:var(--ink);border-color:var(--line)}
 .pilot-button:focus-visible,.pilot-intro :focus-visible{outline:3px solid var(--pilot-olive);outline-offset:4px}
@@ -80,7 +80,7 @@
 .pilot-share-page h1{font:400 clamp(2.4rem,8vw,4rem)/1 'Instrument Serif',serif}
 .pilot-share-list,.pilot-share-vouchers{list-style:none;margin:0;padding:0}
 .pilot-share-list li{display:flex;align-items:center;gap:12px;border-top:1px solid var(--line);padding:12px 0}
-.pilot-share-list p{margin:4px 0 0;color:var(--olive,var(--pilot-olive))}
+.pilot-share-list p{margin:4px 0 0;color:var(--pilot-olive-text)}
 .pilot-share-list img,.pilot-share-placeholder{width:62px;height:62px;object-fit:contain;flex:none;border:1px solid var(--line);border-radius:8px}
 .pilot-share-placeholder{display:grid;place-items:center;font:400 2rem 'Instrument Serif',serif}
 .pilot-share-winner{margin:16px 0}
@@ -90,3 +90,9 @@
 .pilot-share-vouchers li{margin-left:-8px}
 .pilot-share-vouchers img,.pilot-share-vouchers span{display:grid;place-items:center;width:48px;height:48px;object-fit:cover;border:2px solid var(--paper);border-radius:50%;background:var(--line)}
 @media(max-width:767px){.pilot-share-dialog{position:fixed;inset:auto 0 0;margin:0;width:100%;max-width:none;max-height:calc(100dvh - 12px);border-radius:18px 18px 0 0;padding-bottom:max(20px,env(safe-area-inset-bottom))}}
+.pilot-leaderboard-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pilot-leaderboard-title h1{min-width:0}
+.pilot-leaderboard-title [data-leaderboard-share]:empty{display:none}
+.pilot-share-ranks li>span:first-child{min-width:2ch;text-align:center}
+.pilot-share-ranks .pilot-share-count{margin-left:auto;font-variant-numeric:tabular-nums}
+.pilot-share-ranks img,.pilot-share-ranks .pilot-share-placeholder{width:42px;height:42px;border-radius:50%;object-fit:cover}

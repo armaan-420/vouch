@@ -10,12 +10,14 @@
   }
 
   async function open(trigger,{kind,experimentId}) {
+    const {showPilotDialog}=await import('/pilot-dialog.js');
     if(document.querySelector('.pilot-share-dialog[open]'))return;
-    const path=kind==='picks'?'picks':'board/'+encodeURIComponent(experimentId);
+    const path=kind==='winner'?'board/'+encodeURIComponent(experimentId):kind;
+    const title={picks:'Share your picks',winner:'Share the Board',leaderboard:'Share the leaderboard'}[kind];
     const dialog=document.createElement('dialog');
     dialog.className='pilot-dialog pilot-share-dialog';
     dialog.setAttribute('aria-labelledby','pilot-share-heading');
-    dialog.innerHTML=`<div class="pilot-share-top"><h2 id="pilot-share-heading">Share your ${kind==='picks'?'picks':'Board'}</h2>
+    dialog.innerHTML=`<div class="pilot-share-top"><h2 id="pilot-share-heading">${title}</h2>
       <button type="button" class="pilot-dismiss text-button" aria-label="Close share sheet" autofocus>×</button></div>
       <p role="status">Making your card…</p><div class="pilot-share-body" hidden>
       <img class="pilot-share-preview" width="1080" height="1920" alt="">
@@ -24,14 +26,8 @@
       <button type="button" class="pilot-button is-outline" data-copy>Copy link</button></div></div>`;
     const status=dialog.querySelector('[role="status"]'),dismiss=dialog.querySelector('[autofocus]');
     let object;
-    dialog.addEventListener('close',()=>{
-      if(object)URL.revokeObjectURL(object);
-      dialog.remove();
-      if(trigger.isConnected)trigger.focus();
-    },{once:true});
     dismiss.addEventListener('click',()=>dialog.close());
-    document.body.append(dialog);
-    dialog.showModal();
+    showPilotDialog(dialog,trigger,()=>{if(object)URL.revokeObjectURL(object);});
     const track=method=>window.VouchPilot.track('share_created',{kind,method,experimentId});
     try{
       const [cards,response]=await Promise.all([import('/share-cards.js'),fetch('/api/pilot-share/'+path)]);

@@ -279,13 +279,18 @@
         <div class="contributor-overview">
           <div class="contributor-heading">
             <p class="eyebrow">THE PEOPLE BEHIND THE PICKS</p>
-            <h1>Wharton leaderboard</h1>
+            <div class="pilot-leaderboard-title"><h1>Wharton leaderboard</h1><span data-leaderboard-share></span></div>
             <p class="account-intro">See who's vouching for what, and who to ask before you buy.</p>
             ${categories.length&&top.length?topContributorsStrip(top):''}
           </div>
           ${whoToAskCard(categories)}
         </div>
         <div class="contributor-main">${viewer.entry&&!data.entries.some(r=>r.isYou)?`<aside class="contributor-your-place" aria-label="Your position"><p class="eyebrow">YOUR PLACE</p><ol class="contributor-list">${contributorRow(viewer.entry)}</ol></aside>`:''}<div class="contributor-table-heading" id="leaderboard-rankings" tabindex="-1" role="group" aria-label="Leaderboard rankings"><span>Contributor</span><span>Public vouches</span></div><ol class="contributor-list" aria-label="Wharton contributors ranked by public vouches">${data.entries.map(contributorRow).join('')}</ol>${!data.entries.length?`<div class="contributor-empty"><span aria-hidden="true"><img src="/brand/vouch-emblem.svg" alt="" class="brand-emblem"></span><h2>${data.total?'No contributors on this page':'Be one of the first'}</h2><p>${data.total?'Return to the previous page to see contributors.':'The first shared recommendations start here. Join to help others discover your picks.'}</p></div>`:''}<nav class="contributor-pagination" aria-label="Leaderboard pages">${offset?'<button class="profile-outline" data-previous>← Previous</button>':''}${data.hasMore?'<button class="profile-outline" data-next>Next →</button>':''}</nav></div></div>`);
+      if(data.total>=3&&window.VouchShare){
+        const trigger=window.VouchShare.button();
+        trigger.addEventListener('click',()=>window.VouchShare.open(trigger,{kind:'leaderboard'}));
+        root.querySelector('[data-leaderboard-share]').append(trigger);
+      }
       const rankings=root.querySelector('#leaderboard-rankings');
       const strip=root.querySelector('.contributor-top-strip');
       if(strip)stopMeasuringTopStrip=wireTopContributors(strip,rankings,top);

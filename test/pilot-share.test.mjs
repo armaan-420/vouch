@@ -38,3 +38,25 @@ test('winner needs five public named vouchers and an untied Board lead',()=>{
   state.baseVotes.b=state.baseVotes.a;
   assert.equal(winnerShare(groups[0],state,accounts),null);
 });
+
+test('leaderboard share uses the canonical ranked public entries and pins an eligible viewer at their real rank',async()=>{
+  const {whartonLeaderboard}=await import('../lib/contributor-leaderboard.mjs');
+  const {leaderboardShare}=await import('../lib/pilot-share.mjs');
+  const accounts=Object.fromEntries(Array.from({length:8},(_,i)=>['member'+i,member('Member '+i,
+    Array.from({length:8-i},(_,j)=>opinion('product-'+j)),{
+      handle:'v-'+String(i).padStart(16,'0'),email:'student'+i+'@wharton.upenn.edu',emailVerified:true
+    })]));
+  accounts.member1.leaderboardOptIn=false;
+  accounts.member2.showName=false;
+  accounts.member3.emailVerified=false;
+  const expected=whartonLeaderboard(accounts).entries;
+  const top=leaderboardShare(accounts,groups);
+  assert.deepEqual(top.rows.map(r=>r.name),expected.slice(0,5).map(r=>r.displayName));
+  assert.ok(top.rows.every(r=>!r.isYou));
+  accounts.member1.leaderboardOptIn=true;
+  const pinned=leaderboardShare(accounts,groups,'member7').rows;
+  assert.equal(pinned.length,6);
+  assert.deepEqual(pinned.at(-1),{rank:6,name:'Member 7',photo:null,count:1,isYou:true,separate:true});
+  assert.equal(leaderboardShare(accounts,groups,'member0').rows[0].isYou,true);
+  assert.ok(leaderboardShare(accounts,groups,'member2').rows.every(r=>!r.isYou));
+});

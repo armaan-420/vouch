@@ -214,7 +214,7 @@ try{
   await board(lineup[0]);
   await share(page.locator('[data-winner-share]').getByRole('button',{name:'Share'}),'winner');
   await page.goto(origin+'/community-leaderboard');
-  await share(page.locator('[data-leaderboard-share]').getByRole('button',{name:'Share'}),'leaderboard');
+  await share(page.locator('#leaderboard-rankings').getByRole('button',{name:'Share'}),'leaderboard');
   await page.goto(origin+'/wharton');
   await page.locator('.wharton-category[href]').first().waitFor();
   assert.equal(await page.locator('.pilot-intro').count(),0);

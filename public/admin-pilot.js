@@ -22,6 +22,7 @@
       <div class="pilot-metric-result"><p class="pilot-number">${value(row.value,row.unit)}</p>
       <span class="pilot-target-status" data-on-track="${comparison==='On track'}">${comparison}</span></div>
       ${Object.hasOwn(row,'conversion')?`<div class="pilot-funnel-bar" aria-hidden="true"><span style="width:${row.progress}%"></span></div><small>${row.conversion==null?'—':row.conversion+'% of previous step'}</small>`:''}
+      ${row.percentOfCompleters==null?'':`<small>${value(row.percentOfCompleters,'percent')} of completers</small>`}
       <p class="pilot-definition">${esc(row.definition)}</p>
       <label class="pilot-target">Target <input type="number" inputmode="decimal" min="0" step="any" data-target="${esc(row.key)}" aria-label="${esc(row.label)} target${row.unit==='percent'?' in percent':''}" value="${esc(target)}"></label>
     </article>`;
@@ -71,11 +72,11 @@
     }catch(error){status.textContent=error.message;}
   });
   csv.addEventListener('click',()=>{
-    const rows=[['Category','Since','Section','Metric','Value','Unit','Percent of previous step','Target','Definition']];
+    const rows=[['Category','Since','Section','Metric','Value','Unit','Percent of previous step','Target','Definition','Percent of completers']];
     const names=new Map(data.categories.map(c=>[c.id,c.name]));
     for(const [id,report] of Object.entries(data.reports)){
       for(const section of [{title:'Signup funnel',metrics:report.funnel},...report.sections]){
-        for(const m of section.metrics)rows.push([names.get(id)||'All',data.since,section.title,m.label,m.value,m.unit,m.conversion,data.settings.targets[m.key],m.definition]);
+        for(const m of section.metrics)rows.push([names.get(id)||'All',data.since,section.title,m.label,m.value,m.unit,m.conversion,data.settings.targets[m.key],m.definition,m.percentOfCompleters]);
       }
     }
     const literal=rows.map(row=>row.map(value=>'"'+String(value??'').replaceAll('"','""')+'"').join(',')).join('\r\n');

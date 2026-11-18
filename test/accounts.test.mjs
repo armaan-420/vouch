@@ -354,5 +354,5 @@ test('category participation distinguishes new, partial and completed including 
  await f.claim(await f.preview(),'alice',undefined,{displayName:'Alice'});
  assert.equal((await f.call('/api/category-participation?id=first',{identity:'alice',browserId:otherBrowser})).data.categories.first.status,'done');
  assert.equal((await f.call('/api/category-participation?id=first',{browserId:otherBrowser})).data.categories.first.status,'new');
- assert.equal((await f.call('/api/category-participation?id=first&id=second&id=third&id=fourth')).status,400);
+ assert.equal((await f.call('/api/category-participation?id=first&id=second&id=third&id=fourth')).status,404);
 });

@@ -106,3 +106,5 @@
 .pilot-share-page :focus-visible{outline:3px solid var(--olive);outline-offset:4px}
 
 .pilot-share-page:has(.vouch-share-card)>.wordmark{color:var(--ink);text-decoration:none}
+
+.pilot-button.is-lime{background:var(--green);color:var(--ink);border-color:var(--green)}

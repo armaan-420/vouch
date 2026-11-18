@@ -11,6 +11,10 @@
  let searchFocus=null,restoringSearchFocus=false,lastQuery=null;
  const normalizeQuery=value=>value.normalize('NFKD').toLowerCase().replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
  let context={},picker=null,menuOpen=false,searchOpen=false,scrollBefore=null,scrim=null,controller=null,timer=null,version=0,feedbackDialog=null,feedbackFocus=null;
+ let accountHome=null;
+ function updateHome(root=document) {
+  root.querySelectorAll('[data-site-nav] a.wordmark,.profile-mobile-bar a.wordmark').forEach(logo=>{logo.href=accountHome||'/';});
+ }
  const emblem=header.querySelector('.wordmark-emblem');
  const emblemMarkup=emblem?.outerHTML.replace('wordmark-emblem','vouch-action-emblem')||'';
  const overlayHeading=document.createElement('div');overlayHeading.className='site-search-heading';
@@ -101,7 +105,7 @@
  input.maxLength=2048;input.placeholder='Search vouch';input.setAttribute('aria-label','Search vouch');
  function configure(value){context=value;const enabled=true;search.hidden=!enabled;searchToggle.hidden=!enabled;header.classList.toggle('has-product-search',enabled);if(enabled&&window.VouchProductPicker)initializePicker();if(!enabled&&(searchOpen||menuOpen))closePanels(false);}
 
- async function refreshAccount(){if(document.body.classList.contains('collection-flow'))return;try{const response=await fetch('/api/account/me');if(!response.ok)return;const me=await response.json(),link=header.querySelector('.leaderboard-link');if(document.body.classList.contains('account-page'))header.removeAttribute('data-account-nav-locked');header.removeAttribute('data-home-nav-locked');menuToggle.disabled=false;link.classList.toggle('profile-link',!!me.authenticated);link.href=me.authenticated?'/account':'/account?signin=1';link.setAttribute('aria-label',me.authenticated?'My profile':'Sign in');link.textContent=me.authenticated?(me.profile?.displayName||'V').trim().charAt(0).toUpperCase():'Sign in';if(me.profile?.verificationRequired)link.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg>';const photo=me.profile?.photo;if(me.authenticated&&typeof photo==='string'&&photo.startsWith('/api/account/photos/')){const image=document.createElement('img');image.src=photo;image.alt='';link.replaceChildren(image);}}catch{/* Keep the account link available during a transient failure. */}}
+ async function refreshAccount(){if(document.body.classList.contains('collection-flow'))return;try{const response=await fetch('/api/account/me');if(!response.ok)return;const me=await response.json(),link=header.querySelector('.leaderboard-link');accountHome=homePathFor(me.authenticated?me.profile:null);updateHome();if(document.body.classList.contains('account-page'))header.removeAttribute('data-account-nav-locked');header.removeAttribute('data-home-nav-locked');menuToggle.disabled=false;link.classList.toggle('profile-link',!!me.authenticated);link.href=me.authenticated?'/account':'/account?signin=1';link.setAttribute('aria-label',me.authenticated?'My profile':'Sign in');link.textContent=me.authenticated?(me.profile?.displayName||'V').trim().charAt(0).toUpperCase():'Sign in';if(me.profile?.verificationRequired)link.innerHTML='<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg>';const photo=me.profile?.photo;if(me.authenticated&&typeof photo==='string'&&photo.startsWith('/api/account/photos/')){const image=document.createElement('img');image.src=photo;image.alt='';link.replaceChildren(image);}}catch{/* Keep the account link available during a transient failure. */}}
  function openFeedback(trigger){
   if(!feedbackDialog){feedbackDialog=document.createElement('dialog');feedbackDialog.className='suggestion-dialog feedback-dialog';feedbackDialog.id='feedback-dialog';feedbackDialog.setAttribute('aria-labelledby','feedback-title');document.body.append(feedbackDialog);feedbackDialog.addEventListener('close',()=>{if(feedbackFocus?.isConnected)feedbackFocus.focus({preventScroll:true});});}
   if(feedbackDialog.open)return;feedbackFocus=trigger;feedbackDialog.innerHTML=`<button class="suggestion-dialog-close" type="button" aria-label="Close feedback form">×</button><h2 id="feedback-title">A note for Vouch.</h2><form class="suggestion-form feedback-form"><label>What's working, what isn't?<textarea name="message" required minlength="5" maxlength="1000" rows="5"></textarea></label><label>Email (if you'd like a reply)<input name="email" type="email" maxlength="254" autocomplete="email"></label><button class="primary" type="submit">Send feedback</button><p role="status" aria-live="polite"></p></form>`;
@@ -112,7 +116,7 @@
  }
  const pickerReady=window.VouchProductPicker?Promise.resolve():new Promise(resolve=>{const script=document.createElement('script');script.src='/product-picker.js';script.onload=resolve;document.head.append(script);});
  pickerReady.then(()=>configure(context));
- window.VouchSiteNav={configure,refreshAccount,openSearch,emblemMarkup};
+ window.VouchSiteNav={configure,refreshAccount,updateHome,openSearch,emblemMarkup};
  if(document.querySelector('.draft-banner'))header.querySelectorAll('[data-suggest-edit]').forEach(trigger=>trigger.hidden=true);
  if(!document.body.classList.contains('collection-flow'))refreshAccount();document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAccount();});
 })();

@@ -1,3 +1,7 @@
+globalThis.homePathFor = function homePathFor(profile) {
+  return profile?.whartonEmailVerified===true && !profile.browserProfile && !profile.verificationRequired ? '/wharton' : null;
+};
+
 /* Approved outlined v; callers supply only static CSS class names. */
 function brandV(className = "") {
   return `<svg class="brand-v ${className}" viewBox="9 6.5 14 19" aria-hidden="true" focusable="false"><path d="M14.02 24.96L14.02 24.96Q12.34 24.96 11.53 23.70Q10.71 22.43 11.22 20.45L11.22 20.45L13.85 10.59Q14.29 8.99 13.30 8.99L13.30 8.99Q12.58 8.99 11.88 10.01Q11.18 11.03 10.36 13.35L10.36 13.35Q10.23 13.76 9.89 13.76L9.89 13.76Q9.72 13.76 9.61 13.61Q9.51 13.46 9.58 13.22L9.58 13.22Q11.56 7.04 14.53 7.04L14.53 7.04Q15.69 7.04 16.10 8.00Q16.51 8.95 16.06 10.62L16.06 10.62L13.37 20.80Q12.99 22.23 13.32 23.00Q13.64 23.77 14.49 23.77L14.49 23.77Q15.48 23.77 16.59 22.81Q17.70 21.85 18.69 20.32Q19.68 18.78 20.30 16.94Q20.91 15.10 20.91 13.32L20.91 13.32Q20.91 11.89 20.60 11.05Q20.30 10.21 19.97 9.63Q19.65 9.05 19.65 8.37L19.65 8.37Q19.65 7.04 20.81 7.04L20.81 7.04Q22.45 7.04 22.45 10.66L22.45 10.66Q22.45 13.25 21.70 15.80Q20.95 18.34 19.72 20.40Q18.49 22.47 17.00 23.71Q15.52 24.96 14.02 24.96Z" fill="currentColor"/></svg>`;

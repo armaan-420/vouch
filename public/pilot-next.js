@@ -1,12 +1,14 @@
+import {categoriesUnlocked,extraCategories} from './wharton-categories.js';
 import {showPilotDialog} from './pilot-dialog.js';
-export function nextStep({items,states,pilot,profile}) {
+export function nextStep({items,states,pilot,profile,available=[]}) {
   if(!pilot||!profile?.whartonEmailVerified)return null;
   const state=items.filter(group=>states[group.experiment?.id]?.status==='done').length;
   const next=items.find(group=>group.experiment&&states[group.experiment.id]?.status!=='done');
-  return {state,next,partial:states[next?.experiment.id]?.status==='partial',suggested:pilot.suggested,canShare:pilot.canShare};
+  const showUnlock=state>0&&!next&&!categoriesUnlocked(profile)&&extraCategories(available).length>0;
+  return {state,next,showUnlock,partial:states[next?.experiment.id]?.status==='partial',suggested:pilot.suggested,canShare:pilot.canShare};
 }
 
-function suggestionDialog(trigger,onSaved,whartonPilot) {
+export function suggestionDialog(trigger,onSaved,whartonPilot) {
   const dialog=document.createElement('dialog');
   dialog.className='pilot-dialog';
   dialog.setAttribute('aria-labelledby','pilot-suggestion-title');
@@ -34,6 +36,14 @@ function suggestionDialog(trigger,onSaved,whartonPilot) {
     }
   });
   showPilotDialog(dialog,trigger);
+}
+
+export function showUnlockAction(host) {
+  const primary=host.querySelector('.pilot-next-primary');
+  const share=primary.querySelector('[data-next-action="share_picks"]');
+  share.classList.add('is-outline');
+  host.querySelector('.pilot-next-secondary').prepend(share);
+  primary.innerHTML='<a class="pilot-button is-lime" href="/wharton" data-next-action="unlock">Unlock all categories →</a>';
 }
 
 export function mountNext(host,{experimentId,profile}) {

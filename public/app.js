@@ -137,12 +137,13 @@ const boardActions=nextHost?import('/pilot-next.js').then(({mountNext})=>{
   if(nextHost.isConnected)mountNext(nextHost,{experimentId,profile:accountProfile});
 }):null;
 boardActions?.catch(()=>{});
-window.VouchBoardCategories?.mount(app,experiment,{whartonFlow,onLoaded:pilotBoard?async({items,states,pilot})=>{
+window.VouchBoardCategories?.mount(app,experiment,{whartonFlow,onLoaded:pilotBoard?async({items,states,pilot,available})=>{
   if(!pilot||!nextHost.isConnected)return;
-  const [{nextStep},{mountPulse}]=await Promise.all([import('/pilot-next.js'),import('/pilot-pulse.js')]);
+  const [{nextStep,showUnlockAction},{mountPulse}]=await Promise.all([import('/pilot-next.js'),import('/pilot-pulse.js'),boardActions]);
   if(!nextHost.isConnected)return;
   if(Object.values(states).some(state=>state.status==='done'))pilotPulse=mountPulse(app,{pilot,experimentId,handle:accountProfile.handle,existing:pilotPulse});
-  const model=nextStep({items,states,pilot,profile:accountProfile});
+  const model=nextStep({items,states,pilot,profile:accountProfile,available});
+  if(model.showUnlock)showUnlockAction(nextHost);
   nextHost.dataset.pilotState=model.state;
   nextHost.dataset.pilotShare=model.canShare;
   if(!pilotBoardTracked){pilotBoardTracked=true;window.VouchPilot.track('next_step_shown',{state:model.state,experimentId});}
@@ -152,7 +153,16 @@ const winnerId=top&&standingsProductId(top,!!top.communityNominated);
 mountBoardPeople(experiment.status!=='draft'&&winnerId?summaries=>{
   if(Object.hasOwn(summaries,winnerId))window.VouchShare?.mountWinner(winnerHost,{top,runnerUp,publicCount:summaries[winnerId].total,experiment}).catch(()=>{});
 }:undefined);updateTimers();if(restoreHeadingFocus)focusScreenHeading()}
-document.addEventListener('click',async e=>{const communityButton=e.target.closest('[data-community]');if(communityButton){const group=communityButton.closest('.community-actions');group.querySelectorAll('button').forEach(b=>b.disabled=true);try{const data=await api('/api/community/vote',{productId:communityButton.dataset.community,value:communityButton.dataset.choice});invalidateProductVouchers(communityProducts.find(p=>p.id===communityButton.dataset.community));communityProducts=data.products;board()}catch(error){report(error);group.querySelectorAll('button').forEach(b=>b.disabled=false)}return}const vote=e.target.closest('[data-vote]');if(vote){const productId=products[index].id;const value=vote.dataset.vote;const buttons=[...app.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);try{await track('answer',{productId,value,comment:app.querySelector('#rating-comment')?.value||''})}catch{buttons.forEach(b=>b.disabled=false);return}invalidateProductVouchers(products[index]);state.votes[productId]=value;state.comments??={};state.comments[productId]=value==='skip'?'':app.querySelector('#rating-comment')?.value||'';save();index++;while(resumeAnswers&&index<products.length&&resumeAnswers.has(products[index].id))index++;render();window.scrollTo({top:0,behavior:'instant'});return}const action=e.target.closest('[data-action]')?.dataset.action;if(!experiment||experimentStatus()!=='open'&&action==='start')return;if(action&&e.target.closest('a'))e.preventDefault();if(action==='account'){location.assign('/account?experiment='+encodeURIComponent(experimentId)+(accountSignedIn?'':'&signin=1'));return}if(action==='home')go('home');if(action==='board'){if(screen==='game'&&index===products.length){document.getElementById('nomination-form')?.requestSubmit();return}go('board')};if(action==='edit')go('edit');if(action==='start'){try{await track('start')}catch{return}index=0;go('game')}if(action==='back'){index=Math.max(0,index-1);render()}});
+document.addEventListener('click',async e=>{const communityButton=e.target.closest('[data-community]');if(communityButton){const group=communityButton.closest('.community-actions');group.querySelectorAll('button').forEach(b=>b.disabled=true);try{const data=await api('/api/community/vote',{productId:communityButton.dataset.community,value:communityButton.dataset.choice});invalidateProductVouchers(communityProducts.find(p=>p.id===communityButton.dataset.community));communityProducts=data.products;board()}catch(error){report(error);group.querySelectorAll('button').forEach(b=>b.disabled=false)}return}const vote=e.target.closest('[data-vote]');if(vote){const productId=products[index].id;const value=vote.dataset.vote;const buttons=[...app.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);try{await track('answer',{productId,value,comment:app.querySelector('#rating-comment')?.value||''})}catch{buttons.forEach(b=>b.disabled=false);return}invalidateProductVouchers(products[index]);state.votes[productId]=value;state.comments??={};state.comments[productId]=value==='skip'?'':app.querySelector('#rating-comment')?.value||'';save();index++;while(resumeAnswers&&index<products.length&&resumeAnswers.has(products[index].id))index++;render();window.scrollTo({top:0,behavior:'instant'});return}const action=e.target.closest('[data-action]')?.dataset.action;if(action==='home'){
+ const path=homePathFor(accountSignedIn?accountProfile:null);
+ if(path){
+  e.target.closest('.wordmark').disabled=true;
+  await trackingQueue;
+  location.assign(path);
+  return;
+ }
+}
+if(!experiment||experimentStatus()!=='open'&&action==='start')return;if(action&&e.target.closest('a'))e.preventDefault();if(action==='account'){location.assign('/account?experiment='+encodeURIComponent(experimentId)+(accountSignedIn?'':'&signin=1'));return}if(action==='home')go('home');if(action==='board'){if(screen==='game'&&index===products.length){document.getElementById('nomination-form')?.requestSubmit();return}go('board')};if(action==='edit')go('edit');if(action==='start'){try{await track('start')}catch{return}index=0;go('game')}if(action==='back'){index=Math.max(0,index-1);render()}});
 document.getElementById('prototype').onclick=()=>document.getElementById('info').showModal();document.getElementById('reset').onclick=()=>{document.getElementById('info').close();go('home')};
 async function overall(){
   screen='overall';updateHeader();app.innerHTML='<section class="board"><h1>The overall board.</h1><p>Loading results…</p></section>';

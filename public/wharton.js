@@ -1,3 +1,5 @@
+import {mountWhartonHome} from './wharton-home.js';
+
 (()=>{
  'use strict';
  const root=document.getElementById('wharton-app'),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -14,7 +16,7 @@
   if(!/@wharton\.upenn\.edu$/i.test(status.identity.email||'')){frame('<h1>This one’s for Wharton.</h1><p>Use your Wharton email to join this experiment.</p><button class="primary" data-switch>Use another email</button>');root.querySelector('[data-switch]').onclick=async()=>{try{await api('/api/auth/logout',{});attempt={};remember();join()}catch(e){error(e)}};return;}
   const me=await api('/api/account/me');
   if(!me.profile||me.profile.verificationRequired){if(attempt.name){await createProfile(status.identity.email,attempt.name);}else nameForm(status.identity.email);return;}
-  openCategories(me.profile);
+  await openCategories(me.profile);
  }
  function join(){
   const resume=attempt.challengeId&&attempt.expiresAt>Date.now();
@@ -40,7 +42,11 @@
  }
  function openCategories(profile){
   attempt={};try{sessionStorage.removeItem(key);}catch{}
-  categories(profile.displayName);
+  document.body.classList.add('wharton-choosing');
+  root.removeAttribute("aria-live");
+  const member=!!homePathFor(profile);
+  document.querySelector('[data-explore-vouch]').hidden=member;
+  return mountWhartonHome(root,profile,{member,frame,error});
  }
  async function createProfile(email,name){
   const items=(await api('/api/categories')).categories;
@@ -62,19 +68,7 @@
     return;
    }
   }
-  openCategories(profile);
- }
- async function categories(name){
-  document.body.classList.add('wharton-choosing');
-  frame(`<p class="eyebrow">YOUR TASTE BELONGS HERE</p><h1 tabindex="-1">What do you<br><em>know and love?</em></h1><p class="wharton-intro">Welcome, ${esc(name.split(' ')[0])}. Start with one category. Explore the rest whenever you like.</p><div data-categories aria-busy="true"></div>`);
-  const host=root.querySelector('[data-categories]');
-  try{const available=(await api('/api/categories')).categories;
-   const {whartonChoices}=await import('/wharton-categories.js');
-   const groups=whartonChoices(available);
-   host.innerHTML='<div class="wharton-category-list">'+groups.map((group,index)=>{const category=group.experiment;return `<${category?'a':'article'} class="wharton-category ${category?'':'is-upcoming'}" ${category?`data-pilot-category="${esc(category.id)}" href="/${encodeURIComponent(category.id)}?start=1&wharton=1"`:''}><img src="${esc(category?.image||'/category-covers/'+group.key+'.svg')}" alt=""><div>${index===0&&category?'<span class="wharton-category-kicker">Start here</span>':''}<h2>${esc(group.name)}</h2><p>${esc(group.subtitle)}</p>${!category?'<small>Coming soon</small>':''}</div><span aria-hidden="true">${category?'→':''}</span></${category?'a':'article'}>`}).join('')+'</div>';
-   host.querySelectorAll('[data-pilot-category]').forEach(link=>link.addEventListener('click',()=>window.VouchPilot.track('category_chosen',{experimentId:link.dataset.pilotCategory})));
-  }catch(e){host.innerHTML='<button class="text-button" data-retry-categories>Couldn’t load categories. Try again</button>';host.querySelector('button').onclick=()=>categories(name);error(e);}finally{host.setAttribute('aria-busy','false');}
-
+  await openCategories(profile);
  }
  ready().catch(e=>{frame('<h1>Could not connect.</h1><button class="primary" data-retry>Try again</button>');error(e);root.querySelector('[data-retry]').onclick=()=>ready().catch(error)});
 })();

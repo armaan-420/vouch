@@ -2,3 +2,55 @@
 .wharton-header .wordmark{color:#292d24;text-decoration:none}.wharton-layout h1:focus,.wharton-layout h2:focus{outline:none}.wharton-page footer a{color:#697837;text-decoration:none}
 
 .wharton-choosing .wharton-story{display:none}.wharton-choosing .wharton-layout{display:block;max-width:760px;padding-top:40px}.wharton-choosing .wharton-intro{max-width:560px}.wharton-category-list{display:grid;gap:14px;margin:28px 0}.wharton-category{display:grid;grid-template-columns:110px minmax(0,1fr) 24px;align-items:center;gap:20px;min-height:155px;border:1px solid var(--line);border-radius:18px;padding:14px 22px;text-decoration:none;color:var(--ink);background:#fbfaf5}.wharton-category:first-child{background:#eaf0c4}.wharton-category img{width:100%;height:130px;object-fit:contain;mix-blend-mode:multiply}.wharton-category h2{font-size:32px;font-style:italic;margin:4px 0 8px}.wharton-category p{font-size:13px;margin:0}.wharton-category-kicker{display:inline-block;position:relative;top:-4px;font-size:10px;border-radius:20px;padding:4px 10px;background:var(--green)}.wharton-category.is-upcoming{background:transparent}.wharton-category small{display:block;color:var(--muted);font-size:10px;margin-top:10px}.wharton-category:focus-visible{outline:3px solid #828e31;outline-offset:3px}.wharton-code-intro{font-size:14px;line-height:1.5}.wharton-auth-box{max-width:420px}@media(max-width:760px){.wharton-category{grid-template-columns:80px minmax(0,1fr) 18px;gap:14px;padding:12px 16px;min-height:140px}.wharton-category img{height:112px}.wharton-category h2{font-size:29px}.wharton-choosing .wharton-layout{padding:28px 22px}}
+
+.wharton-choosing #wharton-app{min-width:0}
+.wharton-choosing #wharton-app>.pilot-progress{max-width:240px;margin:0 0 24px}
+.wharton-category-list.has-progress{margin-top:14px}
+.has-progress .wharton-category{background:var(--profile-white)}
+.has-progress .wharton-category.is-highlighted{background:color-mix(in srgb,var(--green) 40%,var(--paper))}
+.has-progress .wharton-category h2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;line-height:1.05}
+.has-progress .wharton-category p{color:var(--profile-muted);overflow-wrap:anywhere}
+.wharton-category-status{display:inline-block;max-width:100%;margin-top:7px;padding:4px 9px;border:1px solid transparent;border-radius:999px;font-size:11px;font-weight:600;line-height:1.2;overflow-wrap:anywhere}
+.wharton-category-status.is-new{border-color:var(--pilot-olive)}
+.wharton-category-status.is-partial{background:var(--green)}
+.wharton-category-status.is-done{background:var(--ink);color:var(--paper)}
+
+.wharton-unlock,.wharton-more{padding:20px;border-radius:18px}
+.wharton-unlock{background:var(--ink);color:var(--paper);overflow:clip}
+.wharton-unlock .eyebrow{color:var(--green)}
+.wharton-unlock h2,.wharton-more h2{font:400 2rem/1.05 'Instrument Serif',Georgia,serif;margin:6px 0 8px}
+.wharton-unlock p:not(.eyebrow),.wharton-more p{font-size:14px;line-height:1.5;margin:0 0 16px}
+.wharton-unlock button{width:100%;gap:8px;min-height:46px}
+.wharton-unlock button[aria-disabled="true"]{cursor:progress}
+.wharton-unlock button:focus-visible{outline:3px solid var(--pilot-olive);outline-offset:3px;box-shadow:0 0 0 7px var(--paper)}
+.wharton-unlock svg{flex:none}
+.wharton-unlock svg path{transform-origin:8px 11px;transition:transform 140ms ease-out}
+.wharton-unlock.is-unlocking svg path{transform:rotate(-24deg)}
+.wharton-more{background:var(--profile-white);border:1px solid var(--line)}
+.wharton-stamps,.wharton-completed{list-style:none;padding:0}
+.wharton-stamps{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}
+.wharton-stamps li{padding:4px 9px;border:1px solid color-mix(in srgb,var(--paper) 45%,transparent);border-radius:999px;font-size:11px}
+.wharton-completed{display:grid;gap:7px;margin:14px 0 0}
+.wharton-completed li{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 12px;background:var(--profile-white);border:1px solid var(--line);border-radius:12px;font-size:13px}
+.wharton-completed li>span{display:flex;align-items:center;gap:8px}
+.wharton-completed li>span span{display:grid;place-items:center;flex:0 0 18px;height:18px;background:var(--ink);color:var(--paper);border-radius:50%;font-size:10px}
+.wharton-completed a,.wharton-boards a{display:inline-flex;align-items:center;min-height:44px;color:var(--ink);font-weight:700}
+.wharton-completed a{flex:none}
+.wharton-boards{margin-top:24px}
+.wharton-boards>div{display:flex;gap:8px;flex-wrap:wrap}
+.wharton-boards a{gap:6px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--profile-white);font-size:13px;text-decoration:none}
+.wharton-completed a:focus-visible,.wharton-boards a:focus-visible,.has-progress .wharton-category:focus-visible{outline:3px solid var(--pilot-olive);outline-offset:3px}
+.wharton-unlocked-badge{display:inline-block;padding:5px 10px;margin:0;background:var(--green);border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.06em}
+
+@media(max-width:375px){
+ .has-progress .wharton-category{grid-template-columns:62px minmax(0,1fr) 14px;gap:10px;padding-inline:12px}
+}
+@media(min-width:1024px){
+ .wharton-unlocked .wharton-category-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .wharton-unlocked .wharton-category{grid-template-columns:80px minmax(0,1fr) 18px;gap:14px;padding:12px 16px;min-height:140px}
+ .wharton-unlocked .wharton-category img{height:112px}
+ .wharton-unlocked .wharton-category h2{font-size:29px}
+}
+@media(prefers-reduced-motion:reduce){
+ .wharton-unlock svg path{transition:none}
+}

@@ -64,3 +64,29 @@
 .pilot-followup{display:grid;gap:8px}
 .pilot-followup textarea{width:100%;resize:vertical;border:1px solid var(--muted);border-radius:8px;background:var(--paper);color:var(--ink);padding:10px;font:inherit;min-height:44px}
 #pilot-followup-count{justify-self:end;font-size:.8rem;color:var(--ink)}
+.pilot-board-title{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.pilot-board-title [data-winner-share]:empty{display:none}
+.pilot-share-button{gap:6px;white-space:nowrap}
+.pilot-share-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pilot-share-top h2{margin:0}
+.pilot-share-top .pilot-dismiss{min-width:44px;min-height:44px;font-size:1.5rem}
+.pilot-share-preview{display:block;width:auto;height:auto;max-height:60vh;max-width:100%;aspect-ratio:9/16;object-fit:contain;border:1px solid var(--line);border-radius:10px;margin:10px auto}
+.pilot-share-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pilot-share-body>[data-native-share]{width:100%;margin-bottom:8px}
+.pilot-share-dialog [hidden]{display:none}
+.pilot-share-dialog [role="status"]{min-height:1.3em;margin:6px 0}
+.pilot-share-page{width:min(560px,100%);padding:24px 18px;margin:auto;overflow-wrap:anywhere}
+.pilot-share-page article{margin:24px 0;padding:20px;border:1px solid var(--line);border-radius:18px}
+.pilot-share-page h1{font:400 clamp(2.4rem,8vw,4rem)/1 'Instrument Serif',serif}
+.pilot-share-list,.pilot-share-vouchers{list-style:none;margin:0;padding:0}
+.pilot-share-list li{display:flex;align-items:center;gap:12px;border-top:1px solid var(--line);padding:12px 0}
+.pilot-share-list p{margin:4px 0 0;color:var(--olive,var(--pilot-olive))}
+.pilot-share-list img,.pilot-share-placeholder{width:62px;height:62px;object-fit:contain;flex:none;border:1px solid var(--line);border-radius:8px}
+.pilot-share-placeholder{display:grid;place-items:center;font:400 2rem 'Instrument Serif',serif}
+.pilot-share-winner{margin:16px 0}
+.pilot-share-winner img{display:block;width:100%;max-height:320px;object-fit:contain}
+.pilot-share-winner figcaption{margin-top:8px;font-weight:700}
+.pilot-share-vouchers{display:flex;padding-left:8px}
+.pilot-share-vouchers li{margin-left:-8px}
+.pilot-share-vouchers img,.pilot-share-vouchers span{display:grid;place-items:center;width:48px;height:48px;object-fit:cover;border:2px solid var(--paper);border-radius:50%;background:var(--line)}
+@media(max-width:767px){.pilot-share-dialog{position:fixed;inset:auto 0 0;margin:0;width:100%;max-width:none;max-height:calc(100dvh - 12px);border-radius:18px 18px 0 0;padding-bottom:max(20px,env(safe-area-inset-bottom))}}

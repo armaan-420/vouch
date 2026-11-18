@@ -187,3 +187,34 @@ test('Wharton intro is offered only to a new profile and either exit persists ac
   assert.equal(publicProfile.data.profile.introSeenAt,undefined);
  }
 });
+
+test('public share pages recheck picks privacy and attribute signup through the referral cookie',async t=>{
+ const {WATER_BOTTLES}=await import('../lib/water-bottles.mjs');
+ const {browser}=await fixture(t),admin=browser(),sharer=browser(),recipient=browser();
+ await admin('/api/admin/experiments',{id:'bottles-pilot',title:'Wharton bottles',category:'Water bottles',productIds:WATER_BOTTLES.map(p=>p.id)});
+ async function sign(client,email,name){
+  await signin(client,email);
+  const {data:{claimToken}}=await client('/api/account/edit?experiment=bottles-pilot');
+  const response=await client('/api/account/signup?experiment=bottles-pilot',{displayName:name,email,whartonPilot:true,claimToken});
+  assert.equal(response.status,200);
+  return response.data.profile;
+ }
+ const owner=await sign(sharer,'pilot-owner@wharton.upenn.edu','Pilot Sharer');
+ const link='/share/picks/'+owner.handle+'?ref='+owner.handle;
+ assert.equal((await recipient(link)).status,404);
+ assert.equal((await sharer('/api/events?experiment=bottles-pilot',{type:'answer',productId:WATER_BOTTLES[0].id,value:'yes',comment:'Omit comments from share pages'})).status,200);
+ const {data:card}=await sharer('/api/pilot-share/picks');
+ assert.equal(card.link,link);
+ const opened=await recipient(link);
+ assert.equal(opened.status,200);
+ assert.match(opened.data,/property="og:title"/);
+ assert.match(opened.data,/Join the Wharton experiments/);
+ assert.doesNotMatch(opened.data,/Omit comments|@wharton.upenn.edu/);
+ await sign(recipient,'pilot-recipient@wharton.upenn.edu','Pilot Recipient');
+ const {data:report}=await admin('/api/admin/pilot-metrics');
+ const metrics=Object.fromEntries(report.reports.all.sections.flatMap(s=>s.metrics).map(m=>[m.key,m.value]));
+ assert.equal(metrics['share-opens'],1);
+ assert.equal(metrics['share-signups'],1);
+ await sharer('/api/account/profile',{visibility:'private'});
+ assert.equal((await recipient(link)).status,404);
+});

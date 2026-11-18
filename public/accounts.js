@@ -265,7 +265,120 @@
     // Native modal dialogs make the rest of the page inert and contain Tab focus.
     dialog.showModal();(focus==='visibility'?dialog.querySelector('[name=showName]'):focus==='bio'?bio:focus==='photo'?upload:name).focus();
   }
-  async function loadWhereToBuy(id){try{const config=await request('/api/catalog/config');if(!config.whereToBuy)return;const host=document.getElementById('where-to-buy');if(!host)return;const button=document.createElement('button');button.type='button';button.className='text-button';button.textContent='Where to buy';host.append(button);button.onclick=async()=>{button.disabled=true;try{const data=await request('/api/catalog/items/'+encodeURIComponent(id)+experimentQuery);if(!data.offers?.length){host.remove();return;}host.innerHTML='<section class="account-section"><h2>Where to buy</h2><p>We may earn a commission when you buy through links on this page.</p><ul>'+data.offers.slice(0,5).map(o=>'<li><a rel="sponsored noopener" target="_blank" href="'+esc(o.url)+'">'+esc(o.retailer)+' · '+esc(new Intl.NumberFormat('en-US',{style:'currency',currency:o.currency||'USD'}).format(o.price))+'</a></li>').join('')+'</ul></section>';}catch{host.remove();}};}catch{}}
+  const itemScoreColor=n=>n>=8?'#367332':n>=6.5?'#111':n>=5?'#967000':'#ba352e';
+  function itemBuyUrl(value){
+    try{const url=new URL(value);return url.protocol==='https:'?url.href:null}catch{return null}
+  }
+  function itemOffers(offers){
+    return (offers||[]).filter(o=>itemBuyUrl(o.url)&&Number.isFinite(o.price)&&o.price>=0)
+      .map(o=>{
+        try{return {...o,formattedPrice:new Intl.NumberFormat('en-US',{style:'currency',currency:o.currency||'USD'}).format(o.price)}}
+        catch{return null}
+      }).filter(Boolean).sort((a,b)=>a.price-b.price).slice(0,5);
+  }
+  const itemBuyArrow='<svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 15 15 5M8 5h7v7"/></svg>';
+  function itemBuyMarkup(p,offers,{canCompare=false}={}){
+    const offer=offers[0],url=itemBuyUrl(offer?.url||p.url);
+    if(!url&&!canCompare)return '';
+    const label=offer?'Buy at '+offer.retailer:'Buy now';
+    const accessibleLabel=label+'. Opens in a new tab. Price and availability set by the retailer.';
+    const compare=offers.length>1?'Compare '+plural(offers.length,'retailer'):offer?'See retailer price':canCompare?'Compare retailers':'';
+    const toggle=compare?`<button class="item-buy-toggle" type="button" aria-expanded="false" aria-controls="item-buy-offers">${compare} <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 5 5 5-5"/></svg></button>`:'';
+    const list=compare?`<ul id="item-buy-offers" hidden>${offers.map((o,index)=>`<li><a rel="sponsored noopener noreferrer" target="_blank" href="${esc(o.url)}" aria-label="${esc(o.retailer+', '+o.formattedPrice+', opens in a new tab'+(offers.length>1&&index===0?', lowest price':''))}"><span class="item-offer-retailer"><span>${esc(o.retailer)}</span>${offers.length>1&&index===0?'<span class="item-offer-lowest">Lowest</span>':''}</span><span>${esc(o.formattedPrice)}</span>${itemBuyArrow}</a></li>`).join('')}</ul>`:'';
+    if(!url)return '<div class="item-buy-lookup">'+toggle+list+'</div>';
+    return `<section class="item-buy-card" aria-label="Buy">
+      <a class="item-buy" href="${esc(url)}" target="_blank" rel="${offer?'sponsored ':''}noopener noreferrer" aria-label="${esc(accessibleLabel)}"><span>${esc(label)}</span>${itemBuyArrow}</a>
+      <div class="item-buy-compare-row"><div class="item-buy-compare-heading">${toggle}<span class="item-buy-disclosure">Vouch may earn a commission</span></div>${list}</div>
+    </section>`;
+  }
+  function toggleItemOffers(button,list,open){
+    list.getAnimations().forEach(animation=>animation.cancel());
+    button.setAttribute('aria-expanded',String(open));
+    list.hidden=false;
+    list.inert=!open;
+    const finish=()=>{list.hidden=!open};
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches){finish();return}
+    const closed={height:'0px',opacity:0},expanded={height:list.scrollHeight+'px',opacity:1};
+    list.animate(open?[closed,expanded]:[expanded,closed],{duration:180,easing:'ease-out'}).finished.then(finish,()=>{});
+  }
+  async function loadWhereToBuy(id,p,host){
+    let offers=[],canCompare=false;
+    function paint({open=false,focus}={}){
+      if(!host.isConnected)return;
+      host.innerHTML=itemBuyMarkup(p,offers,{canCompare});
+      const button=host.querySelector('.item-buy-toggle');
+      const list=host.querySelector('#item-buy-offers');
+      if(focus)(focus==='compare'&&button?button:host.querySelector('.item-buy'))?.focus({preventScroll:true});
+      if(open&&button)toggleItemOffers(button,list,true);
+      if(!button)return;
+      button.onclick=async()=>{
+        if(button.getAttribute('aria-busy')==='true')return;
+        if(offers.length){
+          toggleItemOffers(button,list,button.getAttribute('aria-expanded')!=='true');
+          return;
+        }
+        button.setAttribute('aria-busy','true');
+        try{offers=itemOffers((await request('/api/catalog/items/'+encodeURIComponent(id)+experimentQuery)).offers)}
+        catch{/* Keep the direct retailer link if catalog offers are unavailable. */}
+        canCompare=false;
+        paint({open:offers.length>0,focus:document.activeElement===button?'compare':null});
+      };
+    }
+    paint();
+    try{
+      canCompare=!!(await request('/api/catalog/config')).whereToBuy;
+      if(canCompare)paint({focus:host.contains(document.activeElement)?'buy':null});
+    }catch{}
+  }
+  function itemProductRefs(p){
+    const refId=ref=>ref.provider==='channel3'?'c3-'+ref.providerId:ref.provider==='shopify'?'shop-'+encodeURIComponent(ref.providerId):null;
+    return [p.id,p.skuId,p.onBoardId,...(p.alternateRefs||[]).map(ref=>typeof ref==='string'?ref:ref?.id||(ref?.providerId?refId(ref):null))].filter(Boolean);
+  }
+  function itemCategoryPicks(products,p,requestedId){
+    const current=new Set([requestedId,...itemProductRefs(p)]);
+    const picks=(products||[]).filter(row=>{
+      const score=row.score??row.reviewScore;
+      return score!=null&&Number.isFinite(Number(score))&&!itemProductRefs(row).some(ref=>current.has(ref))&&/^\/products\/(?!\/)/.test(row.href||'');
+    }).slice(0,3);
+    return picks.length>=2?picks:[];
+  }
+  const itemCategoryHeading=(isNew,label)=>isNew?'While it’s new: top-vouched '+label:'Also vouched in '+label;
+  function itemPickMarkup(p,index,isNew){
+    const score=Number(p.score??p.reviewScore),image=safeImage(p.image);
+    const thumb=`<span class="item-pick-image"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/></svg>${image?`<img src="${esc(image)}" alt="" loading="lazy">`:''}${isNew?'':`<span class="item-pick-chip">${score.toFixed(1)}</span>`}</span>`;
+    const name=`<span class="item-pick-copy"><span class="item-pick-brand">${esc(p.brand)}</span><span class="item-pick-name">${esc(p.name)}</span></span>`;
+    return `<li><a href="${esc(p.href)}" aria-label="${esc([p.brand,p.name].filter(Boolean).join(' ')+', Vouch score '+score.toFixed(1))}" style="--item-pick-score:${itemScoreColor(score)}">${isNew?`<span class="item-pick-rank">${index+1}</span>`:''}${thumb}${name}${isNew?`<span class="item-pick-score">${score.toFixed(1)}</span>`:''}</a></li>`;
+  }
+  async function loadItemCategoryPicks(host,p,requestedId,isNew){
+    const category=p.categoryId||p.category;
+    if(!category)return;
+    const query=new URLSearchParams({category,sort:'community',reviewed:'1'});
+    const controller=new AbortController();
+    const abort=()=>controller.abort();
+    window.addEventListener('pagehide',abort,{once:true});
+    const section=document.createElement('section');
+    section.className='item-category-picks';
+    section.setAttribute('aria-labelledby','item-picks-heading');
+    host.replaceChildren(section);
+    const listClass=isNew?'item-picks-ranked':'item-picks-tiles';
+    section.innerHTML=`<div class="item-picks-heading"><h2 id="item-picks-heading">${esc(itemCategoryHeading(isNew,p.category||category))}</h2><a href="${esc(experimentId?backPath:'/search?'+query)}">${experimentId?'See the board':'See all'}</a></div>
+      <ol class="${listClass} item-picks-loading" aria-hidden="true">${'<li></li>'.repeat(3)}</ol>`;
+    try{
+      const response=await fetch('/api/discover?'+query,{signal:controller.signal});
+      if(!response.ok)throw Error('Category picks unavailable');
+      const picks=itemCategoryPicks((await response.json()).products,p,requestedId);
+      if(!picks.length){section.remove();return}
+      const list=section.querySelector('ol');
+      list.classList.replace('item-picks-loading','item-picks-loaded');
+      list.removeAttribute('aria-hidden');
+      list.innerHTML=picks.map((pick,index)=>itemPickMarkup(pick,index,isNew)).join('');
+      for(const image of list.querySelectorAll('img')){
+        image.addEventListener('error',()=>image.remove(),{once:true});
+        if(image.complete&&!image.naturalWidth)image.remove();
+      }
+    }catch{section.remove()}
+    finally{window.removeEventListener('pagehide',abort)}
+  }
   const itemTagDescriptions={value:'Worth what you pay.',quality:'Well made, with thoughtful materials or ingredients.',staple:'An everyday essential you keep coming back to.',design:'Looks good and feels thoughtfully designed.'};
   function productTagSection(data){
     const tags=data.tags||[],selected=new Set(data.selectedTagIds||[]);
@@ -319,6 +432,7 @@
   async function renderProduct(id){
     document.body.classList.remove('signin-page');
     let data;try{data=await request('/api/products/'+encodeURIComponent(id));}catch{shell('<h1>This product isn’t available anymore.</h1><p>Try searching for it again.</p><a href="/find">Search products</a>');return}const p=data.product||{},contributors=data.contributors||[];
+    const requestedId=id;
     if(p.id&&p.id!==id){id=p.id;history.replaceState(null,'','/products/'+encodeURIComponent(id)+location.search)}
     if(data.newToVouch){const robots=document.createElement('meta');robots.name='robots';robots.content='noindex';document.head.append(robots)}
     let result=data.community||null,resultsUnavailable=false;
@@ -329,22 +443,20 @@
       resultsUnavailable=!result;
     }
     const ratingMarkup=(result,resultsUnavailable=false)=>{
-      const n=result?.score==null?null:Number(result.score),rated=n!==null&&Number.isFinite(n),color=!rated?'#6c7165':n>=8?'#367332':n>=6.5?'#111':n>=5?'#967000':'#ba352e';
+      const n=result?.score==null?null:Number(result.score),rated=n!==null&&Number.isFinite(n),color=!rated?'#6c7165':itemScoreColor(n);
       const counts=result?.voteCounts,total=Number(counts?.total)||0;
-      return {score:`<a class="item-score" href="#item-community" style="--item-score-color:${color}" aria-label="Vouch score ${rated?n.toFixed(1)+' out of 10':resultsUnavailable?'unavailable':'unrated'}. See community results."><span>Vouch score</span>${rated?`<span class="item-score-dial"><svg viewBox="0 0 80 80" aria-hidden="true"><circle class="item-score-track" cx="40" cy="40" r="35"/><circle class="item-score-progress" cx="40" cy="40" r="35" pathLength="100" stroke-dasharray="${Math.max(0,Math.min(100,n*10))} 100"/></svg><strong>${n.toFixed(1)}</strong></span>`:`<strong class="item-unrated">${resultsUnavailable?'Unavailable':'Unrated'}</strong>`}</a>`,panel:`<section class="item-community" id="item-community"><div class="item-community-heading"><h2>The community says</h2>${counts?`<span>${total} ${total===1?'vote':'votes'}</span>`:''}</div>${counts?`<div class="item-vote-bar" aria-hidden="true">${[['pass','#b96b45'],['maybe','#d8c7ae'],['yes','#6c7d40']].map(([key,c])=>Number(counts[key])>0?`<span style="flex:${Number(counts[key])};background:${c}"></span>`:'').join('')}</div><dl class="item-vote-numbers">${[['pass','👎 Nope'],['maybe','🤝 Brand vouch'],['yes','👍 Vouch']].map(([key,label])=>`<div><dt>${label}</dt><dd>${Number(counts[key])||0}<small>${total?Math.round((Number(counts[key])||0)/total*100):0}%</small></dd></div>`).join('')}</dl>`:`<p class="account-help">${resultsUnavailable?'Community results could not be loaded. Refresh to try again.':'Community ratings will appear here.'}</p>`}<details class="item-evidence"><summary>What’s behind these votes?</summary><p>Vouch means “I tried it. I recommend it.” Trust the brand is not a firsthand item endorsement. Don’t recommend is a negative recommendation; older responses were labeled Pass and did not establish firsthand experience. “Skip this one” responses are excluded. ${result?.source==='public-reviews'?'The score and totals come from public product-page reviews.':experimentId?'The score and totals come from this Edit.':'The score and totals come from public Edits.'} Only consenting public account opinions appear in the people list.</p></details></section>`};
+      return {score:`<a class="item-score" href="#item-community" style="--item-score-color:${color}" aria-label="Vouch score ${rated?n.toFixed(1)+' out of 10':resultsUnavailable?'unavailable':'unrated'}. See community results."><span>Vouch score</span>${rated?`<span class="item-score-dial"><svg viewBox="0 0 80 80" aria-hidden="true"><circle class="item-score-track" cx="40" cy="40" r="35"/><circle class="item-score-progress" cx="40" cy="40" r="35" pathLength="100" stroke-dasharray="${Math.max(0,Math.min(100,n*10))} 100"/></svg><strong>${n.toFixed(1)}</strong></span>`:`<strong class="item-unrated">${resultsUnavailable?'Unavailable':'Unrated'}</strong>`}</a>`,panel:`<section class="item-community" id="item-community"><div class="item-community-heading"><h2>The community says</h2>${counts?`<span>${total} ${total===1?'vote':'votes'}</span>`:''}</div>${counts?`<div class="item-vote-bar" aria-hidden="true">${[['pass','#b96b45'],['maybe','#d8c7ae'],['yes','#6c7d40']].map(([key,c])=>Number(counts[key])>0?`<span style="flex:${Number(counts[key])};background:${c}"></span>`:'').join('')}</div><dl class="item-vote-numbers">${[['pass','👎 Nope'],['maybe','🤝 Brand vouch'],['yes','👍 Vouch']].map(([key,label])=>`<div><dt>${label}</dt><dd>${Number(counts[key])||0}<small>${total?Math.round((Number(counts[key])||0)/total*100):0}%</small></dd></div>`).join('')}</dl>`:`<p class="account-help">${resultsUnavailable?'Community results could not be loaded. Refresh to try again.':'Community ratings will appear here.'}</p>`}</section>`};
     };
     const rating=ratingMarkup(result,resultsUnavailable),people=contributors.filter(c=>c.verdict==='yes');
 
-    const buyUrl=(()=>{try{const u=new URL(p.url);return u.protocol==='https:'?u.href:null}catch{return null}})();
     document.title=(p.name||'Product')+' — Vouch';
-    shell(`<nav class="item-navigation" aria-label="Product navigation"><a class="item-back" href="${esc(backPath)}"><span class="item-back-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5-5 5 5 5M4 10h12"/></svg></span><span>${experimentId?'The Board':'Vouch home'}</span></a>${p.category?`<span class="item-nav-category">${esc(p.category)}</span>`:''}</nav><article class="item-detail"><div class="item-photo">${window.VouchGallery.markup(p,'product-page-gallery')}</div><div class="item-story"><p class="brand">${esc(p.brand)}${p.category?' / '+esc(p.category):''}</p><div class="item-title-row"><h1>${esc(p.name||'Product')}</h1>${rating.score}</div>${itemPeopleSection(people)}${productTagSection(data)}${itemCommentsSection(people)}${rating.panel}<div class="item-purchase">${buyUrl?`<a class="item-buy" href="${esc(buyUrl)}" target="_blank" rel="noopener noreferrer">Buy now <span aria-hidden="true">↗</span></a><p class="account-help">See current price and availability at the retailer.</p>`:''}<div id="where-to-buy"></div></div></div></article>`);
+    shell(`<nav class="item-navigation" aria-label="Product navigation"><a class="item-back" href="${esc(backPath)}"><span class="item-back-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5-5 5 5 5M4 10h12"/></svg></span><span>${experimentId?'The Board':'Vouch home'}</span></a>${p.category?`<span class="item-nav-category">${esc(p.category)}</span>`:''}</nav><article class="item-detail"><div class="item-photo">${window.VouchGallery.markup(p,'product-page-gallery')}</div><div class="item-story"><p class="brand">${esc(p.brand)}${p.category?' / '+esc(p.category):''}</p><div class="item-title-row"><h1>${esc(p.name||'Product')}</h1>${rating.score}</div>${itemPeopleSection(people)}${productTagSection(data)}${itemCommentsSection(people)}${rating.panel}<div class="item-purchase-area">${data.newToVouch?`<div class="item-first-vote"><span class="item-first-vote-badge">New to Vouch</span><span>Tried it? Be the first to weigh in.</span><button type="button"><span aria-hidden="true">←</span> Vote</button></div>`:''}<div data-item-buy></div></div><div data-item-picks></div><div class="item-vote-feedback"><p class="account-status" role="status" aria-live="polite"></p><div data-item-vote-controls></div></div></div></article>`);
     root.querySelectorAll('[data-more-people]').forEach(button=>button.addEventListener('click',()=>{const panel=root.querySelector('.item-more-people');panel.hidden=!panel.hidden;root.querySelectorAll('[data-more-people]').forEach(b=>b.setAttribute('aria-expanded',String(!panel.hidden)));}));
     root.querySelector('[data-more-comments]')?.addEventListener('click',event=>{const section=root.querySelector('.item-comments'),expanded=section.classList.toggle('is-expanded');event.currentTarget.setAttribute('aria-expanded',String(expanded));event.currentTarget.textContent=expanded?'Show fewer comments':'See all '+section.dataset.count+' comments';});
-    const message=document.createElement('p');message.setAttribute('role','status');message.setAttribute('aria-live','polite');
-    const controls=document.createElement('div');root.querySelector('.item-purchase')?.prepend(message,controls);
-    if(data.newToVouch){root.querySelector('.item-score').hidden=true;message.textContent='New to Vouch. Be the first to weigh in.';root.querySelector('.item-community').hidden=true;}
-    if(p.variantLabel||p.retailerCount){const details=document.createElement('p');details.textContent=[p.variantLabel,p.retailerCount?p.retailerCount+' retailers':null].filter(Boolean).join(' · ');controls.append(details)}
-    const profile=document.createElement('a');profile.href='/account';profile.textContent='View or change your vouch';profile.hidden=data.myVerdict!=='yes';controls.append(profile);
+    const message=root.querySelector('.item-vote-feedback p'),controls=root.querySelector('[data-item-vote-controls]');
+    const firstVote=root.querySelector('.item-first-vote');
+    const picksHost=root.querySelector('[data-item-picks]');
+    if(data.newToVouch){root.querySelector('.item-score').hidden=true;root.querySelector('.item-community').hidden=true;}
     const bar=document.createElement('div');bar.className='photo-vote-bar';bar.setAttribute('role','group');bar.setAttribute('aria-label','Your take on this product');root.querySelector('.item-photo').append(bar);
     let selected=data.myVerdict||null,collapsed=!!selected,saving=false;
     function paintVoteBar(focus=false){
@@ -355,6 +467,11 @@
       bar.querySelectorAll('.photo-vote-option').forEach(button=>button.addEventListener('click',()=>choose(button.dataset.verdict)));
       if(focus)(collapsed?bar.querySelector('.photo-vote-summary'):bar.querySelector('[aria-pressed="true"]')||bar.querySelector('button'))?.focus({preventScroll:true});
     }
+    firstVote?.querySelector('button').addEventListener('click',()=>{
+      if(collapsed){collapsed=false;paintVoteBar()}
+      bar.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+      bar.querySelector('.photo-vote-option')?.focus({preventScroll:true});
+    });
     async function refreshPeople(){
       // A product-page verdict can change public review evidence immediately.
       try{const fresh=await request('/api/products/'+encodeURIComponent(id)),people=(fresh.contributors||[]).filter(c=>c.verdict==='yes');
@@ -364,6 +481,11 @@
           root.querySelector('.item-community').outerHTML=rating.panel;
           root.querySelector('.item-score').hidden=!!fresh.newToVouch;
           root.querySelector('.item-community').hidden=!!fresh.newToVouch;
+          if(data.newToVouch&&!fresh.newToVouch){
+            firstVote?.remove();
+            loadItemCategoryPicks(picksHost,p,requestedId,false);
+          }
+          data.newToVouch=fresh.newToVouch;
           if(!fresh.newToVouch)document.head.querySelector('meta[name="robots"][content="noindex"]')?.remove();
         }
         const section=root.querySelector('.item-people');if(section)section.outerHTML=itemPeopleSection(people);
@@ -378,7 +500,7 @@
       try{
         const result=await request('/api/account/vouch',{productId:id,verdict,...(editId?{editId}:{})});
         if(!result.saved)throw Error('Could not save. Please try again.');
-        setPendingProduct(null);selected=verdict;data.myVerdict=verdict==='skip'?null:verdict;collapsed=true;profile.hidden=verdict!=='yes';message.textContent=verdict==='skip'?'Your previous take was cleared.':'Saved to your profile.';
+        setPendingProduct(null);selected=verdict;data.myVerdict=verdict==='skip'?null:verdict;collapsed=true;message.textContent=verdict==='skip'?'Your previous take was cleared.':'Saved to your profile.';
         const n=result.nomination;
         if(verdict==='yes'&&n){
           if(n.status==='choose_edit'){message.textContent+=' Choose an Edit to nominate it to.';for(const e of n.edits){const button=document.createElement('button');button.type='button';button.textContent=e.title;button.dataset.nominationAction='';button.onclick=()=>save('yes',e.id);controls.append(button)}}
@@ -399,9 +521,10 @@
       }catch(error){saving=false;message.textContent=error.message;paintVoteBar(true)}
     }
     paintVoteBar();
+    loadWhereToBuy(id,p,root.querySelector('[data-item-buy]'));
+    loadItemCategoryPicks(picksHost,p,requestedId,!!data.newToVouch);
     if(pendingProductVouch?.id===id){me=await request('/api/account/me');if(me.authenticated&&!me.browserProfile&&!me.profile?.browserProfile)await save(pendingProductVouch.verdict);else{auth=await request('/api/auth/status');renderAnonymous();return;}}
     wireProductTags(id,data);
-    loadWhereToBuy(id);
     if(location.hash==='#item-people')root.querySelector('#item-people')?.scrollIntoView({block:'start'});
   }
   function pendingPicks(){const current=new Map((me?.profile?.opinions||[]).map(o=>[o.productId,o]));return (edit?.opinions||[]).filter(o=>o.claimable!==false&&(!current.has(o.productId)||current.get(o.productId).updatedAt<o.updatedAt));}

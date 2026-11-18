@@ -87,9 +87,15 @@ test('shared hydration keeps bundled and organizer-supplied local product photos
  const eadem={...product,id:'c3-qAxZSfu',providerId:'qAxZSfu',image:undefined};
  const bundled='/assets/wharton-lip-balm/c3-qAxZSfu.jpg';
  const override='/assets/products/override.webp';
- const [original,custom]=await resolver.hydrate([eadem,{...eadem,photoOverride:override,photoOverrides:[override,bundled]}]);
+ const blocked='https://www.sephora.com/productimages/sku/s2960730-main-zoom-1.jpg?imwidth=1224';
+ const [original,custom,legacy]=await resolver.hydrate([
+  eadem,{...eadem,photoOverride:override,photoOverrides:[override,bundled]},
+  {...eadem,photoOverride:blocked,photoOverrides:[blocked]}
+ ]);
  assert.equal(original.image,bundled);
  assert.deepEqual(original.images,[bundled]);
  assert.equal(custom.image,override);
+ assert.equal(legacy.image,bundled);
+ assert.deepEqual(legacy.images,[bundled]);
  assert.deepEqual(custom.images,[override,bundled]);
 });

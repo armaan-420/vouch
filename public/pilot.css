@@ -90,9 +90,6 @@
 .pilot-share-vouchers li{margin-left:-8px}
 .pilot-share-vouchers img,.pilot-share-vouchers span{display:grid;place-items:center;width:48px;height:48px;object-fit:cover;border:2px solid var(--paper);border-radius:50%;background:var(--line)}
 @media(max-width:767px){.pilot-share-dialog{position:fixed;inset:auto 0 0;margin:0;width:100%;max-width:none;max-height:calc(100dvh - 12px);border-radius:18px 18px 0 0;padding-bottom:max(20px,env(safe-area-inset-bottom))}}
-.pilot-leaderboard-title{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.pilot-leaderboard-title h1{min-width:0}
-.pilot-leaderboard-title [data-leaderboard-share]:empty{display:none}
 .pilot-share-ranks li>span:first-child{min-width:2ch;text-align:center}
 .pilot-share-ranks .pilot-share-count{margin-left:auto;font-variant-numeric:tabular-nums}
 .pilot-share-ranks img,.pilot-share-ranks .pilot-share-placeholder{width:42px;height:42px;border-radius:50%;object-fit:cover}

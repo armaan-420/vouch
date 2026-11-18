@@ -125,3 +125,40 @@
 @media(width < 900px){
   .contributor-wharton-mark{width:20px;height:20px}
 }
+
+.contributor-table-heading .pilot-share-button{
+  position:relative;
+  isolation:isolate;
+  min-width:44px;
+  min-height:44px;
+  padding:0 14px;
+  border:0;
+  border-radius:99px;
+  font-size:12px;
+  font-weight:600;
+}
+.contributor-table-heading .pilot-share-button::before{
+  content:"";
+  position:absolute;
+  inset:6px 0;
+  z-index:-1;
+  border:1px solid #c7ceb4;
+  border-radius:inherit;
+  pointer-events:none;
+}
+.contributor-table-heading .pilot-share-button:hover::before{
+  background:#e9eddf;
+}
+.contributor-table-heading .pilot-share-button svg{width:16px;height:16px}
+@media(width < 760px){
+  .contributor-table-heading:has(.pilot-share-button){align-items:center;padding-bottom:4px}
+  .contributor-table-heading:has(.pilot-share-button) .contributor-vouches-label{display:none}
+}
+@media(min-width:760px){
+  .contributor-layout{position:relative}
+  .contributor-layout:has(.who-to-ask) .contributor-main:has(.pilot-share-button){padding-top:36px}
+  .contributor-table-heading .pilot-share-button{position:absolute;top:-15px;right:4px}
+}
+@media(min-width:900px){
+  .contributor-table-heading .pilot-share-button{right:20px}
+}

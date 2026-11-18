@@ -1,0 +1,29 @@
+.pilot-controls{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
+.pilot-controls label,.pilot-target{display:grid;gap:5px;font-size:.875rem}
+.pilot-controls input,.pilot-controls select,.pilot-target input,.pilot-controls button{min-height:44px}
+.pilot-controls input,.pilot-controls select,.pilot-target input{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:0}
+.pilot-target input{width:100%}
+.pilot-report-section{margin:28px 0}
+.pilot-report-section h2{font-family:'Instrument Serif',serif;font-weight:400;font-size:2rem;margin:0 0 12px}
+.pilot-funnel,.pilot-metric-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.pilot-funnel{list-style:none;margin:0;padding:0;counter-reset:funnel}
+.pilot-funnel li{display:grid;counter-increment:funnel;position:relative;min-width:0}
+.pilot-funnel h3::before{content:counter(funnel) '. '}
+.pilot-funnel-bar{margin:3px 0 5px;height:4px;border-radius:99px;background:var(--line)}
+.pilot-funnel-bar span{display:block;height:100%;background:var(--green);border-radius:inherit}
+.pilot-metric{border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0;overflow-wrap:anywhere;display:flex;flex-direction:column}
+.pilot-metric h3{font-size:.9rem;margin:0;text-transform:none}
+.pilot-metric-result{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 9px;margin:10px 0 4px}
+.pilot-metric .pilot-number{font-size:1.9rem;line-height:1;margin:0;font-weight:700;color:var(--ink)}
+.pilot-metric .pilot-definition{line-height:1.45}
+.pilot-definition{font-size:.82rem;color:var(--muted);margin:8px 0 10px}
+.pilot-target{margin-top:auto}
+.pilot-target-status{font-size:.78rem}.pilot-target-status:empty{display:none}
+.pilot-target-status[data-on-track="true"]{text-decoration:underline;text-decoration-color:var(--green);text-decoration-thickness:3px}
+.pilot-followups{list-style:none;padding:0}
+.pilot-followups li{border-top:1px solid var(--line);padding:10px 0;overflow-wrap:anywhere}
+.pilot-followups p{white-space:pre-wrap;margin:0}
+[data-admin-panel="pilot"] :focus-visible{outline:3px solid var(--olive);outline-offset:4px}
+@media(min-width:768px){.pilot-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1024px){.pilot-funnel{grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}.pilot-funnel .pilot-metric{padding:8px 5px}.pilot-funnel h3{font-size:.8rem}.pilot-funnel .pilot-number{font-size:1.5rem}}
+@media(min-width:1200px){.pilot-metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}

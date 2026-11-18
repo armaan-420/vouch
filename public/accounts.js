@@ -662,7 +662,16 @@
       }catch(error){saving=false;message.textContent=error.message;paintVoteBar(true)}
     }
     paintVoteBar();
-    loadWhereToBuy(id,p,root.querySelector('[data-item-buy]'));
+    const buy=root.querySelector('[data-item-buy]');
+    const pilotEdit=data.pilotExperimentId;
+    if(pilotEdit){
+      const trackBuy=event=>{
+        if(event.target.closest('.item-buy,#item-buy-offers a')&&(event.type!=='auxclick'||event.button===1))window.VouchPilot.track('buy_click',{experimentId:pilotEdit,productId:id});
+      };
+      buy?.addEventListener('click',trackBuy);
+      buy?.addEventListener('auxclick',trackBuy);
+    }
+    loadWhereToBuy(id,p,buy);
     loadItemCategoryPicks(picksHost,p,requestedId,!!data.newToVouch);
     if(pendingProductVouch?.id===id){me=await request('/api/account/me');if(me.authenticated&&!me.browserProfile&&!me.profile?.browserProfile)await save(pendingProductVouch.verdict);else{auth=await request('/api/auth/status');renderAnonymous();return;}}
     wireProductTags(id,data);

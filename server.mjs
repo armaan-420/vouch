@@ -1,3 +1,4 @@
+import {pilotLandingPage} from './lib/pilot-events.mjs';
 import {createAdminAuth} from './lib/admin-auth.mjs';
 import {createCatalogRuntime} from './lib/catalog/runtime.mjs';
 import {filePhotoStorage} from './lib/file-photos.mjs';
@@ -13,7 +14,11 @@ export async function createVouchServer({directory=path.resolve('.data'),root=pa
  if(url.pathname==='/admin/login'){res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','private, no-store');res.end(await fs.readFile(new URL('./lib/admin-login.html',import.meta.url),'utf8'));return}
  if(['/admin','/admin/','/admin.html'].includes(url.pathname)){const authorized=!adminAuth||await adminAuth.authorize(new Request(url,{headers:req.headers}));res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','private, no-store');res.end(await fs.readFile(new URL(authorized?'./lib/admin-page.html':'./lib/admin-login.html',import.meta.url),'utf8'));return}
  if(url.pathname==='/homepage'||url.pathname==='/homepage/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','no-cache');res.end(await fs.readFile(new URL('./lib/homepage-preview.html',import.meta.url),'utf8'));return}
- if(url.pathname==='/wharton'||url.pathname==='/wharton/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','no-store');res.end(await fs.readFile(new URL('./lib/wharton-page.html',import.meta.url),'utf8'));return}
+ if(url.pathname==='/wharton'||url.pathname==='/wharton/'){
+  const response=pilotLandingPage(new Request(url,{headers:req.headers}),accountPage(await fs.readFile(new URL('./lib/wharton-page.html',import.meta.url),'utf8')));
+  for(const [key,value] of response.headers)res.setHeader(key,value);
+  res.end(await response.text());return
+ }
  if(url.pathname==='/categories'||url.pathname==='/categories/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','no-cache');res.end(await fs.readFile(new URL('./lib/categories-page.html',import.meta.url),'utf8'));return}
  if(url.pathname==='/search'||url.pathname==='/search/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','no-cache');res.end(await fs.readFile(new URL('./lib/search-page.html',import.meta.url),'utf8'));return}
  if(url.pathname==='/find'||url.pathname==='/find/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','no-cache');res.end(await fs.readFile(new URL('./lib/find-page.html',import.meta.url),'utf8'));return}

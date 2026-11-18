@@ -148,7 +148,7 @@ async function boot(){
     if(whartonFlow&&(!accountSignedIn||!accountProfile?.whartonEmailVerified)){location.replace('/wharton');return;}
     document.getElementById('experiment-info').textContent='This collection contains '+products.length+' products. Responses and nominations stay within this collection. Only collections explicitly included by the organizer contribute to the overall board.';
     if(new URLSearchParams(location.search).has('overall')){await overall();return}
-    if(new URLSearchParams(location.search).has('board')){screen='board';await refreshCommunity();render();return}
+    if(new URLSearchParams(location.search).has('board')){screen='board';if(whartonFlow&&experimentStatus()==='open')await track('leaderboard').catch(()=>{});await refreshCommunity();render();return}
     if(experimentStatus()!=='open'){screen='home';await refreshCommunity();render();return}
     await track('visit');await refreshCommunity();
     if(new URLSearchParams(location.search).get('start')==='1'){await track('start');index=0;if(new URLSearchParams(location.search).has('resume')){const result=await api('/api/category-participation?id='+encodeURIComponent(experimentId)),progress=result.categories[experimentId];resumeAnswers=new Set(progress.answeredProductIds);index=progress.nextProductId?products.findIndex(p=>p.id===progress.nextProductId):products.length;}go('game');return}

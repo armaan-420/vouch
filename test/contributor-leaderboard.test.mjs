@@ -179,7 +179,7 @@ test('top category ignores fallback labels, counts case-insensitively and breaks
 test('leaderboard API returns the same Who to ask across pages and respects note privacy changes',async t=>{
  const f=await fixture(t);
  await f.scope.transaction(d=>{
-  d.accounts[f.key]=categoryMember('alice',[categoryVouch('alice','Headphones',{comment:'My daily pick'})]);
+  d.accounts[f.key]=categoryMember('alice',[categoryVouch('alice','Headphones',{comment:'My daily pick',product:{id:'alice',name:'Alice’s pick',category:'Headphones',provider:'channel3',providerId:'fixture'}})]);
   d.accounts.b=categoryMember('bob',[categoryVouch('bob','Headphones')]);
  });
  const first=(await f.call('/api/community-leaderboard?limit=1')).data;
@@ -187,6 +187,7 @@ test('leaderboard API returns the same Who to ask across pages and respects note
  assert.equal(first.entries[0].handle,'alice');
  assert.equal(second.entries[0].handle,'bob');
  assert.equal(second.whoToAsk.categories[0].featured.note,'My daily pick');
+ assert.equal(second.whoToAsk.categories[0].featured.product.providerId,'fixture');
  assert.deepEqual(second.whoToAsk,first.whoToAsk);
  await f.scope.transaction(d=>{d.accounts[f.key].opinions.alice.visibility='private'});
  assert.deepEqual((await f.call('/api/community-leaderboard')).data.whoToAsk,{categories:[]});

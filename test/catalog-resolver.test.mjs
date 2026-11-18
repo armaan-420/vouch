@@ -81,3 +81,15 @@ test('four organizer photos survive identity storage and provider outages',async
  const saved=identity({...product,photoOverride:photos[0],photoOverrides:photos,images:['https://example.com/temporary.jpg']});assert.equal(saved.images,undefined);
  const [hydrated]=await r.hydrate([saved]);assert.deepEqual(hydrated.images,photos);assert.equal(hydrated.image,photos[0]);
 });
+
+test('shared hydration keeps bundled and organizer-supplied local product photos',async()=>{
+ const resolver=createProductResolver({local,enabled:false});
+ const eadem={...product,id:'c3-qAxZSfu',providerId:'qAxZSfu',image:undefined};
+ const bundled='/assets/wharton-lip-balm/c3-qAxZSfu.jpg';
+ const override='/assets/products/override.webp';
+ const [original,custom]=await resolver.hydrate([eadem,{...eadem,photoOverride:override,photoOverrides:[override,bundled]}]);
+ assert.equal(original.image,bundled);
+ assert.deepEqual(original.images,[bundled]);
+ assert.equal(custom.image,override);
+ assert.deepEqual(custom.images,[override,bundled]);
+});

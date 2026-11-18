@@ -19,7 +19,27 @@
   const productPath=id=>'/products/'+encodeURIComponent(id)+experimentQuery;
   const profilePath=handle=>'/profiles/'+encodeURIComponent(handle)+experimentQuery;
   const safeImage=value=>typeof value==='string'&&(/^\/(?!\/)/.test(value)||/^https:\/\//.test(value))?value:null;
-  const productImage=p=>`<span class="account-product-image" aria-hidden="true">${safeImage(p?.image)?`<img src="${esc(p.image)}" alt="" loading="lazy">`:brandV()}</span>`;
+  function imageWithFallback(sources,fallback,alt='',lazy=true){
+    const images=[...new Set(sources.filter(safeImage))];
+    if(!images.length)return fallback;
+    return `<img src="${esc(images[0])}" alt="${esc(alt)}" ${lazy?'loading="lazy"':''} data-image-alternates="${esc(JSON.stringify(images.slice(1)))}"><template>${fallback}</template>`;
+  }
+  const productPhotos=p=>[p?.image,...(Array.isArray(p?.images)?p.images:[])];
+  const productImage=p=>`<span class="account-product-image" aria-hidden="true">${imageWithFallback(productPhotos(p),brandV())}</span>`;
+  root.addEventListener('error',event=>{
+    const img=event.target;
+    if(!img.matches?.('img[data-image-alternates]'))return;
+    const alternates=JSON.parse(img.dataset.imageAlternates);
+    if(alternates.length){
+      img.src=alternates.shift();
+      img.dataset.imageAlternates=JSON.stringify(alternates);
+      return;
+    }
+    const fallback=img.nextElementSibling;
+    if(!(fallback instanceof HTMLTemplateElement))return;
+    img.replaceWith(fallback.content);
+    fallback.remove();
+  },true);
   const stats=counts=>`<div class="account-stats" aria-label="Opinion summary"><span class="account-stat"><strong>${Number(counts?.yes)||0}</strong> item vouch${Number(counts?.yes)===1?'':'es'}</span><span class="account-stat"><strong>${Number(counts?.no)||0}</strong> ${Number(counts?.no)===1?'pass':'passes'}</span><span class="account-stat"><strong>${Number(counts?.brand)||0}</strong> brand endorsement${Number(counts?.brand)===1?'':'s'}</span></div>`;
   const countOpinions=opinions=>opinions.reduce((a,o)=>{if(Object.hasOwn(a,o.verdict))a[o.verdict]++;return a},{yes:0,no:0,brand:0});
   const date=value=>{const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleDateString(undefined,{dateStyle:'medium'}):''};
@@ -112,12 +132,15 @@
   const category=o=>o.product?.category||'Other';
   const shortDate=value=>{const d=new Date(value);return Number.isFinite(+d)?d.toLocaleDateString('en-US',{month:'short',day:'numeric'}):''};
   const monthDate=value=>{const d=new Date(value);return Number.isFinite(+d)?d.toLocaleDateString('en-US',{month:'long',year:'numeric'}):'Date unavailable'};
-  function photoMarkup(profile,prompt=false){return safeImage(profile.photo)?`<img src="${esc(profile.photo)}" alt="${esc(profile.displayName)}’s profile photo">`:prompt?`${icon('camera')}<span>Add photo</span>`:esc((profile.displayName||'V').trim().charAt(0).toUpperCase())}
+  function photoMarkup(profile,prompt=false){
+    const fallback=prompt?`${icon('camera')}<span>Add photo</span>`:esc((profile.displayName||'V').trim().charAt(0).toUpperCase());
+    return imageWithFallback([profile.photo],fallback,`${profile.displayName}’s profile photo`,false);
+  }
   function historyScore(o){const rated=o.score!==null&&o.score!==undefined&&Number.isFinite(Number(o.score)),n=rated?Number(o.score):null;const label=rated?n.toFixed(1):o.scoreStatus==='unavailable'?'—':'Unrated';const color=n===null?'unrated':n>=8?'green':n>=6.5?'black':n>=5?'yellow':'red';return `<span class="profile-history-score score-${color}" aria-label="Vouch score: ${rated?label:o.scoreStatus==='unavailable'?'unavailable':'unrated'}" title="Current community score in ${esc(o.experimentTitle||'the source collection')}"><small>Vouch score</small><strong>${label}</strong></span>`;}
   function historyRows(rows){return `<div class="profile-history-rows">${rows.map(o=>`<a class="profile-history-row" href="${'/products/'+encodeURIComponent(o.productId)+(o.experimentId?'?experiment='+encodeURIComponent(o.experimentId):experimentQuery)}">${productImage(o.product)}<span class="profile-product-title"><span class="brand">${esc(o.product?.brand)}</span><span>${esc(o.product?.name||'Product')}</span>${libraryTags(o)}</span><span class="profile-category-chip">${esc(category(o))}</span><span class="profile-history-meta">${historyScore(o)}<time datetime="${esc(o.vouchedAt||o.updatedAt)}">${esc(shortDate(o.vouchedAt||o.updatedAt))}</time></span></a>`).join('')}</div>`}
   const badgeMarkup=badges=>`<span class="contributor-badges">${(badges||[]).map(b=>`<span class="contributor-badge" title="${esc(b.description)}"><span>${esc(b.label)}</span><span class="sr-only">: ${esc(b.description)}</span></span>`).join('')}</span>`;
   function contributorAvatar(person){
-    return `<span class="contributor-avatar" aria-hidden="true">${safeImage(person.photo)?`<img src="${esc(person.photo)}" alt="" loading="lazy">`:esc((person.displayName||'V').charAt(0).toUpperCase())}</span>`;
+    return `<span class="contributor-avatar" aria-hidden="true">${imageWithFallback([person.photo],esc((person.displayName||'V').charAt(0).toUpperCase()))}</span>`;
   }
   function contributorRow(row){
     const badges=row.badges||[];
@@ -325,7 +348,11 @@
     const opinions=(profile.opinions||[]).filter(o=>o.verdict==='yes'&&(owner||o.visibility==='public'));
     const categories=[...new Set(opinions.map(category))].map(name=>({name,rows:opinions.filter(o=>category(o)===name)})).sort((a,b)=>b.rows.length-a.rows.length||a.name.localeCompare(b.name));
     const collections=[{name:'My Recs',rows:opinions},...categories];
-    const categoryCard=(c,i)=>`<button class="profile-category ${i===0?'profile-my-recs':''}" data-category="${i}"><span class="profile-collage">${Array.from({length:4},(_,j)=>`<span>${c.rows[j]?safeImage(c.rows[j].product?.image)?`<img src="${esc(c.rows[j].product.image)}" alt="" loading="lazy">`:`<span class="profile-image-fallback">${(c.rows[j].product?.brand?esc(c.rows[j].product.brand):brandV())}</span>`:''}</span>`).join('')}</span><strong>${esc(c.name)}</strong><span>${plural(c.rows.length,'vouch','vouches')}</span></button>`;
+    const categoryCard=(c,i)=>`<button class="profile-category ${i===0?'profile-my-recs':''}" data-category="${i}"><span class="profile-collage">${Array.from({length:4},(_,j)=>{
+      const row=c.rows[j];
+      const fallback=`<span class="profile-image-fallback">${row?.product?.brand?esc(row.product.brand):brandV()}</span>`;
+      return `<span>${row?imageWithFallback(productPhotos(row.product),fallback):''}</span>`;
+    }).join('')}</span><strong>${esc(c.name)}</strong><span>${plural(c.rows.length,'vouch','vouches')}</span></button>`;
     const groups=new Map();
     for(const o of [...opinions].sort((a,b)=>(b.vouchedAt||b.updatedAt).localeCompare(a.vouchedAt||a.updatedAt))){const month=monthDate(o.vouchedAt||o.updatedAt),key=month+'\0'+(o.experimentTitle||o.experimentId||'Your collection');if(!groups.has(key))groups.set(key,{month,title:o.experimentTitle||'Your collection',rows:[]});groups.get(key).rows.push(o)}
     const historyGroups=[...groups.values()],experiments=new Set(opinions.map(o=>o.experimentId||o.experimentTitle||'collection')).size;

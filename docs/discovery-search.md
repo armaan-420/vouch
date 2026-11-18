@@ -66,3 +66,18 @@ exposed. The discovery hero is deferred to a future homepage iteration.
 Validation: 18 relevant search/discovery tests pass, changed JS lint passes, and
 production build passes. Browser verification and publication remain blocked by
 the execution sandbox's listener and outbound Git DNS restrictions.
+
+### Product-page reviews in the library
+
+One public item Vouch from a product page qualifies a standalone listing.
+Existing eligible reviews appear from stored account data without a migration.
+The library uses Channel3 category slugs when available and maps recognized
+categories to the existing Vouch filters. Older records use their saved category
+title, and products without a category appear under Uncategorized.
+
+Global search combines its cached Edit inventory with current public account
+reviews on every request. Provider identities and aliases reconcile listings
+with Edit products. Products with public product-page reviews can appear in the
+rated filter and earn a review score using the existing neutral-adjusted formula.
+Edit scores retain their own vote totals. Private opinions and disabled or deleted
+accounts are excluded.

@@ -73,3 +73,21 @@ test('brand and nope create no nomination or board vote, and repeated verdicts c
  assert.equal((await f.call({productId:product.id,verdict:'yes'})).status,429);
  assert.equal((await f.call({productId:product.id,verdict:'brand'})).status,200);
 });
+
+test('a product-page Vouch can earn a public review score without an Edit',async t=>{
+ const f=await fixture(t,[]);
+ const getProduct=async()=> (await f.accounts(f.req('/api/products/'+product.id,undefined,null))).json();
+ const saved=await f.call({productId:product.id});
+ assert.equal(saved.data.saved,true);
+ assert.equal(saved.data.nomination.status,'no_eligible_edit');
+ assert.equal((await getProduct()).community,null);
+ const shared=await f.accounts(f.req('/api/account/profile',{visibility:'public',opinions:[{productId:product.id,visibility:'public'}]}));
+ assert.equal(shared.status,200);
+ const listed=await getProduct();
+ assert.equal(listed.community.source,'public-reviews');
+ assert.equal(listed.community.score,'7.5');
+ assert.equal(listed.community.voteCounts.total,1);
+ assert.equal(listed.contributors.length,1);
+ await f.call({productId:product.id,verdict:'skip'});
+ assert.equal((await getProduct()).community,null);
+});

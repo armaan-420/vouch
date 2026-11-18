@@ -128,7 +128,7 @@ function mountExperimentTags(product,host=app,lockCard=true){
 }
 function rankedRow(p,i,isCommunity=false){
  const saved=isCommunity?p.myVote:state.votes[p.id];
- return `<div class="rank-row${isCommunity?' community-row':''}"${!isCommunity?` id="product-${esc(p.id)}"`:''}><div class="rank-topline"><div class="rank-product"><span class="rank">${String(i+1).padStart(2,'0')}</span>${standingsImage(p,isCommunity)}<div class="rank-info">${standingsName(p,isCommunity)}${saved&&saved!=='skip'?`<span class="your-vote">You ${verdictLabel(saved)}</span>`:''}</div></div>${scoreSummary(p)}</div>${boardPeople(p,isCommunity)}${isCommunity&&(!p.myVote||p.myVote==='skip')?`<div class="community-actions">${[['no','Nope 👎','👎'],['brand','Brand vouch 🤝','🤝'],['yes','Vouch 👍','👍'],['skip','Skip this one','🤷']].map(([value,label,emoji])=>`<button data-community="${esc(p.id)}" data-choice="${value}" aria-label="${label}" aria-pressed="${p.myVote===value}"><span class="community-action-label" aria-hidden="true">${label}</span><span class="community-action-emoji" aria-hidden="true">${emoji}</span></button>`).join('')}</div>`:''}</div>`;
+ return `<div class="rank-row${isCommunity?' community-row':''}"${!isCommunity?` id="product-${esc(p.id)}"`:''}><div class="rank-topline"><div class="rank-product"><span class="rank">${String(i+1).padStart(2,'0')}</span>${standingsImage(p,isCommunity)}<div class="rank-info">${standingsName(p,isCommunity)}${saved&&saved!=='skip'?`<span class="your-vote" data-board-own-vote="${esc(saved)}">You ${verdictLabel(saved)}</span>`:''}</div></div>${scoreSummary(p)}</div>${boardPeople(p,isCommunity)}${isCommunity&&(!p.myVote||p.myVote==='skip')?`<div class="community-actions">${[['no','Nope 👎','👎'],['brand','Brand vouch 🤝','🤝'],['yes','Vouch 👍','👍'],['skip','Skip this one','🤷']].map(([value,label,emoji])=>`<button data-community="${esc(p.id)}" data-choice="${value}" aria-label="${label}" aria-pressed="${p.myVote===value}"><span class="community-action-label" aria-hidden="true">${label}</span><span class="community-action-emoji" aria-hidden="true">${emoji}</span></button>`).join('')}</div>`:''}</div>`;
 }
 let pilotBoardTracked=false,pilotPulse=null;
 function board(){pilotPulse?.disconnect();updateHeader();const restoreHeadingFocus=document.activeElement===app.querySelector('h1');app.dataset.collectionStatus=experimentStatus();const sorted=[...products.map(p=>({...p,...baseBoard[p.id]})),...communityProducts].sort((a,b)=>Number(b.score??-1)-Number(a.score??-1));const chips=experiment.status!=='draft'&&window.VouchBoardCategories?.markup(experiment)||'';
@@ -220,10 +220,14 @@ async function mountBoardPeople(onSummary){
  const load=async batch=>{
   try{const query=new URLSearchParams();batch.forEach(id=>query.append('id',id));const data=await api('/api/people-summary?'+query);onSummary?.(data.summaries);
    for(const host of hosts.filter(h=>batch.includes(h.dataset.boardPeople))){if(!host.isConnected)continue;const summary=data.summaries[host.dataset.boardPeople];
-    host.innerHTML=summary?.total?`<div class="board-people-avatars">${summary.people.map((p,i)=>window.VouchPeople.avatar(p,i,{className:'board-person'})).join('')}</div><a class="board-people-link" href="${esc(host.dataset.path.split('#')[0]+'#item-people')}">${summary.people[0]?.isYou?'You':esc(window.VouchPeople.shortName(summary.people[0].displayName))}${summary.total>1?' + '+(summary.total-1)+' others':''} vouch${summary.total===1&&!summary.people[0]?.isYou?'es':''} <span aria-hidden="true">→</span></a>`:'';
+    const lead=summary?.people[0];
+    const others=(summary?.total||0)-1;
+    const ownVote=host.parentElement?.querySelector('[data-board-own-vote="yes"]');
+    if(ownVote)ownVote.hidden=!!lead?.isYou;
+    host.innerHTML=summary?.total?`<div class="board-people-avatars">${summary.people.map((p,i)=>window.VouchPeople.avatar(p,i,{className:'board-person'})).join('')}</div><a class="board-people-link" href="${esc(host.dataset.path.split('#')[0]+'#item-people')}">${lead.isYou?'You':esc(window.VouchPeople.shortName(lead.displayName))}${others?' + '+others+(others===1?' other':' others'):''} vouch${!others&&!lead.isYou?'es':''} <span aria-hidden="true">→</span></a>`:'';
     host.hidden=!summary?.total;host.setAttribute('aria-busy','false');
    }
-  }catch{for(const host of hosts.filter(h=>batch.includes(h.dataset.boardPeople))){if(!host.isConnected)continue;host.hidden=false;host.setAttribute('aria-busy','false');host.innerHTML='<button class="text-button" type="button">People could not load. Retry</button>';host.querySelector('button').onclick=()=>load(batch);}}
+  }catch{for(const host of hosts.filter(h=>batch.includes(h.dataset.boardPeople))){if(!host.isConnected)continue;const ownVote=host.parentElement?.querySelector('[data-board-own-vote="yes"]');if(ownVote)ownVote.hidden=false;host.hidden=false;host.setAttribute('aria-busy','false');host.innerHTML='<button class="text-button" type="button">People could not load. Retry</button>';host.querySelector('button').onclick=()=>load(batch);}}
  };
  for(let i=0;i<ids.length;i+=100)await load(ids.slice(i,i+100));
 }

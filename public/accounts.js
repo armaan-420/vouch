@@ -607,7 +607,32 @@
     const rating=ratingMarkup(result,resultsUnavailable),people=contributors.filter(c=>c.verdict==='yes');
 
     document.title=(p.name||'Product')+' — Vouch';
-    shell(`<nav class="item-navigation" aria-label="Product navigation"><a class="item-back" href="${esc(backPath)}"><span class="item-back-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5-5 5 5 5M4 10h12"/></svg></span><span>${experimentId?'The Board':'Vouch home'}</span></a>${p.category?`<span class="item-nav-category">${esc(p.category)}</span>`:''}</nav><article class="item-detail"><div class="item-photo">${window.VouchGallery.markup(p,'product-page-gallery')}</div><div class="item-story"><p class="brand">${esc(p.brand)}${p.category?' / '+esc(p.category):''}</p><div class="item-title-row"><h1>${esc(p.name||'Product')}</h1>${rating.score}</div>${itemPeopleSection(people)}${productTagSection(data)}${itemCommentsSection(people)}${rating.panel}<div class="item-purchase-area">${data.newToVouch?`<div class="item-first-vote"><span class="item-first-vote-badge">New to Vouch</span><span>Tried it? Be the first to weigh in.</span><button type="button"><span aria-hidden="true">←</span> Vote</button></div>`:''}<div data-item-buy></div></div><div data-item-picks></div><div class="item-vote-feedback"><p class="account-status" role="status" aria-live="polite"></p><div data-item-vote-controls></div></div></div></article>`);
+    shell(`<nav class="item-navigation" aria-label="Product navigation"><a class="item-back" href="${esc(backPath)}"><span class="item-back-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5-5 5 5 5M4 10h12"/></svg></span><span>${experimentId?'The Board':'Vouch home'}</span></a>${p.category?`<span class="item-nav-category">${esc(p.category)}</span>`:''}<button type="button" class="item-share" data-item-share aria-label="Share product">${icon('share')}<span>Share</span></button><span class="item-share-status" role="status"></span></nav><article class="item-detail"><div class="item-photo">${window.VouchGallery.markup(p,'product-page-gallery')}</div><div class="item-story"><p class="brand">${esc(p.brand)}${p.category?' / '+esc(p.category):''}</p><div class="item-title-row"><h1>${esc(p.name||'Product')}</h1>${rating.score}</div>${itemPeopleSection(people)}${productTagSection(data)}${itemCommentsSection(people)}${rating.panel}<div class="item-purchase-area">${data.newToVouch?`<div class="item-first-vote"><span class="item-first-vote-badge">New to Vouch</span><span>Tried it? Be the first to weigh in.</span><button type="button"><span aria-hidden="true">←</span> Vote</button></div>`:''}<div data-item-buy></div></div><div data-item-picks></div><div class="item-vote-feedback"><p class="account-status" role="status" aria-live="polite"></p><div data-item-vote-controls></div></div></div></article>`);
+    root.querySelector('[data-item-share]').addEventListener('click',async event=>{
+      const trigger=event.currentTarget,status=root.querySelector('.item-share-status');
+      const url=new URL(productPath(id),location.origin).href;
+      const title=[p.brand,p.name].filter(Boolean).join(' ')||'Product';
+      if(navigator.share){
+        try{await navigator.share({title,url});return;}catch(error){if(error.name==='AbortError')return;}
+      }
+      try{
+        await navigator.clipboard.writeText(url);
+        status.textContent='Product link copied.';
+      }catch{
+        const {showPilotDialog}=await import('/pilot-dialog.js');
+        if(!trigger.isConnected||document.querySelector('#item-share-dialog'))return;
+        const dialog=document.createElement('dialog');
+        dialog.id='item-share-dialog';
+        dialog.className='pilot-dialog';
+        dialog.setAttribute('aria-labelledby','item-share-title');
+        dialog.innerHTML='<h2 id="item-share-title">Share product</h2><label for="item-share-url">Product link</label><input id="item-share-url" readonly autofocus><div class="pilot-dialog-actions"><button type="button" class="pilot-button is-outline">Done</button></div>';
+        const input=dialog.querySelector('input');
+        input.value=url;
+        dialog.querySelector('button').onclick=()=>dialog.close();
+        showPilotDialog(dialog,trigger);
+        input.select();
+      }
+    });
     root.querySelectorAll('[data-more-people]').forEach(button=>button.addEventListener('click',()=>{const panel=root.querySelector('.item-more-people');panel.hidden=!panel.hidden;root.querySelectorAll('[data-more-people]').forEach(b=>b.setAttribute('aria-expanded',String(!panel.hidden)));}));
     root.querySelector('[data-more-comments]')?.addEventListener('click',event=>{const section=root.querySelector('.item-comments'),expanded=section.classList.toggle('is-expanded');event.currentTarget.setAttribute('aria-expanded',String(expanded));event.currentTarget.textContent=expanded?'Show fewer comments':'See all '+section.dataset.count+' comments';});
     const message=root.querySelector('.item-vote-feedback p'),controls=root.querySelector('[data-item-vote-controls]');

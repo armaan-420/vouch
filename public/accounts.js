@@ -454,15 +454,19 @@
   function itemBuyMarkup(p,offers,{canCompare,retailerUrl}){
     const offer=offers[0],url=retailerUrl(offer?.url||p.url);
     if(!url&&!canCompare)return '';
-    const label=offer?'Buy at '+offer.retailer:'Buy now';
-    const accessibleLabel=label+'. Opens in a new tab. Price and availability set by the retailer.';
-    const compare=offers.length>1?'Compare '+plural(offers.length,'retailer'):offer?'See retailer price':canCompare?'Compare retailers':'';
-    const toggle=compare?`<button class="item-buy-toggle" type="button" aria-expanded="false" aria-controls="item-buy-offers">${compare} <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 5 5 5-5"/></svg></button>`:'';
-    const list=compare?`<ul id="item-buy-offers" hidden>${offers.map((o,index)=>`<li><a rel="sponsored noopener noreferrer" target="_blank" href="${esc(o.url)}" aria-label="${esc(o.retailer+', '+o.formattedPrice+', opens in a new tab'+(offers.length>1&&index===0?', lowest price':''))}"><span class="item-offer-retailer"><span>${esc(o.retailer)}</span>${offers.length>1&&index===0?'<span class="item-offer-lowest">Lowest</span>':''}</span><span>${esc(o.formattedPrice)}</span>${itemBuyArrow}</a></li>`).join('')}</ul>`:'';
-    if(!url)return '<div class="item-buy-lookup">'+toggle+list+'</div>';
-    return `<section class="item-buy-card" aria-label="Buy">
-      <a class="item-buy" href="${esc(url)}" target="_blank" rel="${offer?'sponsored ':''}noopener noreferrer" aria-label="${esc(accessibleLabel)}"><span>${esc(label)}</span>${itemBuyArrow}</a>
-      <div class="item-buy-compare-row"><div class="item-buy-compare-heading">${toggle}<span class="item-buy-disclosure">Vouch may earn a commission</span></div>${list}</div>
+    const retailer=offer?.retailer||p.buyRetailer;
+    const label=retailer?'Shop at '+retailer:'Shop product';
+    const accessibleLabel=label+(offer?', '+offer.formattedPrice:'')+'. Opens in a new tab. Price and availability set by the retailer.';
+    const hasPriceList=offers.length>1;
+    const compare=hasPriceList?'See prices at '+plural(offers.length,'store'):canCompare?'Check prices':'';
+    const toggle=compare?`<button class="item-buy-toggle" type="button" ${hasPriceList?'aria-expanded="false" aria-controls="item-buy-offers"':''}>${compare}${hasPriceList?' <svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 5 5 5-5"/></svg>':''}</button>`:'';
+    const list=hasPriceList?`<ul id="item-buy-offers" hidden>${offers.map((o,index)=>`<li><a rel="sponsored noopener noreferrer" target="_blank" href="${esc(o.url)}" aria-label="${esc(o.retailer+', '+o.formattedPrice+', opens in a new tab'+(offers.length>1&&index===0?', lowest price':''))}"><span class="item-offer-retailer"><span>${esc(o.retailer)}</span>${offers.length>1&&index===0?'<span class="item-offer-lowest">Lowest</span>':''}</span><span>${esc(o.formattedPrice)}</span>${itemBuyArrow}</a></li>`).join('')}</ul>`:'';
+    const status=canCompare?'<p class="item-buy-status" role="status"></p>':'';
+    if(!url)return '<div class="item-buy-card item-buy-lookup">'+toggle+list+status+'</div>';
+    const disclosure=!p.buyRetailer||offer?'<span class="item-buy-disclosure">Vouch may earn a commission</span>':'';
+    return `<section class="item-buy-card" aria-label="Where to buy">
+      <a class="item-buy" href="${esc(url)}" target="_blank" rel="${offer?'sponsored ':''}noopener noreferrer" aria-label="${esc(accessibleLabel)}"><span>${esc(label)}</span>${offer?`<span class="item-buy-price">${esc(offer.formattedPrice)}</span>`:itemBuyArrow}</a>
+      ${toggle||disclosure?`<div class="item-buy-compare-row"><div class="item-buy-compare-heading">${toggle}${disclosure}</div>${list}${status}</div>`:''}
     </section>`;
   }
   function toggleItemOffers(button,list,open){
@@ -483,7 +487,7 @@
       const button=host.querySelector('.item-buy-toggle');
       const list=host.querySelector('#item-buy-offers');
       if(focus)(focus==='compare'&&button?button:host.querySelector('.item-buy'))?.focus({preventScroll:true});
-      if(open&&button)toggleItemOffers(button,list,true);
+      if(open&&list)toggleItemOffers(button,list,true);
       if(!button)return;
       button.onclick=async()=>{
         if(button.getAttribute('aria-busy')==='true')return;
@@ -491,14 +495,26 @@
           toggleItemOffers(button,list,button.getAttribute('aria-expanded')!=='true');
           return;
         }
+        const status=host.querySelector('.item-buy-status');
         button.setAttribute('aria-busy','true');
-        try{offers=retailerOffers((await request('/api/catalog/items/'+encodeURIComponent(id)+experimentQuery)).offers)}
-        catch{/* Keep the direct retailer link if catalog offers are unavailable. */}
+        status.textContent='Checking prices…';
+        try{offers=retailerOffers((await request('/api/catalog/items/'+encodeURIComponent(id))).offers)}
+        catch(error){
+          status.textContent=error.message==='Product unavailable.'?'No store prices available for this product.':'Couldn’t check prices. Try again.';
+          button.removeAttribute('aria-busy');
+          return;
+        }
+        if(!offers.length){
+          status.textContent='No store prices available for this product.';
+          button.removeAttribute('aria-busy');
+          return;
+        }
         canCompare=false;
-        paint({open:offers.length>0,focus:document.activeElement===button?'compare':null});
+        paint({open:true,focus:document.activeElement===button?'compare':null});
       };
     }
     paint();
+    if(p.buyRetailer||!p.provider)return;
     try{
       canCompare=!!(await request('/api/catalog/config')).whereToBuy;
       if(canCompare)paint({focus:host.contains(document.activeElement)?'buy':null});

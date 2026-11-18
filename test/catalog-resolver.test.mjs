@@ -93,6 +93,8 @@ test('shared hydration keeps bundled and organizer-supplied local product photos
   {...eadem,photoOverride:blocked,photoOverrides:[blocked]}
  ]);
  assert.equal(original.image,bundled);
+ assert.equal(original.buyRetailer,'EADEM');
+ assert.equal(original.url,'https://eadem.co/products/le-chouchou?variant=46259335463165');
  assert.deepEqual(original.images,[bundled]);
  assert.equal(custom.image,override);
  assert.equal(legacy.image,bundled);

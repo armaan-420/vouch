@@ -22,28 +22,30 @@ test('buy copy and destination follow the lowest offer, preserving catalog order
   const offers=itemOffers([offer('High',24),offer('Zeta',12),offer('Alpha',12)]);
   const markup=itemBuyMarkup(product,offers);
   assert.equal(plural(1,'retailer'),'1 retailer');
-  assert.doesNotMatch(markup,/Guava|SPF|19 retailers|See current price|item-buy-price/);
+  assert.doesNotMatch(markup,/Guava|SPF|19 retailers|See current price/);
   assert.match(markup,/<ul id="item-buy-offers" hidden>.*Zeta, \$12\.00, opens in a new tab, lowest price/);
   assert.match(markup,/aria-expanded="false" aria-controls="item-buy-offers"/);
-  assert.match(markup,/Compare 3 retailers/);
+  assert.match(markup,/See prices at 3 stores/);
   assert.match(markup,/class="item-buy" href="https:\/\/zeta.example\/" target="_blank" rel="sponsored noopener noreferrer"/);
-  assert.match(markup,/Buy at Zeta\. Opens in a new tab/);
+  assert.match(markup,/Shop at Zeta, \$12\.00\. Opens in a new tab/);
 
   const single=itemBuyMarkup(product,itemOffers([offer('Zeta',12)]));
-  assert.match(single,/Buy at Zeta\. Opens in a new tab/);
-  assert.match(single,/See retailer price/);
-  assert.match(single,/<ul id="item-buy-offers" hidden>.*Zeta, \$12\.00, opens in a new tab/);
-  assert.doesNotMatch(single,/Compare|>From<|>Lowest</);
+  assert.match(single,/Shop at Zeta, \$12\.00\. Opens in a new tab/);
+  assert.match(single,/class="item-buy-price">\$12\.00/);
+  assert.doesNotMatch(single,/item-buy-toggle|>Lowest</);
 });
 
 test('buy row falls back to HTTPS and hides when there is no destination',()=>{
   const fallback=itemBuyMarkup(product,[]);
   assert.match(fallback,/href="https:\/\/fallback.example\/"/);
-  assert.match(fallback,/>Buy now</);
+  assert.match(fallback,/>Shop product</);
   assert.doesNotMatch(fallback,/item-buy-price|sponsored|Compare/);
   assert.equal(itemBuyMarkup({url:'http://example.com/'},[]),'');
-  assert.doesNotMatch(itemBuyMarkup({},[],{canCompare:true}),/item-buy-card/);
-  assert.match(itemBuyMarkup(product,[],{canCompare:true}),/Compare retailers/);
+  assert.match(itemBuyMarkup({},[],{canCompare:true}),/item-buy-lookup/);
+  assert.match(itemBuyMarkup(product,[],{canCompare:true}),/Check prices/);
+  const direct=itemBuyMarkup({...product,buyRetailer:'EADEM'},[]);
+  assert.match(direct,/>Shop at EADEM</);
+  assert.doesNotMatch(direct,/item-buy-toggle|may earn a commission/);
 });
 
 test('category strip excludes the current product and its aliases and needs two scored picks',()=>{

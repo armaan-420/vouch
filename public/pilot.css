@@ -54,3 +54,13 @@
 .pilot-dialog-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
 .pilot-dialog :focus-visible,.pilot-board-card :focus-visible{outline:3px solid var(--pilot-olive);outline-offset:4px}
 @media(min-width:768px){.pilot-next-secondary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pilot-pulse{position:relative;background:color-mix(in srgb,var(--green) 16%,var(--paper))}
+.pilot-pulse .eyebrow{margin:0 48px 10px 0;color:var(--ink)}
+.pilot-pulse h2{padding-right:12px}
+.pilot-pulse .pilot-dismiss{position:absolute;top:8px;right:8px;width:44px;height:44px;font-size:1.5rem}
+.pilot-pulse-choices{display:flex;flex-wrap:wrap;gap:8px}
+.pilot-pulse-choices button{border-color:var(--pilot-olive);flex:auto}
+.pilot-pulse-choices button:hover{background:var(--green)}
+.pilot-followup{display:grid;gap:8px}
+.pilot-followup textarea{width:100%;resize:vertical;border:1px solid var(--muted);border-radius:8px;background:var(--paper);color:var(--ink);padding:10px;font:inherit;min-height:44px}
+#pilot-followup-count{justify-self:end;font-size:.8rem;color:var(--ink)}

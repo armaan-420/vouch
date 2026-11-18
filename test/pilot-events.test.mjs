@@ -49,3 +49,36 @@ test('funnel merges pre-signup visitor history and return rate uses Eastern midn
   assert.equal(result['buy-water-bottles'],1);
   assert.equal(result.trust,100);
 });
+
+test('a Wharton pulse answer is counted once across categories and only organizer metrics expose follow-up',async()=>{
+  const {createPilotMetrics}=await import('../lib/pilot-metrics.mjs');
+  const pulse={events:[],rates:{},settings:{targets:{}}};
+  const account={email:'test@wharton.upenn.edu',emailVerified:true,createdAt:'2026-11-18T16:00Z'};
+  const accounts={accounts:{member:account},browserOwners:{}};
+  const store={scope:async()=>({read:()=>pulse,transaction:fn=>fn(pulse)})};
+  const accountStore=async()=>({read:()=>accounts,transaction:fn=>fn(accounts)});
+  const handle=createPilotEvents({store,accountStore,getAccount:async()=>({key:'member',account}),now:()=>Date.parse('2026-11-18T17:00Z')});
+  const answer={type:'pulse_answer',experimentId:'waterbottle',answer:'yes'};
+  assert.equal((await handle(post(answer))).status,204);
+  const followUp='<b>'+ 'x'.repeat(240)+'</b>';
+  assert.equal((await handle(post({...answer,followUp}))).status,204);
+  assert.ok(account.pilotPulseSeenAt);
+  assert.equal((await handle(post({type:'pulse_answer',experimentId:'lip-balm',answer:'no'}))).status,204);
+  assert.equal((await handle(post({type:'pulse_shown',experimentId:'lip-balm'}))).status,204);
+  assert.equal(pulse.events.length,1);
+  assert.equal(pulse.events[0].followUp.length,240);
+
+  const url='https://vouch.test/api/admin/pilot-metrics';
+  const metrics=createPilotMetrics({store,accountStore,registryStore:async()=>({read:()=>({experiments:{}})}),authorizeAdmin:r=>r.headers.get('x-test-admin')==='yes'});
+  assert.equal((await metrics(new Request(url))).status,401);
+  const result=await (await metrics(new Request(url,{headers:{'x-test-admin':'yes'}}))).json();
+  assert.deepEqual(result.reports.all.followUps,[{at:'2026-11-18T17:00:00.000Z',answer:'yes',followUp:followUp.slice(0,240)}]);
+  const other={...account,pilotPulseSeenAt:null};
+  accounts.accounts.other=other;
+  const dismiss=createPilotEvents({store,accountStore,getAccount:async()=>({key:'other',account:other})});
+  assert.equal((await dismiss(post({type:'pulse_dismissed',experimentId:'waterbottle'}))).status,204);
+  assert.ok(other.pilotPulseSeenAt);
+  await dismiss(post({...answer,experimentId:'lip-balm'}));
+  assert.equal(pulse.events.filter(e=>e.accountKey==='other').length,1);
+  assert.equal(pulse.events.at(-1).type,'pulse_dismissed');
+});

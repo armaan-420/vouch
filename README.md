@@ -1,5 +1,7 @@
 # Vouch
 
+See the [category registry guide](CATEGORIES.md) for category management, API filters and the backfill.
+
 ## Current release — November 16, 2026 · version 107
 
 Live at [Vouch sign-in](https://v4ch.app/account?signin=1). Email entry now uses the generic “Enter your email address” placeholder and tighter headline spacing. Phones below 768px show the form without imagery; tablets at 768–899px show the polaroid fan beside/behind the headline; desktop uses a warm paper panel. Example people and scores are static and labeled “Sample activity”. Code entry has a six-cell single input, automatic verification, heading focus and a 30-second client/server resend cooldown. The italic-v branding from version 106 is retained.

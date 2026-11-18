@@ -1,5 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {publicHttps,validGtin,variantLabel,tokens,isBundle} from '../lib/catalog/normalize.mjs';
+import {initialCategoryRegistry,validateCategory} from '../lib/category-registry.mjs';
 import {createChannel3,mapChannel3} from '../lib/catalog/providers/channel3.mjs';
 import {createShopifyCatalog,mapShopify} from '../lib/catalog/providers/shopify-catalog.mjs';
 const c3={id:'fixture-bottle',title:'Example Bottle 24 oz',brands:[{name:'Example'}],images:[{url:'https://images.example.com/bottle.jpg'}],offers:[{domain:'merchant.example.com',url:'https://merchant.example.com/buy',price:{price:25,currency:'USD'},max_commission_rate:0.9}],category:{title:'Water bottles'}};
@@ -14,6 +15,18 @@ test('Channel3 narrows text and photo requests to verified voting categories in 
  await provider.search('Example',{category:'Golf bags'});assert.equal(bodies.at(-1).query,'Example Golf bags');assert.equal(bodies.at(-1).filters,undefined);
  await provider.search('Example golf bags',{category:'Golf bags'});assert.equal(bodies.at(-1).query,'Example golf bags');
  for(const category of [undefined,'Products']){await provider.search('Example',{category});assert.equal(bodies.at(-1).query,'Example');assert.equal(bodies.at(-1).filters,undefined);}
+});
+test('Channel3 uses saved category slugs when an organizer renames a label',async()=>{
+ const registry=initialCategoryRegistry();
+ registry.categories.televisions=validateCategory({...registry.categories.televisions,label:'Television sets',aliases:[]},registry);
+ let body;
+ const provider=createChannel3({apiKey:'fixture',fetcher:async(_url,options)=>{body=JSON.parse(options.body);return Response.json({products:[]});}});
+ await provider.search('Example',{category:'Television sets',categoryRegistry:registry});
+ assert.deepEqual(body.filters,{category_ids:['televisions']});
+ await provider.search('Example',{category:'Televisions',categoryRegistry:registry});
+ assert.equal(body.filters,undefined);
+ await provider.search('Example',{category:'Televisions',categoryId:'televisions',categoryRegistry:registry});
+ assert.deepEqual(body.filters,{category_ids:['televisions']});
 });
 test('catalog normalization rejects unsafe hosts, invalid GTINs and bundles',()=>{
  for(const u of ['http://example.com','https://localhost','https://127.1','https://2130706433','https://10.0.0.1','https://172.20.0.1','https://192.168.1.1','https://169.254.1.2','https://[::1]','https://[::ffff:127.0.0.1]','https://user:password@example.com','https://example.com/'+ 'a'.repeat(2048)])assert.equal(publicHttps(u),null,u);

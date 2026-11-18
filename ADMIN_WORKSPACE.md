@@ -26,6 +26,10 @@ Columns: Edit name/path, category, publication or schedule status, product count
 
 Links use `#experiments/<id>` and preserve the selected experiment in the URL. The global experiment selector stays on Home; detail pages use their own experiment identity to avoid changing settings for a different row.
 
+## Categories
+
+Create and edit category labels, parents and aliases. Edit settings suggests registry labels and accepts free text. See the [category registry guide](CATEGORIES.md).
+
 ## Product Library
 
 The default table contains products with active verdicts, ordered by vote count. Search matches product name, brand, category and tag labels across the entire returned inventory, not only the displayed page. Pagination shows 25 products per page. Include unvoted products exposes stored curated/custom products for tagging; it does not query the entire external catalog.

@@ -8,6 +8,7 @@ import {createFileStore} from '../lib/file-store.mjs';
 import {initialRegistry} from '../lib/experiment-api.mjs';
 import {initialAccounts,productKey} from '../lib/account-records.mjs';
 import {globalSearch,invalidateSearchIndex} from '../lib/global-search.mjs';
+import {withLibraryReviews} from '../lib/library-reviews.mjs';
 import {initialTags} from '../lib/product-tags.mjs';
 const tags=[{id:'light',label:'Lightweight'},{id:'grease',label:'Non-greasy'},{id:'fragrance',label:'Fragrance-free'},{id:'leak',label:'Leak-proof'}];
 const p=(id,extra={})=>({id,name:id,brand:'Brand',category:'Sunscreen',formula:'',tags:tags.slice(0,2),score:'7.5',voteCounts:{total:1},...extra});
@@ -76,7 +77,7 @@ test('standalone public Vouches are discoverable by category and stay separate f
   const discover=async query=>(await discoverySearch({store,accounts,request:req('/api/discover?'+query)})).json();
   const data=await discover('reviewed=1');
   assert.equal(data.total,3);
-  assert.deepEqual(data.categoryOptions,[{id:'coffee-mugs',label:'Mugs & Cups'},{id:'televisions',label:'Televisions'},{id:'uncategorized',label:'Uncategorized'}]);
+  assert.deepEqual(data.categoryOptions,[{id:'coffee-mugs',label:'Mugs & Cups',parentId:null},{id:'televisions',label:'Televisions',parentId:'electronics'},{id:'uncategorized',label:'Uncategorized',parentId:null}]);
   assert.ok(!JSON.stringify(data).includes('private test payload'));
   const [product]=(await discover('category=televisions&reviewed=1')).products;
   assert.equal(product.id,sony.id);
@@ -85,6 +86,8 @@ test('standalone public Vouches are discoverable by category and stay separate f
   assert.equal(product.voteCounts.total,0);
   assert.equal(product.score,null);
   assert.equal((await discover('category=Televisions')).total,1);
+  assert.equal((await discover('category=coffee-mugs')).total,1);
+  assert.equal(product.parentCategory,'Electronics');
   const search=async()=>(await globalSearch({store,accounts,request:req('/api/search?q=Sony+Bravia&source=vouch')})).json();
   assert.equal((await search()).products[0].vouchStatus,'rated');
   await records.transaction(d=>{d.accounts.public.opinions.sony.visibility='private'});
@@ -100,4 +103,41 @@ test('standalone public Vouches are discoverable by category and stay separate f
   assert.equal(joined[0].reviewCounts.total,2);
   assert.equal(joined[0].score,'7.5');
  }finally{await rm(directory,{recursive:true,force:true})}
+});
+
+test('legacy Edit labels and category IDs stay stable in the review library',async()=>{
+ const legacy=[
+  ['Beauty','beauty'],['Electronics','electronics'],['Travel & Outdoors','travel-outdoors'],
+  ['Sunscreen','sunscreen'],['sunscreens','sunscreen'],['sunscreen','sunscreen'],
+  ['Blush','blush'],['Lip balm','lip-balm'],['Lip Balm','lip-balm'],['Hand cream','hand-cream'],
+  ['Shampoo','shampoo'],['shampoos','shampoo'],['Televisions','televisions'],
+  ['TV','televisions'],['TVs','televisions'],['Television','televisions'],
+  ['Headphones','headphones'],['headphone','headphone'],['Power banks','power-banks'],['Air purifiers','air-purifiers'],
+  ['Water bottles','water-bottles'],['Water bottle','water-bottles'],['Water Bottles','water-bottles'],
+  ['Carry-on luggage','carry-on-luggage'],['Running shoes','running-shoes'],['Running Shoes','running-shoes'],
+  ['Bags and totes','bags-and-totes'],['Golf bags','golf-bags'],['Boards','boards'],['Products','products'],
+  ['Mugs & Cups','mugs-cups'],['Athletic Shoes','athletic-shoes'],['Open','open'],
+ ];
+ const edits=legacy.map(([category],i)=>p('legacy-'+i,{category}));
+ const products=await withLibraryReviews(null,edits,initialAccounts());
+ assert.deepEqual(products.map(p=>[p.category,p.categoryId]),legacy);
+});
+
+test('Discover filters by parent, child ID and legacy category labels',async t=>{
+ const directory=await mkdtemp(path.join(os.tmpdir(),'vouch-discover-parent-'));
+ t.after(()=>rm(directory,{recursive:true,force:true}));
+ const store=await createFileStore(directory);
+ const registry=await store.scope('experiment-registry',initialRegistry);
+ const labels={headset:'Headphones',tv:'TVs',battery:'Power banks',spf:'Sunscreen',audio:'Electronics'};
+ await registry.transaction(d=>{
+  d.experiments=Object.fromEntries(Object.entries(labels).map(([id,category])=>[id,{id,category,products:[p(id,{categorySlug:'sunscreen'})]}]));
+ });
+ const accounts=async()=>Response.json({profile:null});
+ const discover=async category=>(await discoverySearch({store,accounts,request:new Request('https://vouch.test/api/discover?category='+category)})).json();
+ const parent=await discover('electronics');
+ assert.deepEqual(parent.products.map(p=>p.id).sort(),['audio','battery','headset','tv']);
+ assert.deepEqual(parent.parents,[{id:'beauty',label:'Beauty'},{id:'electronics',label:'Electronics'}]);
+ assert.deepEqual(parent.categoryOptions.find(c=>c.id==='headphones'),{id:'headphones',label:'Headphones',parentId:'electronics'});
+ for(const category of ['headphones','Headphones'])assert.deepEqual((await discover(category)).products.map(p=>p.id),['headset']);
+ assert.deepEqual((await discover('TVs')).products.map(p=>p.id),['tv']);
 });

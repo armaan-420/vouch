@@ -45,3 +45,50 @@ test('organizers can rename a live experiment and set its directory cover withou
  const category=(await(await f.req('/api/categories',null,false)).json()).categories.find(c=>c.id==='edit');assert.equal(category.image,settings.coverImage);assert.equal(category.category,settings.category);
  assert.equal((await f.req('/api/admin/experiment-settings',{...settings,coverImage:''})).status,200);assert.equal((await f.registry.read()).experiments.edit.coverImage,null);
 });
+
+test('category management requires an organizer and can create, rename and reparent categories',async t=>{
+ const f=await setup(t);
+ const newParent={action:'create',label:'Home goods'};
+ assert.equal((await f.req('/api/admin/categories',null,false)).status,401);
+ assert.equal((await f.req('/api/admin/categories',newParent,false)).status,401);
+ const response=await f.req('/api/admin/categories',newParent);
+ assert.equal(response.status,201);
+ const {category:parent}=await response.json();
+ assert.equal(parent.id,'home-goods');
+ assert.equal((await f.req('/api/admin/categories',{action:'update',id:'electronics',label:'Electronics',parentId:parent.id})).status,400);
+ const moved=await f.req('/api/admin/categories',{action:'update',id:'headphones',label:'Personal audio',parentId:parent.id,aliases:['Headphones','Headsets']});
+ assert.equal(moved.status,200);
+ assert.equal((await moved.json()).category.id,'headphones');
+ const listing=await (await f.req('/api/admin/categories')).json();
+ assert.equal(listing.categories.find(c=>c.id==='headphones').parentId,parent.id);
+ assert.equal(listing.categories.find(c=>c.id==='headphones').label,'Personal audio');
+ const settings={id:'edit',category:'Headsets',includeInOverall:false,closed:false};
+ const saved=await (await f.req('/api/admin/experiment-settings',settings)).json();
+ assert.equal(saved.warning,undefined);
+ assert.equal(saved.experiment.category,'Personal audio');
+ assert.equal(saved.experiment.categoryId,'headphones');
+ const entry=(await (await f.req('/api/categories',null,false)).json()).categories.find(c=>c.id==='edit');
+ assert.equal(entry.categoryId,'headphones');
+ assert.equal(entry.parentCategory,'Home goods');
+ const edit=(await (await f.req('/api/experiment?experiment=edit',null,false)).json()).experiment;
+ assert.equal(edit.products[0].parentCategoryId,parent.id);
+ const warningResponse=await f.req('/api/admin/experiment-settings',{...settings,category:'Kitchen utensils'});
+ assert.equal(warningResponse.status,200);
+ const warning=await warningResponse.json();
+ assert.match(warning.warning,/not in the registry/);
+ assert.equal(warning.experiment.category,'Kitchen utensils');
+ assert.equal(warning.experiment.categoryId,undefined);
+ const unmatched=(await (await f.req('/api/admin/categories')).json()).unmatched;
+ assert.ok(unmatched.some(e=>e.editId==='edit'&&e.category==='Kitchen utensils'));
+});
+
+test('creating an Edit keeps an unknown free-text label and returns a warning',async t=>{
+ const f=await setup(t);
+ const settings={id:'utensil-edit',title:'Cooking utensil test',category:'Utensils',productIds:['boj'],customProducts:[]};
+ const response=await f.req('/api/admin/experiments',settings);
+ assert.equal(response.status,201);
+ const result=await response.json();
+ assert.match(result.warning,/not in the registry/);
+ assert.equal(result.experiment.category,'Utensils');
+ assert.equal(result.experiment.categoryId,undefined);
+});

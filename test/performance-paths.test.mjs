@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {mapConcurrent} from '../lib/map-concurrent.mjs';
 import {publicInventory} from '../lib/discovery-search.mjs';
 import {createProductResolver} from '../lib/catalog/resolver.mjs';
+import {initialCategoryRegistry} from '../lib/category-registry.mjs';
 import {fresh} from '../lib/vouch-api.mjs';
 
 test('concurrent work retains input order and limits outstanding calls',async()=>{
@@ -19,6 +20,7 @@ test('inventory reads public categories concurrently and merges votes in registr
  const gates=[],started=[];
  const store={scope(key){return {async read(){
   if(key==='experiment-registry')return {experiments};if(key==='product-tags')return {products:{}};
+  if(key==='category-registry-v1')return initialCategoryRegistry();
   if(key==='accounts-v1')return {accounts:{},products:{}};
 
   const i=Number(key.slice('experiment:e'.length));started.push(i);

@@ -1,5 +1,6 @@
 (()=>{
  'use strict';
+ // TODO(category-registry) Use registry categories for the Wharton chips.
  const groups=[{name:'Water bottles',match:/water bottle/i},{name:'Lip balm',match:/lip balm/i},{name:'Carry-on luggage',match:/carry[ -]?on/i}];
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function markup(experiment){return groups.some(g=>g.match.test(experiment.category))?'<div class="board-category-switcher" aria-busy="true"><p class="board-category-status" role="status">Finding Wharton experiments…</p></div>':'';}

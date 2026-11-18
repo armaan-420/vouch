@@ -23,7 +23,7 @@ function selectExperiment(){
 }
 async function loadExperiments(){const data=await request('/api/admin/experiments');experiments=data.experiments.filter(e=>e.status!=='draft');renderExperimentOverview();document.getElementById('experiment-select').innerHTML=experiments.map(e=>'<option value="'+safe(e.id)+'">'+safe(e.title)+(e.closed?' (closed)':'')+'</option>').join('');if(!experiments.some(e=>e.id===selectedExperiment))selectedExperiment=experiments[0]?.id||'';document.getElementById('experiment-select').value=selectedExperiment;document.getElementById('product-choices').innerHTML=[...data.defaultProducts,...data.customProducts].map(productChoice).join('');renderCatalogSelection();if(experiments.length)selectExperiment();else {loadVersion++;document.getElementById('metrics').innerHTML='';document.getElementById('details').textContent='No experiments yet.';document.getElementById('active-experiment-title').textContent='No experiment selected';}document.dispatchEvent(new CustomEvent('vouch-experiments-loaded'))}
 document.getElementById('experiment-select').onchange=e=>{selectedExperiment=e.target.value;updateExperimentUrl();catalogVersion++;catalogController?.abort();clearTimeout(catalogTimer);collapseCatalog();if(catalogInput.value.trim().length>=2)searchCatalog();selectExperiment()};
-document.getElementById('settings-form').onsubmit=async e=>{e.preventDefault();const button=e.target.querySelector('button');button.disabled=true;try{await request('/api/admin/experiment-settings',{id:selectedExperiment,title:document.getElementById('settings-title').value,category:document.getElementById('settings-category').value,searchAliases:document.getElementById('settings-aliases').value.split(',').map(s=>s.trim()).filter(Boolean),coverImage:document.getElementById('settings-cover').value,includeInOverall:document.getElementById('include-overall').checked,closed:document.getElementById('close-experiment').checked,startsAt:document.getElementById('experiment-start').value?new Date(document.getElementById('experiment-start').value).toISOString():null,endsAt:document.getElementById('experiment-end').value?new Date(document.getElementById('experiment-end').value).toISOString():null});await loadExperiments();document.getElementById('status').textContent='Experiment settings saved.'}catch(error){document.getElementById('status').textContent=error.message}finally{button.disabled=false}};
+document.getElementById('settings-form').onsubmit=async e=>{e.preventDefault();const button=e.target.querySelector('button');button.disabled=true;try{const data=await request('/api/admin/experiment-settings',{id:selectedExperiment,title:document.getElementById('settings-title').value,category:document.getElementById('settings-category').value,searchAliases:document.getElementById('settings-aliases').value.split(',').map(s=>s.trim()).filter(Boolean),coverImage:document.getElementById('settings-cover').value,includeInOverall:document.getElementById('include-overall').checked,closed:document.getElementById('close-experiment').checked,startsAt:document.getElementById('experiment-start').value?new Date(document.getElementById('experiment-start').value).toISOString():null,endsAt:document.getElementById('experiment-end').value?new Date(document.getElementById('experiment-end').value).toISOString():null});await loadExperiments();document.getElementById('status').textContent=data.warning?'Experiment settings saved. '+data.warning:'Experiment settings saved.'}catch(error){document.getElementById('status').textContent=error.message}finally{button.disabled=false}};
 const catalogInput=document.getElementById('catalog-search'),catalogChoices=document.getElementById('catalog-choices'),catalogStatus=document.getElementById('catalog-status');
 let catalogTimer,catalogController,catalogVersion=0,catalogMatches=[];
 function chosenProducts(){return [...document.querySelectorAll('input[name="experiment-product"]:checked')]}
@@ -52,7 +52,7 @@ catalogInput.oninput=()=>{catalogVersion++;catalogController?.abort();clearTimeo
 document.getElementById('product-choices').onchange=()=>{renderCatalogSelection();highlightCatalog()};
 document.getElementById('add-custom').onclick=()=>{const p=Object.fromEntries(['id','brand','name','formula','image','url'].map(key=>[key,document.getElementById('custom-'+key).value.trim()]));const status=document.getElementById('create-status');if(!/^sku-[a-z0-9]+(-[a-z0-9]+)*$/.test(p.id)||p.name.length<2||p.brand.length<2){status.textContent='Enter a stable ID beginning sku-, a brand, and a product name.';return}if(customDraft.some(x=>x.id===p.id)){status.textContent='That SKU is already in this draft.';return}customDraft.push(p);document.getElementById('custom-draft').innerHTML=customDraft.map((x,i)=>'<li>'+safe(x.brand)+' — '+safe(x.name)+' <button type="button" class="text-button" data-remove="'+i+'">Remove</button></li>').join('');for(const key of ['id','brand','name','formula','image','url'])document.getElementById('custom-'+key).value='';status.textContent='SKU added to this draft.'};
 document.getElementById('custom-draft').onclick=e=>{const button=e.target.closest('[data-remove]');if(!button)return;customDraft.splice(Number(button.dataset.remove),1);button.closest('li').remove();[...document.querySelectorAll('[data-remove]')].forEach((b,i)=>b.dataset.remove=i)};
-document.getElementById('create-experiment').onsubmit=async e=>{e.preventDefault();const status=document.getElementById('create-status'),button=e.target.querySelector('button[type="submit"]');button.disabled=true;try{const data=await request('/api/admin/experiments',{id:document.getElementById('experiment-slug').value,title:document.getElementById('experiment-title').value,coverImage:document.getElementById('experiment-cover').value,category:document.getElementById('experiment-category').value,productIds:[...document.querySelectorAll('input[name="experiment-product"]:checked')].map(x=>x.value),customProducts:customDraft});selectedExperiment=data.experiment.id;customDraft=[];e.target.reset();document.getElementById('custom-draft').innerHTML='';catalogVersion++;catalogController?.abort();clearTimeout(catalogTimer);collapseCatalog();catalogStatus.textContent='Type at least two characters. Selections stay here as you search.';await loadExperiments();updateExperimentUrl();location.hash='experiments/'+encodeURIComponent(selectedExperiment);status.textContent='Experiment created. Use Open experiment or Copy link above.'}catch(error){status.textContent=error.message}finally{button.disabled=false}};
+document.getElementById('create-experiment').onsubmit=async e=>{e.preventDefault();const status=document.getElementById('create-status'),button=e.target.querySelector('button[type="submit"]');button.disabled=true;try{const data=await request('/api/admin/experiments',{id:document.getElementById('experiment-slug').value,title:document.getElementById('experiment-title').value,coverImage:document.getElementById('experiment-cover').value,category:document.getElementById('experiment-category').value,productIds:[...document.querySelectorAll('input[name="experiment-product"]:checked')].map(x=>x.value),customProducts:customDraft});selectedExperiment=data.experiment.id;customDraft=[];e.target.reset();document.getElementById('custom-draft').innerHTML='';catalogVersion++;catalogController?.abort();clearTimeout(catalogTimer);collapseCatalog();catalogStatus.textContent='Type at least two characters. Selections stay here as you search.';await loadExperiments();updateExperimentUrl();location.hash='experiments/'+encodeURIComponent(selectedExperiment);status.textContent='Experiment created. Use Open experiment or Copy link above.';if(data.warning)document.getElementById('status').textContent=data.warning}catch(error){status.textContent=error.message}finally{button.disabled=false}};
 (async()=>{try{await loadExperiments();const h=await request('/api/health');document.getElementById('health-status').textContent=h.ok?'Database connected · '+h.experimentCount+' experiment(s).':''}catch(error){document.getElementById('status').textContent=error.message}})();
 
 let libraryProducts=[],tagDefinitions={},taggedProduct=null;
@@ -69,3 +69,60 @@ function renderExperimentOverview(){
 }
 
 for(const [inputId,previewId,statusId] of [['settings-cover','settings-cover-preview','settings-cover-status'],['experiment-cover','create-cover-preview','create-cover-status']]){const input=document.getElementById(inputId),preview=document.getElementById(previewId),status=document.getElementById(statusId);input.addEventListener('input',()=>{preview.hidden=true;status.textContent='';if(!input.value)return;if(!/^https:\/\//i.test(input.value)){status.textContent='Use a public HTTPS image URL.';return;}preview.src=input.value;preview.hidden=false;});preview.onerror=()=>{preview.hidden=true;status.textContent='Could not load this image. Check the URL before saving.';};preview.onload=()=>status.textContent='Cover preview loaded.';}
+
+const categoryForm=document.getElementById('category-form');
+const categoryStatus=document.getElementById('admin-categories-status');
+const categoryList=document.getElementById('admin-category-list');
+let registryCategories=[],editingCategoryId=null;
+
+async function loadCategories(){
+ const {categories,unmatched}=await request('/api/admin/categories');
+ registryCategories=categories.sort((a,b)=>a.label.localeCompare(b.label));
+ document.getElementById('registry-category-labels').replaceChildren(...registryCategories.map(c=>new Option(c.label,c.label)));
+ const row=c=>`<li><button class="text-button" type="button" data-category-id="${safe(c.id)}">${safe(c.label)}</button></li>`;
+ const groups=registryCategories.filter(c=>!c.parentId).map(parent=>({parent,children:registryCategories.filter(c=>c.parentId===parent.id)}));
+ categoryList.innerHTML=groups.filter(g=>g.children.length).map(({parent,children})=>
+  `<h2><button class="text-button" type="button" data-category-id="${safe(parent.id)}">${safe(parent.label)}</button></h2><ul>${children.map(row).join('')}</ul>`
+ ).join('')+'<h2>Unassigned</h2><ul>'+groups.filter(g=>!g.children.length).map(g=>row(g.parent)).join('')
+  +unmatched.map(e=>`<li>${safe(e.category||'Uncategorized')} · Edit /${safe(e.editId)}</li>`).join('')+'</ul>';
+}
+
+function openCategoryForm(category){
+ editingCategoryId=category?.id||null;
+ categoryForm.reset();
+ document.getElementById('category-form-heading').textContent=category?'Edit '+category.label:'New category';
+ categoryForm.elements.label.value=category?.label||'';
+ categoryForm.elements.aliases.value=category?.aliases.join(', ')||'';
+ const parent=categoryForm.elements.parentId;
+ const hasChildren=editingCategoryId&&registryCategories.some(c=>c.parentId===editingCategoryId);
+ parent.replaceChildren(new Option('No parent',''));
+ if(!hasChildren)for(const c of registryCategories.filter(c=>!c.parentId&&c.id!==editingCategoryId))parent.add(new Option(c.label,c.id));
+ parent.value=category?.parentId||'';
+ categoryStatus.textContent='';
+ categoryForm.hidden=false;
+ categoryForm.elements.label.focus();
+}
+
+categoryList.onclick=event=>{
+ const id=event.target.closest('[data-category-id]')?.dataset.categoryId;
+ if(id)openCategoryForm(registryCategories.find(c=>c.id===id));
+};
+document.getElementById('new-category').onclick=()=>openCategoryForm();
+document.getElementById('cancel-category').onclick=()=>{categoryForm.hidden=true;};
+categoryForm.onsubmit=async event=>{
+ event.preventDefault();
+ const button=categoryForm.querySelector('[type=submit]');
+ button.disabled=true;
+ try{
+  const values=new FormData(categoryForm);
+  const label=values.get('label').trim();
+  await request('/api/admin/categories',{action:editingCategoryId?'update':'create',...(editingCategoryId?{id:editingCategoryId}:{}),label,parentId:values.get('parentId')||null,aliases:values.get('aliases').split(',').map(a=>a.trim()).filter(Boolean)});
+  categoryForm.hidden=true;
+  categoryStatus.textContent='Category saved.';
+  await loadCategories();
+ }catch(error){categoryStatus.textContent=error.message;}
+ finally{button.disabled=false;}
+};
+const refreshCategories=()=>loadCategories().catch(error=>{categoryStatus.textContent=error.message;});
+document.addEventListener('vouch-admin-section',event=>{if(event.detail.section==='categories')refreshCategories();});
+refreshCategories();

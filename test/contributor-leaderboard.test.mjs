@@ -83,3 +83,129 @@ test('saved-email browser participants get a signup gate without exposing their 
  assert.equal(whartonLeaderboard(accounts).viewer.requiresSignup,false);assert.equal(whartonLeaderboard(accounts).total,0);assert.equal(JSON.stringify(whartonLeaderboard(accounts)).includes('pending@'),false);
  accounts.pending.emailVerified=true;accounts.pending.browserProfile=false;accounts.pending.verificationRequired=false;assert.equal(whartonLeaderboard(accounts,{key:'pending'}).viewer.requiresSignup,false);assert.equal(whartonLeaderboard(accounts).total,1);
 });
+
+const categoryVouch=(id,category,extra={})=>opinion(id,{
+ product:{id,name:id,category},...extra
+});
+const categoryMember=(handle,vouches,extra={})=>member(handle,0,{
+ opinions:Object.fromEntries(vouches.map(vouch=>[vouch.productId,vouch])),...extra
+});
+const date=day=>`2026-11-${String(day).padStart(2,'0')}T00:00:00Z`;
+
+test('Who to ask needs two contributors and a note, orders by newest vouch and caps categories at four',()=>{
+ const labels=Array.from({length:8},(_,i)=>'Category '+i);
+ const a=categoryMember('a',[
+  ...labels.map((label,i)=>categoryVouch('a'+i,label,{comment:'Useful',updatedAt:date(i+1)})),
+  categoryVouch('solo','Solo',{comment:'A solo note',updatedAt:date(25)}),
+  categoryVouch('quiet','Quiet',{updatedAt:date(25)})
+ ]);
+ const b=categoryMember('b',[
+  ...labels.map((label,i)=>categoryVouch('b'+i,label,{updatedAt:date(20-i)})),
+  categoryVouch('quiet','Quiet',{comment:'   ',updatedAt:date(25)})
+ ]);
+ const board=whartonLeaderboard({a,b});
+ assert.deepEqual(board.whoToAsk.categories.map(c=>c.label),labels.slice(0,4));
+ assert.ok(board.whoToAsk.categories.every(c=>c.people===2&&c.featured.handle==='a'));
+ assert.deepEqual(whartonLeaderboard({a}).whoToAsk,{categories:[]});
+});
+
+test('Who to ask shares leaderboard eligibility and cannot leak excluded contributors',()=>{
+ const valid=[categoryMember('a',[categoryVouch('a','Headphones',{comment:'Daily pick'})]),categoryMember('b',[categoryVouch('b','headphones')])];
+ const excluded=[{leaderboardOptIn:false},{visibility:'private'},{showName:false},{emailVerified:false},{disabledAt:'now'},{deletedAt:'now'}];
+ const outsiders=excluded.map((extra,i)=>categoryMember('excluded-'+i,Array.from({length:4},(_,j)=>
+  categoryVouch('p'+j,'Headphones',{comment:'Hidden note',updatedAt:date(25)})),extra));
+ const accounts=Object.fromEntries([...valid,...outsiders].map(a=>[a.handle,a]));
+ const board=whartonLeaderboard(accounts);
+ const [headphones]=board.whoToAsk.categories;
+ assert.equal(headphones.label,'Headphones');
+ assert.equal(headphones.people,2);
+ assert.equal(headphones.featured.handle,'a');
+ assert.deepEqual(headphones.others,[{handle:'b',displayName:'b',photo:null,count:1}]);
+ assert.doesNotMatch(JSON.stringify(board.whoToAsk),/excluded|Hidden note|@wharton|opinions/);
+});
+
+test('Who to ask only uses deduplicated public item vouches with nonblank notes and safe images',()=>{
+ const featured=categoryVouch('selected','Headphones',{
+  comment:'  <Useful> & comfortable  ',product:{id:'selected',name:'Selected',brand:'Demo',category:'Headphones',image:'//bad.test/pick',secret:'metadata'}
+ });
+ const a=categoryMember('a',[
+  featured,
+  categoryVouch('duplicate','Headphones',{product:{skuId:'selected',category:'Headphones'},comment:'Old duplicate',updatedAt:date(1)}),
+  categoryVouch('private','Headphones',{comment:'Private',visibility:'private',updatedAt:date(20)}),
+  ...['no','brand','skip'].map(verdict=>categoryVouch(verdict,'Headphones',{verdict,comment:verdict,updatedAt:date(20)})),
+  categoryVouch('whitespace','Headphones',{comment:'  \n  ',updatedAt:date(21)}),
+  categoryVouch('empty','Headphones',{comment:'',updatedAt:date(22)})
+ ]);
+ const b=categoryMember('b',[categoryVouch('b','Headphones')]);
+ const result=()=>whartonLeaderboard({a,b}).whoToAsk.categories[0].featured;
+ assert.deepEqual(result(),{
+  handle:'a',displayName:'a',photo:null,count:3,note:'<Useful> & comfortable',
+  product:{id:'selected',name:'Selected',brand:'Demo',image:null}
+ });
+ featured.product.image='/images/product.png';
+ assert.equal(result().product.image,'/images/product.png');
+ featured.product.image='https://example.test/product.png';
+ assert.equal(result().product.image,'https://example.test/product.png');
+});
+
+test('Who to ask chooses featured by count, newest noted vouch, then handle, with three other people',()=>{
+ const person=(handle,count,day)=>categoryMember(handle,Array.from({length:count},(_,i)=>
+  categoryVouch(handle+i,'Headphones',{comment:i===0&&day?handle+' note':'',updatedAt:date(i===0&&day?day:28)})));
+ const category=(...members)=>whartonLeaderboard(Object.fromEntries(members.map(a=>[a.handle,a]))).whoToAsk.categories[0];
+ const a=person('a',3,5),b=person('b',3,5),c=person('c',3,6),d=person('d',2,7),e=person('e',4,0);
+ assert.equal(category(d,c).featured.handle,'c');
+ assert.equal(category(a,c).featured.handle,'c');
+ const result=category(person('f',1,0),e,d,b,a);
+ assert.equal(result.featured.handle,'a');
+ assert.equal(result.featured.product.id,'a0');
+ assert.equal(result.people,5);
+ assert.deepEqual(result.others.map(p=>p.handle),['e','b','d']);
+});
+
+test('top category ignores fallback labels, counts case-insensitively and breaks ties by newest vouch',()=>{
+ const a=categoryMember('a',[
+  categoryVouch('h1','Headphones'),categoryVouch('h2','headphones',{updatedAt:date(18)}),
+  categoryVouch('s1','Sunscreen'),categoryVouch('s2','Sunscreen',{updatedAt:date(17)}),
+  ...['Other','Products',undefined].flatMap((label,i)=>Array.from({length:3},(_,j)=>
+   categoryVouch(`ignored-${i}-${j}`,label,{comment:'Ignored',updatedAt:date(25)})))
+ ]);
+ const b=categoryMember('b',[categoryVouch('b','Headphones',{comment:'A note'})]);
+ const board=whartonLeaderboard({a,b});
+ assert.deepEqual(board.entries.map(r=>r.topCategory),[{label:'headphones',count:2},null]);
+ assert.deepEqual(board.whoToAsk.categories.map(c=>c.label),['headphones']);
+ assert.equal(board.entries[0].count,13);
+});
+
+test('leaderboard API returns the same Who to ask across pages and respects note privacy changes',async t=>{
+ const f=await fixture(t);
+ await f.scope.transaction(d=>{
+  d.accounts[f.key]=categoryMember('alice',[categoryVouch('alice','Headphones',{comment:'My daily pick'})]);
+  d.accounts.b=categoryMember('bob',[categoryVouch('bob','Headphones')]);
+ });
+ const first=(await f.call('/api/community-leaderboard?limit=1')).data;
+ const second=(await f.call('/api/community-leaderboard?limit=1&offset=1')).data;
+ assert.equal(first.entries[0].handle,'alice');
+ assert.equal(second.entries[0].handle,'bob');
+ assert.equal(second.whoToAsk.categories[0].featured.note,'My daily pick');
+ assert.deepEqual(second.whoToAsk,first.whoToAsk);
+ await f.scope.transaction(d=>{d.accounts[f.key].opinions.alice.visibility='private'});
+ assert.deepEqual((await f.call('/api/community-leaderboard')).data.whoToAsk,{categories:[]});
+});
+
+test('overall top three are the same across pages and preserve tied ranks',()=>{
+ const accounts={a:member('a',5),b:member('b',5),c:member('c',3),d:member('d',1)};
+ const first=whartonLeaderboard(accounts,{key:'b',limit:2});
+ const second=whartonLeaderboard(accounts,{key:'b',offset:2,limit:2});
+ assert.deepEqual(first.top.map(({handle,rank,isYou})=>[handle,rank,isYou]),[['a',1,false],['b',1,true],['c',3,false]]);
+ assert.deepEqual(second.top,first.top);
+ assert.deepEqual(first.top,[...first.entries,second.entries[0]]);
+});
+
+test('overall top includes only eligible members and handles fewer than three',()=>{
+ const optedOut=member('opted-out',20,{leaderboardOptIn:false});
+ const ineligible=member('ineligible',20,{emailVerified:false});
+ const a=member('a',3),b=member('b',1);
+ assert.deepEqual(whartonLeaderboard({optedOut,ineligible}).top,[]);
+ assert.deepEqual(whartonLeaderboard({optedOut,ineligible,a}).top.map(row=>row.handle),['a']);
+ assert.deepEqual(whartonLeaderboard({optedOut,ineligible,a,b}).top.map(row=>row.handle),['a','b']);
+});

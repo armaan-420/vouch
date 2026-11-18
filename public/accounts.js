@@ -116,7 +116,92 @@
   function historyScore(o){const rated=o.score!==null&&o.score!==undefined&&Number.isFinite(Number(o.score)),n=rated?Number(o.score):null;const label=rated?n.toFixed(1):o.scoreStatus==='unavailable'?'—':'Unrated';const color=n===null?'unrated':n>=8?'green':n>=6.5?'black':n>=5?'yellow':'red';return `<span class="profile-history-score score-${color}" aria-label="Vouch score: ${rated?label:o.scoreStatus==='unavailable'?'unavailable':'unrated'}" title="Current community score in ${esc(o.experimentTitle||'the source collection')}"><small>Vouch score</small><strong>${label}</strong></span>`;}
   function historyRows(rows){return `<div class="profile-history-rows">${rows.map(o=>`<a class="profile-history-row" href="${'/products/'+encodeURIComponent(o.productId)+(o.experimentId?'?experiment='+encodeURIComponent(o.experimentId):experimentQuery)}">${productImage(o.product)}<span class="profile-product-title"><span class="brand">${esc(o.product?.brand)}</span><span>${esc(o.product?.name||'Product')}</span>${libraryTags(o)}</span><span class="profile-category-chip">${esc(category(o))}</span><span class="profile-history-meta">${historyScore(o)}<time datetime="${esc(o.vouchedAt||o.updatedAt)}">${esc(shortDate(o.vouchedAt||o.updatedAt))}</time></span></a>`).join('')}</div>`}
   const badgeMarkup=badges=>`<span class="contributor-badges">${(badges||[]).map(b=>`<span class="contributor-badge" title="${esc(b.description)}"><span>${esc(b.label)}</span><span class="sr-only">: ${esc(b.description)}</span></span>`).join('')}</span>`;
-  function contributorRow(row){return `<li class="contributor-row ${row.isYou?'is-you':''}"><a href="/profiles/${encodeURIComponent(row.handle)}"><span class="contributor-rank" aria-label="Rank ${row.rank}">${row.rank}</span><span class="contributor-avatar">${safeImage(row.photo)?`<img src="${esc(row.photo)}" alt="" loading="lazy">`:esc((row.displayName||'V').charAt(0).toUpperCase())}</span><span class="contributor-person"><strong>${esc(row.displayName)}${row.isYou?' <small>You</small>':''}</strong>${badgeMarkup(row.badges)}</span><span class="contributor-count"><strong>${row.count.toLocaleString()}</strong><span>${row.count===1?'vouch':'vouches'} shared</span></span></a></li>`;}
+  function contributorAvatar(person){
+    return `<span class="contributor-avatar" aria-hidden="true">${safeImage(person.photo)?`<img src="${esc(person.photo)}" alt="" loading="lazy">`:esc((person.displayName||'V').charAt(0).toUpperCase())}</span>`;
+  }
+  function contributorRow(row){
+    const topCategory=row.topCategory?`<span class="contributor-badge contributor-badge--category">${esc(row.topCategory.label)} ${row.topCategory.count}</span>`:'';
+    return `<li class="contributor-row ${row.isYou?'is-you':''}"><a href="/profiles/${encodeURIComponent(row.handle)}"><span class="contributor-rank" aria-label="Rank ${row.rank}">${row.rank}</span>${contributorAvatar(row)}<span class="contributor-person"><strong>${esc(row.displayName)}${row.isYou?' <small>You</small>':''}</strong>${badgeMarkup(row.badges)}${topCategory}</span><span class="contributor-count"><strong>${row.count.toLocaleString()}</strong><span>${row.count===1?'vouch':'vouches'} shared</span></span></a></li>`;
+  }
+  function topContributorsLabel(top){
+    const people=top.map(({displayName,count})=>`${displayName}, ${plural(count,'vouch','vouches')}`);
+    return `Top contributors: ${people.join('; ')}. Jump to rankings.`;
+  }
+  function topContributorsStrip(top){
+    const names=top.map(person=>person.displayName.trim().split(/\s+/));
+    const firstNames=names.map(([first])=>first.toLowerCase());
+    return `<a class="contributor-top-strip" href="#leaderboard-rankings" aria-label="${esc(topContributorsLabel(top))}">
+      <span class="contributor-top-label" aria-hidden="true">Top</span>
+      ${top.map((person,index)=>{
+        const [first,...rest]=names[index];
+        const duplicate=firstNames.filter(name=>name===firstNames[index]).length>1;
+        const name=person.isYou?'You':duplicate&&rest.length?`${first} ${Array.from(rest.at(-1))[0]}.`:first;
+        return `<span class="contributor-top-person" aria-hidden="true">${contributorAvatar(person)}<span class="contributor-top-name">${esc(name)}</span><strong>${person.count}</strong></span>`;
+      }).join('')}
+      <span class="contributor-top-arrow" aria-hidden="true">↓</span>
+    </a>`;
+  }
+  function wireTopContributors(strip,rankings,top){
+    strip.addEventListener('click',event=>{
+      if(event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||event.button!==0)return;
+      // Let the fragment link set the URL and scroll before moving focus.
+      requestAnimationFrame(()=>{
+        if(document.activeElement===strip||document.activeElement===document.body){
+          rankings.focus({preventScroll:true});
+        }
+      });
+    });
+    if(top.length<3)return;
+    const third=strip.querySelectorAll('.contributor-top-person')[2];
+    const fit=()=>{
+      if(!strip.isConnected)return;
+      third.hidden=false;
+      const clipped=[...strip.querySelectorAll('.contributor-top-name')].some(name=>name.scrollWidth>name.clientWidth);
+      third.hidden=matchMedia('(width < 380px)').matches&&clipped;
+      strip.setAttribute('aria-label',topContributorsLabel(third.hidden?top.slice(0,2):top));
+    };
+    const observer=new ResizeObserver(fit);
+    observer.observe(strip);
+    document.fonts.ready.then(fit);
+    fit();
+    return ()=>observer.disconnect();
+  }
+  function whoToAskContent({label,featured,others,people}){
+    const {handle,displayName,count,note,product}=featured;
+    const vouchesInCategory=n=>`${plural(n,'vouch','vouches')} in ${label}`;
+    const more=people-1-others.length;
+    const productName=[product.brand,product.name].filter(Boolean).join(' ');
+    return `
+      <div class="who-to-ask-person">
+        ${contributorAvatar(featured)}
+        <div><a href="/profiles/${encodeURIComponent(handle)}">${esc(displayName)}</a>
+          <p class="who-to-ask-meta">${esc(vouchesInCategory(count))}</p></div>
+      </div>
+      <blockquote class="who-to-ask-note"><p>“${esc(note)}”</p></blockquote>
+      <a class="who-to-ask-pick" href="/products/${encodeURIComponent(product.id)}" aria-label="${esc(`${productName}, ${displayName}’s pick`)}">
+        ${productImage(product)}
+        <span class="who-to-ask-product">
+          ${product.brand?`<span class="who-to-ask-brand">${esc(product.brand)}</span>`:''}
+          <strong>${esc(product.name)}</strong>
+          <span class="who-to-ask-pick-label">Their pick →</span>
+        </span>
+      </a>
+      <div class="who-to-ask-footer">
+        <div class="who-to-ask-others">${others.map(person=>`<a href="/profiles/${encodeURIComponent(person.handle)}" aria-label="${esc(`${person.displayName}, ${vouchesInCategory(person.count)}`)}">${contributorAvatar(person)}</a>`).join('')}</div>
+        ${more>0?`<span>+ ${more} more</span>`:''}
+      </div>`;
+  }
+  function whoToAskCard(categories){
+    if(!categories.length)return '';
+    return `<aside class="who-to-ask" aria-labelledby="who-to-ask-title">
+      <h2 id="who-to-ask-title">${categories.length===1?'Who to ask about '+esc(categories[0].label):'Who to ask'}</h2>
+      <p class="who-to-ask-meta">From classmates' public vouches</p>
+      ${categories.length>1?`<div class="who-to-ask-chips" role="group" aria-label="Choose a category">
+        ${categories.map(({label},index)=>`<button type="button" data-ask-category="${index}" aria-pressed="${index===0}"><span>${esc(label)}</span></button>`).join('')}
+      </div>`:''}
+      <div class="who-to-ask-content" aria-live="polite" aria-atomic="true">${whoToAskContent(categories[0])}</div>
+    </aside>`;
+  }
   let leaderboardDialog=null,leaderboardSignupTimer=null;
   async function openLeaderboardSignup(){
     if(leaderboardDialog?.open)return;
@@ -160,18 +245,79 @@
       else if(challenge)renderCode();else renderName();
     }catch(error){dialog.innerHTML='<h2 id="leaderboard-signup-title">Finish signing up</h2><p id="leaderboard-signup-intro" role="alert">'+esc(error.message)+'</p><button class="primary" data-signup-retry>Try again</button><a class="leaderboard-signup-back" href="/">Back to Vouch</a>';dialog.querySelector('[data-signup-retry]').onclick=()=>{close();openLeaderboardSignup();};}
   }
-  async function renderLeaderboard(offset=0){
+  let stopMeasuringLeaderboardCard,stopMeasuringTopStrip;
+  function measureLeaderboardCard(card){
+    const header=document.querySelector('[data-site-nav]');
+    const fit=()=>{
+      const stickyHeader=header&&['sticky','fixed'].includes(getComputedStyle(header).position);
+      const top=(stickyHeader?header.offsetHeight:0)+24;
+      card.style.setProperty('--ask-top',top+'px');
+      card.toggleAttribute('data-sticky',card.offsetHeight+top<=window.innerHeight);
+    };
+    const observer=new ResizeObserver(fit);
+    observer.observe(card);
+    if(header)observer.observe(header);
+    window.addEventListener('resize',fit);
+    fit();
+    return ()=>{observer.disconnect();window.removeEventListener('resize',fit)};
+  }
+  async function renderLeaderboard(offset=0,{restoreFragment=false}={}){
+    stopMeasuringLeaderboardCard?.();
+    stopMeasuringLeaderboardCard=null;
+    stopMeasuringTopStrip?.();
+    stopMeasuringTopStrip=null;
     document.title='Wharton leaderboard — Vouch';
     shell(`<p class="eyebrow">THE PEOPLE BEHIND THE PICKS</p><h1>Wharton leaderboard</h1><p role="status">Loading recommendations shared…</p>`);
     try{
       const data=await request('/api/community-leaderboard?community=wharton&offset='+offset),viewer=data.viewer;
-      const participation=viewer.authenticated?`<div class="contributor-participation" id="leaderboard-participation"><h2>${viewer.entry?'Your recommendations count':viewer.optedIn?'Your leaderboard participation':'Share your taste with Wharton'}</h2><p>${viewer.eligible?(viewer.optedIn?'You’re participating. Your name, public vouches and earned badges appear here.':'Join to show your name, public vouch count and badges here. Anyone can browse the leaderboard and open your public profile.') :esc(viewer.reason)}</p>${viewer.eligible||viewer.optedIn?`<button type="button" class="profile-outline" data-leaderboard-toggle>${viewer.optedIn?'Leave leaderboard':'Join leaderboard'}</button>`:''} <a class="text-button" href="/account">${viewer.eligible?'Your collection':'Manage your profile'}</a><p class="account-help">Joining never makes private vouches public. You can leave at any time.</p><p data-participation-status role="status"></p></div>`:`<div class="contributor-participation" id="leaderboard-participation"><h2>Your recommendations belong here</h2><p>Verified Wharton members with public profiles appear automatically. Sign in to find your place.</p><a class="profile-outline" href="/account?signin=1">Sign in to join</a></div>`;
-      shell(`<div class="contributor-heading"><p class="eyebrow">THE PEOPLE BEHIND THE PICKS</p><h1>Wharton<br>leaderboard</h1><p class="account-intro">Good finds deserve to be shared. Explore the people sharing their recommendations with Wharton.</p><p class="contributor-summary">All time <span aria-hidden="true">·</span> ${plural(data.total,'contributor')}</p><a class="contributor-participation-link" href="#leaderboard-participation">${viewer.optedIn?'Manage participation':'Join the leaderboard'} ↓</a></div>${viewer.entry&&!data.entries.some(r=>r.isYou)?`<aside class="contributor-your-place" aria-label="Your position"><p class="eyebrow">YOUR PLACE</p><ol class="contributor-list">${contributorRow(viewer.entry)}</ol></aside>`:''}<div class="contributor-table-heading"><span>Contributor</span><span>Public vouches</span></div><ol class="contributor-list" aria-label="Wharton contributors ranked by public vouches">${data.entries.map(contributorRow).join('')}</ol>${!data.entries.length?`<div class="contributor-empty"><span aria-hidden="true"><img src="/brand/vouch-emblem.svg" alt="" class="brand-emblem"></span><h2>${data.total?'No contributors on this page':'Be one of the first'}</h2><p>${data.total?'Return to the previous page to see contributors.':'The first shared recommendations start here. Join to help others discover your picks.'}</p></div>`:''}<nav class="contributor-pagination" aria-label="Leaderboard pages">${offset?'<button class="profile-outline" data-previous>← Previous</button>':''}${data.hasMore?'<button class="profile-outline" data-next>Next →</button>':''}</nav>${participation}<details class="contributor-rules"><summary>How rankings and badges work</summary><p>Rank is the number of unique products someone currently vouches for publicly across Vouch. Ties share a rank. Changing or hiding a vouch can lower the count. Private vouches, brand trust, negative ratings and skipped products do not count.</p><p>Wharton membership requires a verified wharton.upenn.edu email. Early tester is historical recognition. Contribution badges mark 10, 25 and 50 current public vouches; only the highest milestone is shown. Activity and affiliation do not establish product expertise.</p><p>Verified Wharton members with public named profiles appear automatically, including existing members. You can leave the leaderboard at any time. Only public recommendations count; members with none shared start at zero. Counts update when this page loads.</p></details>`);
+      const categories=data.whoToAsk?.categories||[], top=data.top||[];
+      const participation=viewer.authenticated
+        ? viewer.eligible
+          ? `<button type="button" class="profile-outline" data-leaderboard-toggle>${viewer.optedIn?'Leave leaderboard':'Join leaderboard'}</button><p data-participation-status role="status"></p>`
+          : `<p>${esc(viewer.reason)}</p><a class="profile-outline" href="/account">Manage your profile</a>`
+        : '<a class="profile-outline" href="/account?signin=1">Sign in to join</a>';
+      shell(`<div class="contributor-layout">
+        <div class="contributor-overview">
+          <div class="contributor-heading">
+            <p class="eyebrow">THE PEOPLE BEHIND THE PICKS</p>
+            <h1>Wharton leaderboard</h1>
+            <p class="account-intro">See who's vouching for what, and who to ask before you buy.</p>
+            ${categories.length&&top.length?topContributorsStrip(top):''}
+          </div>
+          ${whoToAskCard(categories)}
+        </div>
+        <div class="contributor-main">${viewer.entry&&!data.entries.some(r=>r.isYou)?`<aside class="contributor-your-place" aria-label="Your position"><p class="eyebrow">YOUR PLACE</p><ol class="contributor-list">${contributorRow(viewer.entry)}</ol></aside>`:''}<div class="contributor-table-heading" id="leaderboard-rankings" tabindex="-1" role="group" aria-label="Leaderboard rankings"><span>Contributor</span><span>Public vouches</span></div><ol class="contributor-list" aria-label="Wharton contributors ranked by public vouches">${data.entries.map(contributorRow).join('')}</ol>${!data.entries.length?`<div class="contributor-empty"><span aria-hidden="true"><img src="/brand/vouch-emblem.svg" alt="" class="brand-emblem"></span><h2>${data.total?'No contributors on this page':'Be one of the first'}</h2><p>${data.total?'Return to the previous page to see contributors.':'The first shared recommendations start here. Join to help others discover your picks.'}</p></div>`:''}<nav class="contributor-pagination" aria-label="Leaderboard pages">${offset?'<button class="profile-outline" data-previous>← Previous</button>':''}${data.hasMore?'<button class="profile-outline" data-next>Next →</button>':''}</nav><div class="contributor-participation" id="leaderboard-participation">${participation}</div></div></div>`);
+      const rankings=root.querySelector('#leaderboard-rankings');
+      const strip=root.querySelector('.contributor-top-strip');
+      if(strip)stopMeasuringTopStrip=wireTopContributors(strip,rankings,top);
+      const card=root.querySelector('.who-to-ask');
+      if(card)stopMeasuringLeaderboardCard=measureLeaderboardCard(card);
+      const chips=root.querySelector('.who-to-ask-chips');
+      const content=root.querySelector('.who-to-ask-content');
+      let fade;
+      chips?.addEventListener('click',event=>{
+        const chip=event.target.closest('button[data-ask-category]');
+        if(!chip||chip.getAttribute('aria-pressed')==='true')return;
+        chips.querySelector('[aria-pressed="true"]').setAttribute('aria-pressed','false');
+        chip.setAttribute('aria-pressed','true');
+        content.innerHTML=whoToAskContent(categories[Number(chip.dataset.askCategory)]);
+        fade?.cancel();
+        if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+          fade=content.animate([{opacity:0},{opacity:1}],{duration:160,easing:'ease-out'});
+        }
+      });
       root.querySelector('[data-previous]')?.addEventListener('click',()=>renderLeaderboard(Math.max(0,offset-data.limit)));
       root.querySelector('[data-next]')?.addEventListener('click',()=>renderLeaderboard(offset+data.limit));
+      if(restoreFragment&&location.hash==='#leaderboard-rankings'){
+        rankings.scrollIntoView();
+        rankings.focus({preventScroll:true});
+      }
+      if(restoreFragment&&location.hash==='#leaderboard-participation'){
+        root.querySelector('#leaderboard-participation').scrollIntoView();
+      }
       if(viewer.requiresSignup)await openLeaderboardSignup();
       root.querySelector('[data-leaderboard-toggle]')?.addEventListener('click',async event=>{const button=event.target;button.disabled=true;try{await request('/api/account/profile',{leaderboardOptIn:!viewer.optedIn});await renderLeaderboard(0)}catch(error){root.querySelector('[data-participation-status]').textContent=error.message;button.disabled=false;}});
-    }catch(error){shell(`<a href="/">← Vouch home</a><h1>Wharton leaderboard</h1><p class="account-error" role="alert">${esc(error.message)}</p><button class="profile-outline" data-retry-leaderboard>Try again</button>`);root.querySelector('[data-retry-leaderboard]').onclick=()=>renderLeaderboard(offset);}
+    }catch(error){shell(`<a href="/">← Vouch home</a><h1>Wharton leaderboard</h1><p class="account-error" role="alert">${esc(error.message)}</p><button class="profile-outline" data-retry-leaderboard>Try again</button>`);root.querySelector('[data-retry-leaderboard]').onclick=()=>renderLeaderboard(offset,{restoreFragment});}
   }
   function renderProfile(profile,owner=false,saved=false,showMoreCategories=false){
     window.VouchSiteNav?.refreshAccount();
@@ -528,6 +674,6 @@
     if(location.hash==='#item-people')root.querySelector('#item-people')?.scrollIntoView({block:'start'});
   }
   function pendingPicks(){const current=new Map((me?.profile?.opinions||[]).map(o=>[o.productId,o]));return (edit?.opinions||[]).filter(o=>o.claimable!==false&&(!current.has(o.productId)||current.get(o.productId).updatedAt<o.updatedAt));}
-  async function load(){if(location.pathname.startsWith('/community-leaderboard')){await renderLeaderboard();return}if(verificationToken){shell(`${topLine()}<h1>Verify your email.</h1><p>Confirm this email address and sign in to your Vouch account.</p><button type="button" class="primary" id="confirm-email-link">Verify email and sign in</button>${statusMarkup()}`);root.querySelector('#confirm-email-link').onclick=async event=>{event.target.disabled=true;try{await request('/api/auth/verify-email',{token:verificationToken});verificationToken=null;clearAttempt();await load();}catch(error){event.target.disabled=false;failure(error);}};return;}window.VouchSiteNav?.refreshAccount();try{const parts=location.pathname.split('/').filter(Boolean);if(parts[0]==='profiles'){const data=await request('/api/profiles/'+encodeURIComponent(decodeURIComponent(parts.slice(1).join('/'))));renderProfile(data.profile,false);return}if(parts[0]==='products'){await renderProduct(decodeURIComponent(parts.slice(1).join('/')));return}me=await request('/api/account/me');auth=await request('/api/auth/status');edit=null;if(experimentId||!me.authenticated||params.get('review')==='1'||!me.profile)edit=await request('/api/account/edit'+experimentQuery);if(me.profile?.verificationRequired){if(challenge&&authEmail!==me.profile.email)clearAttempt();if(challenge)renderAnonymous();else renderPendingVerification();return}if(!me.authenticated){renderAnonymous();return}if(edit&&!me.profile){if(!auth?.identity?.email){renderAnonymous();return}renderSignup();return}if(edit&&params.get('review')==='1'){renderReview();return}if(!me.profile){edit={opinions:[],counts:{yes:0,no:0,brand:0},claimToken:null};renderReview();return}renderProfile(me.profile,true)}catch(error){failure(error)}}
+  async function load(){if(location.pathname.startsWith('/community-leaderboard')){await renderLeaderboard(0,{restoreFragment:true});return}if(verificationToken){shell(`${topLine()}<h1>Verify your email.</h1><p>Confirm this email address and sign in to your Vouch account.</p><button type="button" class="primary" id="confirm-email-link">Verify email and sign in</button>${statusMarkup()}`);root.querySelector('#confirm-email-link').onclick=async event=>{event.target.disabled=true;try{await request('/api/auth/verify-email',{token:verificationToken});verificationToken=null;clearAttempt();await load();}catch(error){event.target.disabled=false;failure(error);}};return;}window.VouchSiteNav?.refreshAccount();try{const parts=location.pathname.split('/').filter(Boolean);if(parts[0]==='profiles'){const data=await request('/api/profiles/'+encodeURIComponent(decodeURIComponent(parts.slice(1).join('/'))));renderProfile(data.profile,false);return}if(parts[0]==='products'){await renderProduct(decodeURIComponent(parts.slice(1).join('/')));return}me=await request('/api/account/me');auth=await request('/api/auth/status');edit=null;if(experimentId||!me.authenticated||params.get('review')==='1'||!me.profile)edit=await request('/api/account/edit'+experimentQuery);if(me.profile?.verificationRequired){if(challenge&&authEmail!==me.profile.email)clearAttempt();if(challenge)renderAnonymous();else renderPendingVerification();return}if(!me.authenticated){renderAnonymous();return}if(edit&&!me.profile){if(!auth?.identity?.email){renderAnonymous();return}renderSignup();return}if(edit&&params.get('review')==='1'){renderReview();return}if(!me.profile){edit={opinions:[],counts:{yes:0,no:0,brand:0},claimToken:null};renderReview();return}renderProfile(me.profile,true)}catch(error){failure(error)}}
   load();
 })();

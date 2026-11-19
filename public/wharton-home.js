@@ -1,4 +1,4 @@
-import {categoryHref,categoriesUnlocked,earnedUnlock,extraCategories,gateCategory,participation,pilotLockIcon,unlockableCategories,unlockKey,whartonChoices} from './wharton-categories.js';
+import {categoryHref,categoriesUnlocked,earnedUnlock,gateCategory,participation,pilotLockIcon,unlockableCategories,unlockKey,whartonChoices} from './wharton-categories.js';
 import {progressMarkup} from './pilot-progress.js';
 import {suggestionDialog} from './pilot-next.js';
 
@@ -133,7 +133,6 @@ export async function mountWhartonHome(root,profile,{member,frame,error,demo=fal
     if(!response.ok)throw Error('Couldn’t load categories.');
     const available=(await response.json()).categories;
     const groups=whartonChoices(available);
-    const extras=extraCategories(available);
     const gate=gateCategory(groups);
     const picks=groups.filter(group=>group.experiment&&group!==gate);
     const unlockable=unlockableCategories(available);
@@ -179,16 +178,22 @@ export async function mountWhartonHome(root,profile,{member,frame,error,demo=fal
       const heading='<p class="wharton-unlocked-badge">✓ EVERY CATEGORY UNLOCKED</p><h1 tabindex="-1">What else do you <em>know and love?</em></h1>';
       try{
         const states=await statesPromise;
-        const next=picks.find(pick=>states[pick.experiment.id].status!=='done');
-        const pickCards=picks.map(pick=>card(pick,{progress:states[pick.experiment.id],kicker:pick===next?'Up next':null,source:'unlocked'}));
-        const ordered=extras.slice().sort((a,b)=>statusOrder[states[a.id].status]-statusOrder[states[b.id].status]);
-        const more=ordered.map(category=>card({experiment:category,name:category.category},{
-          progress:states[category.id],wharton:false
-        }));
+        const newest=unlockable.reduce((latest,category)=>{
+          const created=Date.parse(category.createdAt);
+          return Number.isFinite(created)&&(!latest||created>Date.parse(latest.createdAt))?category:latest;
+        },null);
+        const ordered=unlockable.filter(category=>category!==newest)
+          .sort((a,b)=>statusOrder[states[a.id].status]-statusOrder[states[b.id].status]);
+        if(newest)ordered.unshift(newest);
+        const cards=ordered.map(category=>{
+          const pick=picks.find(pick=>pick.experiment.id===category.id);
+          return card(pick||{experiment:category,name:category.category},{
+            progress:states[category.id],kicker:category===newest?'New for you':null,wharton:!!pick,source:'unlocked'
+          });
+        });
         const completed=gate&&states[gate.experiment.id]?.status==='done'?compactRows([gate]):'';
         show(heading,
-          (pickCards.length?`<section>${sectionTitle('WHARTON IS VOUCHING',"Classmates’ picks")}<div class="wharton-category-list has-progress">${pickCards.join('')}</div></section>`:'')+
-          (more.length?`<section>${sectionTitle('MORE TO VOUCH FOR',more.length+' open')}<div class="wharton-category-list has-progress">${more.join('')}</div></section>`:'')+
+          (cards.length?`<section>${sectionTitle('MORE TO VOUCH FOR',cards.length+' open')}<div class="wharton-category-list has-progress">${cards.join('')}</div></section>`:'')+
           completed);
         if(animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
           const fade=[{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}];

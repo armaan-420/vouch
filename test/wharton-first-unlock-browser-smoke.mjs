@@ -27,7 +27,7 @@ await (await store.scope('experiment-registry',initialRegistry)).transaction(dat
   for(const e of lineup)data.experiments[e.id]={...DEFAULT_EXPERIMENT,...e};
   for(let index=0;index<10;index++){
     const id='fixture-edit-'+index;
-    data.experiments[id]={...DEFAULT_EXPERIMENT,id,title:'Test Edit '+index,category:'Test category '+index,products:WATER_BOTTLES};
+    data.experiments[id]={...DEFAULT_EXPERIMENT,id,title:'Test Edit '+index,category:'Test category '+index,createdAt:new Date(Date.UTC(2026,10,10-index)).toISOString(),products:WATER_BOTTLES};
   }
 });
 const server=await createVouchServer({directory,productSearch:{search:async()=>({products:[]}),find:async()=>null},autoOptions:{env:{EXPERIMENT_AUTO_BUILD:'off'}}});
@@ -112,8 +112,10 @@ try{
       assert.equal(await countdown.count(),0);
       await board(lineup[0],'unlock');
       assert.match(await page.locator('.board-dock-status').innerText(),/Water bottles ✓\s+You go girl!/);
-      assert.equal(await page.locator('.board-category-chip').count(),0);
-      assert.equal(await page.getByRole('link',{name:'See more categories'}).count(),0);
+      const chipNames=await page.locator('.board-category-chip').allTextContents();
+      assert.equal(chipNames.length,3);
+      assert.match(chipNames[0],/Water bottles/);
+      assert.ok(await page.locator('a.board-category-chip').evaluateAll(chips=>chips.every(chip=>chip.offsetHeight>=44)));
       await check('dock-unlock');
       await page.goto(origin+'/wharton');
       const unlock=page.getByRole('button',{name:'Unlock all categories'});
@@ -134,7 +136,9 @@ try{
       await page.getByText('Every category unlocked.',{exact:true}).waitFor({state:'attached'});
       await check('F');
       assert.equal(await page.locator('.wharton-category[href$="wharton=1"]').count(),2);
-      assert.equal(await page.locator('.wharton-category .wharton-category-kicker').allTextContents().then(names=>names.join()),'Up next');
+      assert.equal(await page.locator('.wharton-category .wharton-category-kicker').allTextContents().then(names=>names.join()),'New for you');
+      assert.equal(await page.locator('.wharton-category').first().getAttribute('data-pilot-category'),'fixture-edit-0');
+      assert.equal(await page.getByRole('heading',{name:'Wharton is vouching'}).count(),0);
       assert.equal(await page.locator('.wharton-tile').count(),0);
       assert.equal(await page.locator('.wharton-category[href$="wharton=1"] p').count(),0);
       const moreCards=page.locator('.wharton-category[data-source="unlocked"]:not([href*="wharton=1"])');
@@ -147,13 +151,12 @@ try{
       await unlocked.waitFor();
       await board(lineup[0],'next_category');
       assert.match(await page.locator('.board-dock-status').innerText(),/1 of 3 vouched/);
-      assert.equal(await page.locator('.board-category-chip').count(),0);
-      const catalog=page.getByRole('link',{name:'See more categories'});
-      assert.equal(await catalog.getAttribute('href'),'/wharton');
-      assert.ok(await catalog.evaluate(el=>el.offsetHeight>=44));
+      assert.deepEqual(await page.locator('.board-category-chip').allTextContents(),chipNames);
       await check('dock-unlocked');
-      await catalog.press('Enter');
-      await unlocked.waitFor();
+      await page.goto(origin+'/'+lineup[0].id+'?board=1');
+      await page.locator('.board-category-chip').first().waitFor();
+      assert.deepEqual(await page.locator('.board-category-chip').allTextContents(),chipNames);
+      await check('everyday-chips');
       assert.deepEqual(errors,[]);
       console.log('PASS',width,'A → B → E → F, countdown, dock and keyboard focus');
     }finally{await context.close();}

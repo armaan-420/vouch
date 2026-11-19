@@ -1,0 +1,30 @@
+{
+  "sites_project_id": "appgprj_6ae5468eccc88191ad1d6413c672392a",
+  "latest_sites_version": 138,
+  "latest_source_commit": "871d29d9c01f739fd860aadf933c3b369e0231a0",
+  "latest_deployment_id": "appgdep_6afe3f271e108191982e237a882f6600",
+  "latest_deployment_status": "succeeded",
+  "environment_revision": 7,
+  "verified_versions": {
+    "from": 122,
+    "through": 138,
+    "all_status": "succeeded"
+  },
+  "checks": {
+    "automated_tests": 388,
+    "production_build": "passed",
+    "live_read_only": [
+      "/api/health",
+      "/wharton",
+      "/community-leaderboard",
+      "/products/c3-ajcgnrn",
+      "/api/categories"
+    ],
+    "browser_fixture_scope": "Wharton states and logo routing at 320–1440px"
+  },
+  "limits": [
+    "Production email delivery and full sign-in were not exercised.",
+    "Production signed-in votes, unlock writes, shares, and purchases were not exercised.",
+    "Physical-device accessibility, broad load testing, and live catalog accuracy remain unverified."
+  ]
+}

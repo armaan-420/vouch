@@ -85,3 +85,34 @@ test('comments accompany votes without score inflation, survive restart and clea
  await a('/api/events',{type:'answer',productId:'boj',value:'brand'});assert.equal((await a('/api/me')).data.comments.boj,'');
  const exported=(await a('/api/admin/export')).data.data;assert.equal(exported.sessions[Object.keys(exported.sessions)[0]].comment,undefined);
 });
+
+test('Organizer can dismiss and restore an inbox nomination without changing the visitor submission',async t=>{
+ const f=await fixture(t),visitor=browser(f);
+ await visitor('/api/nominations',{name:'Test nomination'});
+ const summary=()=>visitor('/api/admin/summary').then(result=>result.data);
+ const original=(await summary()).nominations[0];
+ const update=async (payload,headers={})=>fetch(f.origin+'/api/admin/nomination-status',{
+  method:'POST',headers:{Origin:f.origin,'Content-Type':'application/json',...headers},body:JSON.stringify(payload)
+ });
+ const payload={keys:original.sourceKeys,dismissed:true};
+ assert.equal((await update(payload,{Origin:'https://other.example'})).status,403);
+ assert.equal((await update(payload,{'Content-Type':'text/plain'})).status,415);
+ assert.equal((await update({...payload,keys:[...payload.keys,'absent']})).status,404);
+ assert.deepEqual((await summary()).nominations[0],original);
+ assert.equal((await update(payload)).status,200);
+ assert.equal((await summary()).nominations[0].dismissed,true);
+ assert.equal((await summary()).nominationSubmitters,1);
+ assert.equal((await visitor('/api/me')).data.nomination.name,'Test nomination');
+ await f.restart();
+ assert.equal((await summary()).nominations[0].dismissed,true);
+ assert.equal((await update({...payload,dismissed:false})).status,200);
+ assert.deepEqual((await summary()).nominations[0],original);
+});
+
+test('Nomination dismissal requires an organizer session',async t=>{
+ const f=await fixture(t,{adminAuthOptions:{pin:'1234'}});
+ const response=await fetch(f.origin+'/api/admin/nomination-status',{
+  method:'POST',headers:{Origin:f.origin,'Content-Type':'application/json'},body:JSON.stringify({keys:['sample'],dismissed:true})
+ });
+ assert.equal(response.status,401);
+});

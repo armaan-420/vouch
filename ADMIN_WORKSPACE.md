@@ -1,4 +1,4 @@
-# Organizer tables
+# Organizer workspace
 
 ## Current production — November 8, 2026, version 50
 
@@ -18,31 +18,39 @@ Suggestion review now has Product lineup, Research & sources, and Details & hist
 
 ---
 
-Home retains its existing overview. The other sidebar sections now open table indexes, with details on separate addressable views within the organizer. Publication status and source/version are recorded in the latest release notes.
+## Local Organizer update — November 18, 2026
 
-## Experiments
+### Home and navigation
 
-Columns: Edit name/path, category, publication or schedule status, product count, active votes, and schedule dates. Search filters name, category and path. A live/closed/scheduled Edit opens its own settings and participation page, with nomination review and community additions below. Draft rows open the related suggestion review; they cannot be published through the settings form. Create experiment has its own view.
+Home links directly to missing products by Edit, draft suggestions, new feedback, and unverified People. The Edits, Suggestions and Feedback sidebar badges count items that need action. Home orders Edits by Live, Scheduled, Draft, Closed and Disabled. Additional closed Edits sit behind a disclosure. Visitor and finish-rate counts are per Edit. Visitors are distinct browsers, so adding those counts across Edits would double-count some browsers.
 
-Links use `#experiments/<id>` and preserve the selected experiment in the URL. The global experiment selector stays on Home; detail pages use their own experiment identity to avoid changing settings for a different row.
+Phones use the Workspace menu from the sticky top bar. The sheet closes on selection, Escape, or a backdrop click and returns focus to Menu. Tablet and desktop use the sidebar. The System status dot in the sidebar opens database and research diagnostics.
 
-## Categories
+### Edits
 
-Create and edit category labels, parents and aliases. Edit settings suggests registry labels and accepts free text. See the [category registry guide](CATEGORIES.md).
+Search the Edits table by name, category or path. Open a row for its Overview or use the row's action menu to disable, reactivate or delete it. Deletion requires the exact path. Create Edit opens its own form.
 
-## Product Library
+Published Edit details use `#experiments/<id>/overview`, `/products`, `/missing`, `/community` and `/settings`. The original `#experiments/<id>` opens Overview. Browser Back and Forward traverse the selected tabs. Private drafts open for review in Suggestions. The explicit draft Overview path from Home has a link to that review.
 
-The default table contains products with active verdicts, ordered by vote count. Search matches product name, brand, category and tag labels across the entire returned inventory, not only the displayed page. Pagination shows 25 products per page. Include unvoted products exposes stored curated/custom products for tagging; it does not query the entire external catalog.
+Overview shows the participation funnel, result download, refresh and schedule. Finishing means answering every card and viewing the leaderboard. The counted-vote browsers number counts browsers with at least one non-skip vote. Products keeps up/down controls visible and holds Set photos and Remove in its row menu. Settings offers Follow schedule and Closed now. Pausing responses keeps scheduled dates saved. The existing lineup revision and lifecycle confirmation rules apply.
 
-Columns: product and brand, category, total votes, item Vouch, Soft-Vouch, Pass, score, and number of Edits with activity. Product details show totals, per-experiment counts/scores, category and tag editing. Skips are excluded.
+In Missing products, unconfirmed submissions come first, followed by confirmed groups and products on the community board. Select entries to confirm or combine them. Dismiss hides selected source nominations from the active inbox and lookup counts. Use Dismissed, then Restore, to bring them back. The visitor's submission, public community eligibility, and recorded votes remain intact. The organizer-only `POST /api/admin/nomination-status` uses the selected source keys, a boolean dismissed state, and existing authorization plus same-origin and JSON checks.
 
-The organizer inventory reads every registered published experiment, including closed or ended Edits. It includes base votes and community votes, reviewed nomination history and products no longer visible under the one-product-per-brand Board presentation. Unresolved historical IDs get a clearly labeled archived-product placeholder rather than being silently omitted. Name-only community identities stay scoped to their source experiment. Stable catalog/SKU identities combine across experiments.
+### Wharton pilot
 
-For the combined product total and score, each browser's latest recorded verdict wins across Edits, following the existing overall-board principle. A newer skip clears its earlier contribution. Timestamps missing from legacy records are treated as oldest; equal timestamps use deterministic registry iteration order. Per-experiment rows describe that experiment's active verdicts and can sum higher than the deduplicated combined total. Scores use the shared current formula: Vouch = 10, Soft-Vouch = 7, Pass = 0, plus one neutral response worth 5. Existing saved votes recalculate on read. Voting and the overall-board opt-in setting are unchanged.
+Set targets reveals the same autosaving target inputs used in the previous version. The signup funnel uses Landing as its baseline. The highlight marks the largest loss in people between successive steps. The sections below the funnel remember their disclosure state on the current browser when local storage is available. Trust signal starts open on first visit. Spread includes per-card and per-method totals. Category, Since and CSV use the existing pilot report.
 
-`GET /api/admin/inventory` supplies aggregate experiment and product records. It requires organizer authorization. Browser keys are used only for deduplication in memory; responses contain no visitor IDs, sessions or private account identities. No sixty-product cap is applied. Catalog provider identity/photo hydration rules still apply. Historical/community products are also resolvable when saving tags.
+### Categories
 
-The current isolated preview at port 4188 has no recorded votes. Its default library is therefore empty; Include unvoted products can be used to inspect the table. No production voting data was imported. Populated-library checks used a separate temporary QA dataset.
+Manage labels, parents and aliases from each category row. The grouped table counts registered Edits and products returned by the inventory for that category. Unassigned appears when there are standalone categories or Edits without a registry match. Edit settings suggests registry labels and accepts free text. See the [category registry guide](CATEGORIES.md).
+
+### Product Library
+
+Search matches product, brand, category and tags. The category filter and sort apply before the 25-row pagination. Votes sorts highest first by default. Click a sortable header to change its direction. Phones show product cards with a sort control. The thumbnail uses existing catalog hydration and published lineup photo overrides. Create a reusable tag opens the existing form from the toolbar.
+
+Totals use each browser's latest verdict across all published Edits, including closed ones. Skips are excluded. A newer skip clears the earlier verdict. Per-Edit counts may add up to more than the combined total. Public product-page reviews remain a separate column and can make a product eligible for the default view. Include unvoted products adds stored products.
+
+The inventory includes base and community votes, reviewed nomination history, and archived items outside the one-product-per-brand Board display. Unresolved historical IDs receive an archived-product label. Name-only community products keep their source Edit identity. Stable catalog and SKU identities combine across Edits. Legacy votes without timestamps sort oldest. Equal timestamps use registry order. Organizer authorization is required, and the inventory omits browser keys and private account identities.
 
 ## Suggestions
 
@@ -58,10 +66,6 @@ A category/row opens research, picks, source links, lineup editing, preview and 
 
 The existing dismiss/build endpoints remain compatible. All new actions use organizer authorization, JSON/same-origin checks and the durable lease. Registry/job writes remain separate records, as in the original draft workflow; this is not a distributed transaction.
 
-## Navigation and verification
+## People and Feedback
 
-Sidebar links return to each table. Row links are keyboard-accessible; the row background also opens the detail view. Browser Back and direct fragment links work. Tables scroll inside their own containers on narrow screens, with a scroll hint, rather than widening the page. Suggestion actions stay visible at the right of desktop tables.
-
-Automated suite: 156 passing tests, including latest-verdict aggregation, skips, nomination history, more than sixty products, authorization, absence of browser IDs in inventory, draft exclusion, rejection, deletion/restoration, live-Edit protection and refresh history.
-
-Browser checks on a separate synthetic QA dataset cover populated product counts, search/details, tag saving, suggestion delete/restore, refresh-to-draft, rejection, approval and Live status. The regular local preview was checked for all table indexes, experiment settings and unvoted product search/detail. Physical-device and full screen-reader checks remain unverified.
+The People cards set the Status filter. Selecting the current filter returns to All accounts. Feedback and People use the quiet refresh control and local update time. People actions remain in the row menu.

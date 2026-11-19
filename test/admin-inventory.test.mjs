@@ -34,3 +34,12 @@ test('organizer inventory includes standalone public Vouches and keeps product r
  assert.ok(!result.products.some(p=>p.id===hidden.id));
  assert.doesNotMatch(JSON.stringify(result),/private-account-id|private-comment/);
 });
+
+test('inventory uses the published lineup photo override for the same SKU', async t=>{
+ const f=await fixture(t);
+ f.registry.skus[shoe.id]={...shoe,image:'https://example.com/original.png'};
+ f.registry.experiments.sunscreen.products[0]={...shoe,photoOverride:'https://example.com/lineup.png'};
+ const product=(await adminInventory(f)).products.find(p=>p.id===shoe.id);
+ assert.equal(product.image,'https://example.com/lineup.png');
+ assert.equal(product.photoOverride,product.image);
+});

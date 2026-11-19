@@ -16,9 +16,15 @@ function report(error){let notice=document.getElementById('save-error');if(!noti
 function track(type,extra={}){if(demoId)return Promise.resolve();const job=trackingQueue.then(()=>api('/api/events',{type,...extra}));trackingQueue=job.catch(error=>report(error));return job}
 function watchEnd(){const section=document.getElementById('nominate');if(!section)return;const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){track('end_seen').catch(()=>{});observer.disconnect()}},{threshold:0.25});observer.observe(section)}
 
-function loadDemoState(){
- state=initial();
- try{const saved=JSON.parse(sessionStorage.getItem('demo:'+KEY));if(saved?.id===demoId)state=saved.state}catch{}
+function readDemoState(id){
+ try{const saved=JSON.parse(sessionStorage.getItem('demo:vouch-experiment-'+id));if(saved?.id===demoId)return saved.state}catch{}
+ return initial();
+}
+function demoParticipation(category){
+ const votes=(category.id===experimentId?state:readDemoState(category.id)).votes;
+ const answeredProductIds=Object.keys(votes);
+ const done=category.id===experimentId?hasAnsweredAll():answeredProductIds.length>=category.productCount;
+ return {answeredProductIds,status:done?'done':answeredProductIds.length?'partial':'new'};
 }
 function save(){try{
  if(demoId)sessionStorage.setItem('demo:'+KEY,JSON.stringify({id:demoId,state}));
@@ -102,7 +108,7 @@ function updateHeader(){
  document.querySelector('.header-label').innerHTML=`${timing}`;
  window.VouchSiteNav?.configure({experimentId,experimentPath,category:experiment.category,draft:experiment.status==='draft',voting,searchUrl:q=>apiUrl('/api/products/search?q='+encodeURIComponent(q)),productPath:standingsProductPath,canNominate:!demoId&&experimentStatus()==='open'&&experiment.status!=='draft',nominate:nominateFromNav});
 }
-async function refreshAccountStatus(){try{const me=await api('/api/account/me');if(me.demo&&!demoStorageLoaded){demoId=me.demoId;demoStorageLoaded=true;loadDemoState();}accountSignedIn=!!me.authenticated;accountProfile=me.profile;accountStatusKnown=true}catch{}updateHeader();}
+async function refreshAccountStatus(){try{const me=await api('/api/account/me');if(me.demo&&!demoStorageLoaded){demoId=me.demoId;demoStorageLoaded=true;state=readDemoState(experimentId);}accountSignedIn=!!me.authenticated;accountProfile=me.profile;accountStatusKnown=true}catch{}updateHeader();}
 function updateTimers(){
  if(!experiment)return;
  const status=experimentStatus();updateHeader();
@@ -142,11 +148,26 @@ function rankedRow(p,i,isCommunity=false){
 let pilotBoardTracked=false,pilotPulse=null;
 function board(){pilotPulse?.disconnect();updateHeader();const restoreHeadingFocus=document.activeElement===app.querySelector('h1');app.dataset.collectionStatus=experimentStatus();const sorted=[...products.map(p=>({...p,...baseBoard[p.id]})),...communityProducts].sort((a,b)=>Number(b.score??-1)-Number(a.score??-1));const chips=experiment.status!=='draft'&&window.VouchBoardCategories?.markup(experiment)||'';
 const pilotBoard=whartonFlow&&accountSignedIn&&accountProfile?.whartonEmailVerified&&!!chips;app.innerHTML=`<section class="board"><div class="board-head"><p class="eyebrow">VOUCH / ${esc(experiment.title)}</p>${chips?'<div class="pilot-board-title"><h1>The Board</h1><span data-winner-share></span></div>':'<h1>The Board</h1>'}<p>Rankings reflect the collective pool of item vouches, brand trust and don’t-recommend responses from everyone who voted.</p></div>${chips}<div class="board-topline"><span>PRODUCT</span><span>VOUCH SCORE</span></div>${sorted.map((p,i)=>p.communityNominated?communityCard(p,i):rankedRow(p,i)).join('')}${experiment.status!=='draft'?'<div data-pilot-next></div>':''}${experimentStatus()==='open'&&experiment.status!=='draft'&&!demoId?'<button type="button" class="board-vouch-card" data-vouch-search>'+window.VouchSiteNav.emblemMarkup+'<span>Missing your favorite? Vouch for it</span></button>':''}${experiment.status==='draft'?'':window.VouchCategories?.section()||''}${experiment.status==='draft'?'<p>Organizer preview · Voting opens after approval.</p>':experimentStatus()!=='open'?'<p>'+ (experimentStatus()==='upcoming'?'Voting has not started yet.':'Voting has ended. Results remain available.')+' Nominations and voting are paused.</p>':demoId?'<p>Demo mode · Your vouches are only visible to you during this session.</p>':nominationView()}${accountSignedIn?`<p class="collection-sync-notice" role="status">${profileSyncState==='saved'||accountProfile?.browserProfile?'Your picks are saved to your collection.':'Review these products to save any picks missing from your collection.'} <a href="/account?experiment=${encodeURIComponent(experimentId)}${profileSyncState==='saved'||accountProfile?.browserProfile?'':'&review=1'}">${profileSyncState==='saved'||accountProfile?.browserProfile?'View my collection':'Review and save picks'} →</a></p>`:''}<div class="board-bottom"><button class="text-button" data-action="start">${Object.keys(state.votes).length?'Revisit your takes':'Start vouching'}</button></div></section>`;if(experimentStatus()!=='open'){app.querySelectorAll('[data-community],[data-action="start"]').forEach(b=>b.disabled=true)}else if(!demoId){mountNomination();watchEnd()}if(!demoId)window.VouchSuggestions?.mount(app);if(experiment.status!=='draft')window.VouchCategories?.mount(app,{exclude:experimentId,limit:3});const nextHost=app.querySelector('[data-pilot-next]');
-const boardActions=nextHost?import('/pilot-next.js').then(({mountNext})=>{
+const demoPilot=!!demoId&&whartonFlow&&!!chips;
+const boardActions=nextHost&&!demoPilot?import('/pilot-next.js').then(({mountNext})=>{
   if(nextHost.isConnected)mountNext(nextHost,{experimentId,profile:accountProfile});
 }):null;
 boardActions?.catch(()=>{});
-window.VouchBoardCategories?.mount(app,experiment,{whartonFlow,onLoaded:pilotBoard?async({items,states,pilot,available})=>{
+window.VouchBoardCategories?.mount(app,experiment,{whartonFlow,demoParticipation:demoPilot?demoParticipation:null,onLoaded:demoPilot?async({items,states})=>{
+  const [{progressMarkup},{categoryHref}]=await Promise.all([import('/pilot-progress.js'),import('/wharton-categories.js')]);
+  if(!nextHost?.isConnected)return;
+  const live=items.filter(item=>item.experiment);
+  const done=live.filter(item=>states[item.experiment.id].status==='done').length;
+  const next=live.find(item=>states[item.experiment.id].status!=='done');
+  const label=done+' of '+live.length+' vouched';
+  const href=next?categoryHref(next.experiment.id,states[next.experiment.id].status,true):'/wharton';
+  const action=next?(states[next.experiment.id].status==='partial'?'Continue ':'Vouch for ')+next.name.toLowerCase():'Back to Wharton';
+  nextHost.innerHTML=`<section class="pilot-board-card" aria-labelledby="pilot-next-heading">
+    <h2 id="pilot-next-heading">${label}</h2>
+    ${progressMarkup(done,label,{segments:live.length,role:'img'})}
+    <a class="pilot-button" href="${href}">${esc(action)}</a>
+  </section>`;
+}:pilotBoard?async({items,states,pilot,available})=>{
   if(!pilot||!nextHost.isConnected)return;
   const [{nextStep,showUnlockAction},{mountPulse}]=await Promise.all([import('/pilot-next.js'),import('/pilot-pulse.js'),boardActions]);
   if(!nextHost.isConnected)return;
@@ -191,7 +212,7 @@ async function boot(){
     if(new URLSearchParams(location.search).has('board')){screen='board';if(whartonFlow&&experimentStatus()==='open')await track('leaderboard').catch(()=>{});await refreshCommunity();render();return}
     if(experimentStatus()!=='open'){screen='home';await refreshCommunity();render();return}
     await track('visit');await refreshCommunity();
-    if(new URLSearchParams(location.search).get('start')==='1'){await track('start');index=0;if(new URLSearchParams(location.search).has('resume')){const result=await api('/api/category-participation?id='+encodeURIComponent(experimentId)),progress=result.categories[experimentId];resumeAnswers=new Set(progress.answeredProductIds);index=progress.nextProductId?products.findIndex(p=>p.id===progress.nextProductId):products.length;}go('game');return}
+    if(new URLSearchParams(location.search).get('start')==='1'){await track('start');index=0;if(new URLSearchParams(location.search).has('resume')){if(demoId){resumeAnswers=new Set(Object.keys(state.votes));const next=products.findIndex(p=>!resumeAnswers.has(p.id));index=next===-1?products.length:next;}else{const result=await api('/api/category-participation?id='+encodeURIComponent(experimentId)),progress=result.categories[experimentId];resumeAnswers=new Set(progress.answeredProductIds);index=progress.nextProductId?products.findIndex(p=>p.id===progress.nextProductId):products.length;}}go('game');return}
     render();
   }catch(error){app.innerHTML='<section class="board"><h1>Could not open this collection.</h1><p role="alert">'+esc(error.message)+'</p><button class="primary" id="retry-load">Try again</button></section>';document.getElementById('retry-load').onclick=boot}
 }

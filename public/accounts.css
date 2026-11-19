@@ -337,3 +337,12 @@
 .item-vote-feedback:has([data-share-saved-vouch]){display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .item-vote-feedback [data-item-vote-controls]{display:flex;flex-wrap:wrap;gap:8px}
 #item-product-vote{scroll-margin-top:100px}
+.product-loading{max-width:700px;display:grid;gap:20px}
+.product-loading>span,.product-loading i{display:block;border-radius:12px;background:#e5e8d9;animation:product-loading-pulse 1s ease-in-out infinite alternate}
+.product-loading>span:first-child{width:76px;height:76px;border-radius:50%}
+.product-loading>span:nth-child(2){width:55%;height:35px}
+.product-loading>span:nth-child(3){height:80px}
+.product-loading>div{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.product-loading i{height:200px}
+@keyframes product-loading-pulse{to{opacity:.45}}
+@media(prefers-reduced-motion:reduce){.product-loading>span,.product-loading i{animation:none}}

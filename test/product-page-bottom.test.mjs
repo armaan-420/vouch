@@ -8,7 +8,7 @@ const source=readFileSync(new URL('../public/accounts.js',import.meta.url),'utf8
 const context={
   URL,URLSearchParams,
   location:{pathname:'/products/current',search:'',hash:''},
-  document:{getElementById(){return {addEventListener(){}}},body:{classList:{add(){}}}},
+  document:{getElementById(){return {addEventListener(){},querySelector(){return null}}},body:{classList:{add(){}}}},
 };
 const {itemBuyMarkup:buyMarkup,itemCategoryHeading,itemCategoryPicks,plural}=vm.runInNewContext(
   source.replace('  load();\n})();','  return {itemBuyMarkup,itemCategoryHeading,itemCategoryPicks,plural};\n})();'),

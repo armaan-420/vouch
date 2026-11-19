@@ -49,11 +49,30 @@ try{
    if(width===1280){await route.abort();return;}
    await route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44"><rect width="44" height="44" fill="olive"/></svg>'});
   });
+  let finishProduct;
+  let productReady=new Promise(resolve=>{finishProduct=resolve;});
+  let failProduct=true;
+  await page.route('**/api/products/'+product.id,async route=>{
+   await productReady;
+   if(failProduct){failProduct=false;await route.fulfill({status:503,json:{error:'Temporary failure.'}});}
+   else await route.continue();
+  });
   await page.goto(origin+productPath,{waitUntil:'domcontentloaded'});
+  const skeleton=page.getByRole('status',{name:'Opening product…',exact:true});
+  await skeleton.waitFor();
+  assert.equal(await page.locator('.page-loading-ring').count(),0);
+  assert.equal(await skeleton.locator('span').first().evaluate(el=>getComputedStyle(el).animationName),reducedMotion==='reduce'?'none':'product-loading-pulse');
   const avatar=page.getByRole('link',{name:'My profile',exact:true});
   assert.equal(await avatar.innerText(),'T');
   assert.equal(await avatar.locator('img').count(),0);
   const initialBounds=await avatar.boundingBox();
+  finishProduct();
+  const retry=page.getByRole('button',{name:'Try again',exact:true});
+  await retry.waitFor();
+  productReady=new Promise(resolve=>{finishProduct=resolve;});
+  await retry.click();
+  await skeleton.waitFor();
+  finishProduct();
   const back=page.getByRole('link',{name:'The Board',exact:true});
   await back.waitFor();
   assert.equal(await back.getAttribute('href'),boardPath);
@@ -71,6 +90,7 @@ try{
   await page.waitForURL(origin+boardPath,{waitUntil:'domcontentloaded'});
   const loader=page.getByText('Opening the Board…',{exact:true});
   await loader.waitFor();
+  assert.equal(await skeleton.count(),0);
   assert.equal(await avatar.innerText(),'T');
   assert.equal((await avatar.boundingBox()).width,initialBounds.width);
   assert.equal(await page.locator('.page-loading-ring').evaluate(el=>getComputedStyle(el).animationName),reducedMotion==='reduce'?'none':'page-loading-sweep');

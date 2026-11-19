@@ -1,6 +1,7 @@
 (() => {
   'use strict';
   const root=document.getElementById('account-app');
+  const productLoading=root.querySelector('.product-loading')?.parentElement;
   if(!location.pathname.startsWith('/community-leaderboard'))document.body.classList.add('account-page');
   else document.querySelector('[data-site-nav]')?.removeAttribute('data-account-nav-locked');
   const params=new URLSearchParams(location.search),experimentId=params.get('experiment');
@@ -45,7 +46,7 @@
   const date=value=>{const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleDateString(undefined,{dateStyle:'medium'}):''};
   async function request(path,payload){const response=await fetch(path,{method:payload===undefined?'GET':'POST',credentials:'same-origin',headers:payload===undefined?{}:{'Content-Type':'application/json'},body:payload===undefined?undefined:JSON.stringify(payload)});let data;try{data=await response.json()}catch{throw Error('Could not connect. Please try again.')}if(!response.ok)throw Object.assign(Error(data.error||'Could not save. Please try again.'),{status:response.status});return data}
   function focusHeading(){if(document.querySelector('dialog[open]'))return;const heading=root.querySelector('h1');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}}
-  function shell(html){const wasLoading=!!root.querySelector('.page-loading');document.body.classList.toggle('signin-page',html.includes('signin-layout'));profileObserver?.disconnect();categoryObserver?.disconnect();if(!html.includes('profile-layout'))document.body.classList.remove('collection-page');root.innerHTML='<section class="account-shell">'+html+'</section>';if(wasLoading)window.VouchPageLoading.reveal(root);focusHeading()}
+  function shell(html){const wasLoading=!!root.querySelector('.page-loading, .product-loading');document.body.classList.toggle('signin-page',html.includes('signin-layout'));profileObserver?.disconnect();categoryObserver?.disconnect();if(!html.includes('profile-layout'))document.body.classList.remove('collection-page');root.innerHTML='<section class="account-shell">'+html+'</section>';if(wasLoading)window.VouchPageLoading.reveal(root);focusHeading()}
   function failure(error,target){const el=target||root.querySelector('[data-status]');if(el){el.className='account-status account-error';el.setAttribute('role','alert');el.textContent=error.message;el.focus?.()}else shell(`<h1>Could not open this page.</h1><p class="account-error" role="alert">${esc(error.message)}</p><button class="primary" data-retry>Try again</button>`);root.querySelector('[data-retry]')?.addEventListener('click',load)}
   function statusMarkup(){return '<p class="account-status" data-status role="status" aria-live="polite"></p>'}
   const libraryTags=o=>(o.tags||[]).length?`<span class="library-tags" aria-label="Product tags">${o.tags.map(t=>`<span>${esc(t.label)}</span>`).join('')}</span>`:'';
@@ -623,7 +624,7 @@
   const photoVoteText={yes:'You vouched',brand:'You trust the brand',no:'You said nope',skip:'Not tried'};
   async function renderProduct(id){
     document.body.classList.remove('signin-page');
-    window.VouchPageLoading.show(root,'Opening product…');
+    if(productLoading&&!productLoading.isConnected)root.replaceChildren(productLoading);
     const {retailerUrl,retailerOffers}=await import('/retailer-offers.js');
     let data;
     try{data=await request('/api/products/'+encodeURIComponent(id));}

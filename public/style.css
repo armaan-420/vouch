@@ -423,11 +423,13 @@ html.nomination-search-open,html.nomination-search-open body{overflow:hidden;ove
  /* The focused voting flow keeps its Board shortcut and omits navigation search. */
 }
 
-/* Global search settles after one short turn. */
+/* Global search: a quiet lime pulse and traveling dots while the catalog loads. */
 .catalog-searching{display:flex;align-items:center;gap:10px;min-height:36px;color:#526139;font-size:13px;font-weight:500;letter-spacing:.02em}
-.catalog-searching::before{content:"";width:20px;height:20px;flex:0 0 20px;border-radius:7px;background:#d7ed68;transform:rotate(-9deg);animation:catalog-turn 200ms ease-out}
-@keyframes catalog-turn{from{transform:rotate(15deg)}}
-@media(prefers-reduced-motion:reduce){.catalog-searching::before{animation:none}}
+.catalog-searching::before{content:"";width:20px;height:20px;flex:0 0 20px;border-radius:7px;background:#d7ed68;box-shadow:0 0 0 4px #d7ed6826;animation:catalog-pulse 1.5s ease-in-out infinite}
+.catalog-searching::after{content:"";width:26px;height:6px;background:radial-gradient(circle closest-side,#718044 90%,transparent) 0 50%/6px 6px repeat-x;animation:catalog-dots 1.2s ease-in-out infinite}
+@keyframes catalog-pulse{0%,100%{transform:rotate(-10deg) scale(.85);box-shadow:0 0 0 4px #d7ed6826}50%{transform:rotate(10deg) scale(1);box-shadow:0 0 0 7px #d7ed6815}}
+@keyframes catalog-dots{0%,100%{opacity:.35;transform:translateY(0)}50%{opacity:1;transform:translateY(-2px)}}
+@media(prefers-reduced-motion:reduce){.catalog-searching::before,.catalog-searching::after{animation:none}}
 
 /* Wharton experiment: people occupy the former Board tag row. */
 .board-people{display:flex;align-items:center;gap:10px;padding:2px 0 0;min-height:32px;flex-wrap:wrap}.board-people-avatars{display:flex;padding-left:4px}.board-person{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:#e9ecdf;border:2px solid #f6f4ea;margin-left:-4px;font-size:10px;color:#292d24;text-decoration:none;position:relative;overflow:hidden}.person-avatar{position:relative;overflow:hidden}.person-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}.board-people-link{font-size:12px;color:#697837;text-decoration:none}.board-people-link:hover{text-decoration:underline}.board-person:focus-visible{outline:2px solid #697837;outline-offset:2px}

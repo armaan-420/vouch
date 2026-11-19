@@ -16,7 +16,8 @@ const icons={
 const esc=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const suggestionThanks='Thanks for suggesting a category.';
 
-export function primaryAction(data,model,{experiment,products,canStart,invite}) {
+export function primaryAction(data,model,{experiment,products,canStart,invite,hasTake}) {
+  if(hasTake&&!model?.showUnlock)return {title:'Share the love',...invite,label:'Invite'};
   if(!model)return canStart
     ?{title:'Add your take',label:'Start vouching',action:'start'}
     :{title:'Share the love',...invite};
@@ -65,11 +66,11 @@ function actionMarkup({action,href},attributes,content) {
     :`<button type="button" ${attributes} data-dock-action="${action}"${action==='start'?' data-action="start"':''}>${content}</button>`;
 }
 
-export function mountBoardDock(host,data,{experiment,products,profile,demo,canStart,onShown}) {
+export function mountBoardDock(host,data,{experiment,products,profile,demo,canStart,hasTake,onShown}) {
   const model=data&&nextStep({...data,profile,demo});
   const pilot=!!model;
   const invite={action:'invite',label:pilot?'Invite a classmate':'Invite a friend'};
-  const primary=primaryAction(data,model,{experiment,products,canStart,invite});
+  const primary=primaryAction(data,model,{experiment,products,canStart,invite,hasTake});
   const menu=moreActions({pilot,demo,invite,profile,experimentId:experiment.id}).filter(item=>item.action!==primary.action);
   const key='vouch-board-suggested:'+(profile?.handle||'visitor');
   let suggested=!!model?.suggested;

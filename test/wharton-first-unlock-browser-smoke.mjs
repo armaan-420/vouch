@@ -157,6 +157,34 @@ try{
       await page.locator('.board-category-chip').first().waitFor();
       assert.deepEqual(await page.locator('.board-category-chip').allTextContents(),chipNames);
       await check('everyday-chips');
+      const newest='fixture-edit-0';
+      const productId=WATER_BOTTLES[0].id;
+      const write=async (url,data)=>{
+        const response=await page.request.post(origin+url,{headers:{Origin:origin},data});
+        assert.ok(response.ok(),url+' '+response.status());
+      };
+      const newestBoard=origin+'/'+newest+'?board=1';
+      await page.goto(newestBoard);
+      await page.locator('.board-dock-main[data-dock-action="start"]').waitFor({state:'attached'});
+      for(const verdict of ['yes','no','brand']){
+        await write('/api/account/vouch',{productId,verdict});
+        await page.reload();
+        const invite=page.locator('.board-dock-main[data-dock-action="invite"]');
+        await invite.waitFor({state:'attached'});
+        assert.equal(await invite.textContent(),'Invite');
+      }
+      await page.evaluate(()=>scrollTo(0,120));
+      await page.locator('.board-dock.is-visible').waitFor();
+      await check('dock-invite');
+      for(const product of WATER_BOTTLES){
+        await write('/api/events?experiment='+newest,{type:'answer',productId:product.id,value:'skip'});
+      }
+      await page.goto(origin+'/wharton');
+      await unlocked.waitFor();
+      const featured=page.locator('.wharton-category').first();
+      assert.equal(await featured.locator('.wharton-category-kicker').textContent(),'Up next');
+      assert.notEqual(await featured.getAttribute('data-pilot-category'),newest);
+      await check('up-next');
       assert.deepEqual(errors,[]);
       console.log('PASS',width,'A → B → E → F, countdown, dock and keyboard focus');
     }finally{await context.close();}

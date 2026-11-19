@@ -182,13 +182,14 @@ export async function mountWhartonHome(root,profile,{member,frame,error,demo=fal
           const created=Date.parse(category.createdAt);
           return Number.isFinite(created)&&(!latest||created>Date.parse(latest.createdAt))?category:latest;
         },null);
-        const ordered=unlockable.filter(category=>category!==newest)
-          .sort((a,b)=>statusOrder[states[a.id].status]-statusOrder[states[b.id].status]);
-        if(newest)ordered.unshift(newest);
+        const ordered=unlockable.slice().sort((a,b)=>statusOrder[states[a.id].status]-statusOrder[states[b.id].status]);
+        const isNew=!!newest&&states[newest.id].status!=='done';
+        const featured=isNew?newest:ordered.find(category=>states[category.id].status!=='done');
+        if(featured)ordered.unshift(...ordered.splice(ordered.indexOf(featured),1));
         const cards=ordered.map(category=>{
           const pick=picks.find(pick=>pick.experiment.id===category.id);
           return card(pick||{experiment:category,name:category.category},{
-            progress:states[category.id],kicker:category===newest?'New for you':null,wharton:!!pick,source:'unlocked'
+            progress:states[category.id],kicker:category===featured?(isNew?'New for you':'Up next'):null,wharton:!!pick,source:'unlocked'
           });
         });
         const completed=gate&&states[gate.experiment.id]?.status==='done'?compactRows([gate]):'';

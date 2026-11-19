@@ -199,8 +199,12 @@ const showDock=async(data)=>{
   const {mountBoardDock}=await import('/board-dock.js');
   if(!dockHost?.isConnected)return;
   disconnectBoardDock?.();
+  const boardProductIds=new Set([...products.map(product=>standingsProductId(product)),
+    ...communityProducts.map(product=>standingsProductId(product,true))].filter(Boolean));
+  const hasTake=personalOpinions().length>0||(!demoId&&accountSignedIn&&accountProfile?.opinions?.some(opinion=>
+    ['yes','no','brand'].includes(opinion.verdict)&&(opinion.experimentId===experimentId||boardProductIds.has(opinion.productId))));
   disconnectBoardDock=mountBoardDock(dockHost,data,{
-    experiment,products,profile:accountSignedIn?accountProfile:null,demo:demoPilot,
+    experiment,products,profile:accountSignedIn?accountProfile:null,demo:demoPilot,hasTake,
     canStart:experimentStatus()==='open'&&!demoId&&!Object.keys(state.votes).length,
     onShown:state=>{
       if(dockTracked)return;

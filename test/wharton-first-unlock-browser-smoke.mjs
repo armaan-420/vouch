@@ -112,10 +112,14 @@ try{
       assert.equal(await countdown.count(),0);
       await board(lineup[0],'unlock');
       assert.match(await page.locator('.board-dock-status').innerText(),/Water bottles ✓\s+You go girl!/);
+      assert.equal(await page.locator('.board-category-chip').count(),0);
+      assert.equal(await page.getByRole('link',{name:'See more categories'}).count(),0);
       await check('dock-unlock');
       await page.goto(origin+'/wharton');
       const unlock=page.getByRole('button',{name:'Unlock all categories'});
       await unlock.waitFor();
+      assert.match(await page.locator('.wharton-unlock p:not(.eyebrow)').innerText(),/^\d+ more categories are open\.$/);
+      assert.equal(await page.getByRole('link',{name:'See more categories'}).count(),0);
       await check('E');
       if(width===360){
         await page.route('**/api/account/pilot-unlock',async route=>{
@@ -143,7 +147,13 @@ try{
       await unlocked.waitFor();
       await board(lineup[0],'next_category');
       assert.match(await page.locator('.board-dock-status').innerText(),/1 of 3 vouched/);
+      assert.equal(await page.locator('.board-category-chip').count(),0);
+      const catalog=page.getByRole('link',{name:'See more categories'});
+      assert.equal(await catalog.getAttribute('href'),'/wharton');
+      assert.ok(await catalog.evaluate(el=>el.offsetHeight>=44));
       await check('dock-unlocked');
+      await catalog.press('Enter');
+      await unlocked.waitFor();
       assert.deepEqual(errors,[]);
       console.log('PASS',width,'A → B → E → F, countdown, dock and keyboard focus');
     }finally{await context.close();}

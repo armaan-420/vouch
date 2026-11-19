@@ -211,7 +211,7 @@ const showDock=async(data)=>{
 };
 const showEveryday=()=>showDock().catch(console.error);
 if(dockHost&&!pilotBoard&&!demoPilot)showEveryday();
-window.VouchBoardCategories?.mount(app,experiment,{whartonFlow,demoParticipation:demoPilot?demoParticipation:null,
+window.VouchBoardCategories?.mount(app,experiment,{whartonFlow,profile:pilotBoard?accountProfile:null,demoParticipation:demoPilot?demoParticipation:null,
   onError:pilotBoard||demoPilot?showEveryday:undefined,
   onLoaded:demoPilot||pilotBoard?async({items,states,pilot,available})=>{
     if(!demoPilot&&!pilot){showEveryday();return}

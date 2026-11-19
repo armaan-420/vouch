@@ -58,14 +58,12 @@ function unlockMeter(answered,total,remaining) {
   return `<div class="wharton-meter"><div class="wharton-meter-track">${bar}<span>${pilotLockIcon({size:12})}</span></div><p aria-hidden="true"><strong>${answered} of ${total} rated</strong> · ${remaining} to unlock</p></div>`;
 }
 
-function unlockCard(categories,picks) {
+function unlockCard(categories) {
   const count=categories.length;
-  const names=picks.map(pick=>pick.key==='carry-on'?'carry-on':pick.shortLabel).join(' and ');
-  const including=names?`, including Wharton's ${esc(names)} ${picks.length===1?'pick':'picks'}`:'';
   return `<section class="wharton-unlock">
     <p class="eyebrow">YOU EARNED IT</p>
     <h2>Unlock every category</h2>
-    <p>${count===1?'1 more category is open':count+' more categories are open'}${including}.</p>
+    <p>${count===1?'1 more category is open':count+' more categories are open'}.</p>
     <div class="wharton-cover-fan" aria-hidden="true">${categories.slice(0,4).map(cover).join('')}<span>${lockIcon}</span></div>
     <button type="button" class="pilot-button is-lime" data-unlock>${lockIcon} Unlock all categories</button>
   </section>`;
@@ -248,7 +246,7 @@ export async function mountWhartonHome(root,profile,{member,frame,error,demo=fal
 
     const heading=`<p class="eyebrow">${esc(done[0].name.toUpperCase())} VOUCHED</p><h1 tabindex="-1">Nice taste, <em>${first}.</em></h1>`;
     const remaining=orderedUnlockable.filter(category=>states[category.id]?.status!=='done');
-    show(heading,(remaining.length?unlockCard(remaining,picks.filter(pick=>states[pick.experiment.id]?.status!=='done')):moreCard)+compactRows(done));
+    show(heading,(remaining.length?unlockCard(remaining):moreCard)+compactRows(done));
     const button=host.querySelector('[data-unlock]');
     if(!button)return;
     button.onclick=async()=>{

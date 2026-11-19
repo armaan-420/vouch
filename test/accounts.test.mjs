@@ -341,6 +341,7 @@ test('organizers can remove comments without changing votes and stale claims can
  await f.api.syncAccountOpinions(f.request('/api/events',{identity:'alice'}),'first','sku-one');
  const profile=(await f.call('/api/account/me',{identity:'alice'})).data.profile;
  assert.equal(profile.opinions[0].comment,'');assert.equal(profile.opinions[0].verdict,'yes');
+ assert.equal((await f.call('/api/products/sku-one',{identity:'alice'})).data.myNote.text,'');
 });
 
 test('category participation distinguishes new, partial and completed including skips across devices',async t=>{
@@ -355,4 +356,46 @@ test('category participation distinguishes new, partial and completed including 
  assert.equal((await f.call('/api/category-participation?id=first',{identity:'alice',browserId:otherBrowser})).data.categories.first.status,'done');
  assert.equal((await f.call('/api/category-participation?id=first',{browserId:otherBrowser})).data.categories.first.status,'new');
  assert.equal((await f.call('/api/category-participation?id=first&id=second&id=third&id=fourth')).status,404);
+});
+
+test('product note writes require a vouch and preserve profile fields and scores',async t=>{
+ const f=await setup(t),identity='alice';
+ f.answer('sku-one','yes');f.answer('sku-two','brand');f.answer('sku-three','no');
+ await f.claim(await f.preview(),identity);
+ const product=(id,viewer=identity)=>f.call('/api/products/'+id,{identity:viewer});
+ const settings=body=>f.call('/api/account/profile',{identity,body});
+ const note=(productId,comment)=>settings({opinions:[{productId,comment}]});
+ const vote=verdict=>f.call('/api/account/vouch',{identity,body:{productId:'sku-one',verdict}});
+ const before=(await settings({visibility:'public',displayName:'Alice Example',bio:'My bio',leaderboardOptIn:false})).data.profile;
+ assert.equal(Object.hasOwn((await product('sku-one',null)).data,'myNote'),false);
+ const first=(await product('sku-one')).data;
+ assert.equal(first.myNote.text,'');
+ const privateNote=await note('sku-one','  My first note  ');
+ assert.equal(privateNote.status,200);
+ for(const field of ['displayName','bio','visibility','leaderboardOptIn','showName'])assert.deepEqual(privateNote.data.profile[field],before[field]);
+ await settings({opinions:[{productId:'sku-one',visibility:'private'}]});
+ assert.deepEqual((await product('sku-one')).data.myNote,{text:'My first note',isPublic:false});
+ assert.equal((await product('sku-one',null)).data.contributors.some(person=>person.comment),false);
+ await settings({opinions:[{productId:'sku-one',visibility:'public'}]});
+ assert.deepEqual((await product('sku-one')).data.myNote,{text:'My first note',isPublic:true});
+ await settings({showName:false});
+ assert.deepEqual((await product('sku-one')).data.myNote,{text:'My first note',isPublic:false});
+ await settings({showName:true});
+ assert.equal((await note('sku-one','x'.repeat(241))).status,400);
+ assert.equal((await note('sku-one','x'.repeat(240))).status,200);
+ const edited=(await product('sku-one')).data;
+ assert.equal(edited.myNote.text.length,240);
+ assert.deepEqual(edited.community,first.community);
+ assert.equal((await vote('yes')).status,200);
+ assert.equal((await product('sku-one')).data.myNote.text.length,240);
+ assert.equal((await note('sku-one','')).status,200);
+ assert.equal((await product('sku-one')).data.myNote.text,'');
+ assert.equal((await note('sku-one','Cleared by vote change')).status,200);
+ assert.equal((await vote('skip')).status,200);
+ assert.deepEqual((await product('sku-one')).data.myNote,{text:'',isPublic:false});
+ for(const id of ['sku-one','sku-two','sku-three']){
+   const rejection=await note(id,'No vouch');
+   assert.equal(rejection.status,400);
+   assert.equal(rejection.data.error,'Vouch for this product to add a note.');
+ }
 });

@@ -577,21 +577,33 @@
     return `<section class="item-tags" aria-labelledby="item-tags-heading"><div class="item-tag-heading"><h2 id="item-tags-heading">What stands out</h2><span>Tap to add yours</span></div><div class="item-tag-options" role="group" aria-label="Your product tags">${tags.map(t=>`<button type="button" class="item-tag" data-item-tag="${esc(t.id)}" aria-pressed="${selected.has(t.id)}" title="${esc(itemTagDescriptions[t.id]||t.label)}"><span class="item-tag-mark" aria-hidden="true">${selected.has(t.id)?'✓':'+'}</span>${esc(t.label)}${t.count?`<small class="item-tag-count">${Number(t.count)}</small>`:''}</button>`).join('')}</div><p class="item-tag-status" data-tag-status role="status" aria-live="polite"></p></section>`;
   }
   function wireProductTags(id,initial){
-    let current=initial;
+    let current=initial,pending=false;
+    const paint=fresh=>{
+      current=fresh;
+      const active=new Set(current.selectedTagIds),byId=new Map(current.tags.map(t=>[t.id,t]));
+      root.querySelectorAll('[data-item-tag]').forEach(b=>{
+        const tag=byId.get(b.dataset.itemTag),selected=active.has(b.dataset.itemTag);
+        b.setAttribute('aria-pressed',String(selected));
+        b.querySelector('.item-tag-mark').textContent=selected?'✓':'+';
+        b.querySelector('.item-tag-count')?.remove();
+        if(tag?.count){
+          const count=document.createElement('small');
+          count.className='item-tag-count';count.textContent=tag.count;b.append(count);
+        }
+      });
+    };
     root.querySelector('.item-tags').addEventListener('click',async event=>{
       const button=event.target.closest('[data-item-tag]');if(!button||button.disabled)return;
       const selected=new Set(current.selectedTagIds||[]),tagId=button.dataset.itemTag;
       selected.has(tagId)?selected.delete(tagId):selected.add(tagId);
-      root.querySelectorAll('[data-item-tag]').forEach(b=>b.disabled=true);
+      pending=true;root.querySelectorAll('[data-item-tag]').forEach(b=>b.disabled=true);
       const status=root.querySelector('[data-tag-status]');status.textContent='Saving…';
       try{
-        current=await request('/api/products/'+encodeURIComponent(id),{tagIds:[...selected]});
-        const active=new Set(current.selectedTagIds),byId=new Map(current.tags.map(t=>[t.id,t]));
-        root.querySelectorAll('[data-item-tag]').forEach(b=>{const tag=byId.get(b.dataset.itemTag);b.setAttribute('aria-pressed',String(active.has(b.dataset.itemTag)));b.querySelector('.item-tag-mark').textContent=active.has(b.dataset.itemTag)?'✓':'+';b.querySelector('.item-tag-count')?.remove();if(tag?.count){const count=document.createElement('small');count.className='item-tag-count';count.textContent=tag.count;b.append(count)}});
-
+        paint(await request('/api/products/'+encodeURIComponent(id),{tagIds:[...selected]}));
         status.textContent='Saved. Your tags help others understand this product.';
-      }catch(error){status.textContent=error.message+' Tap again to retry.'}finally{root.querySelectorAll('[data-item-tag]').forEach(b=>b.disabled=false)}
+      }catch(error){status.textContent=error.message+' Tap again to retry.'}finally{pending=false;root.querySelectorAll('[data-item-tag]').forEach(b=>b.disabled=false)}
     });
+    return fresh=>{if(!pending&&fresh.tags)paint(fresh)};
   }
   // Keep API order here; a future follow system can change this one policy.
   const orderedItemPeople=people=>people;
@@ -613,9 +625,51 @@
     if(days===0)return 'Today';if(days===1)return 'Yesterday';if(days<7)return days+' days ago';if(days<28)return Math.floor(days/7)+' '+(days<14?'week':'weeks')+' ago';
     return when.toLocaleDateString(undefined,{month:'short',day:'numeric'});
   }
-  function itemCommentsSection(people){
-    const comments=people.filter(p=>typeof p.comment==='string'&&p.comment.trim());if(!comments.length)return '';
-    return `<section class="item-comments" id="item-comments" data-count="${comments.length}"><h2>What people say <small>${comments.length}</small></h2><div class="item-comment-grid" id="item-comment-list">${comments.map((p,i)=>`<article class="item-comment"><p>${esc(p.comment)}</p><div class="item-comment-by">${window.VouchPeople.avatar(p,i,{className:'item-person',profilePath})}<strong>${p.handle?`<a href="${esc(profilePath(p.handle))}">${esc(window.VouchPeople.shortName(p.displayName))}</a>`:esc(p.displayName||'Anonymous')}</strong><time datetime="${esc(p.updatedAt||'')}">${esc(itemRelativeDate(p.updatedAt))}</time></div></article>`).join('')}</div>${comments.length>2?`<button type="button" class="item-see-all" data-more-comments aria-expanded="false" aria-controls="item-comment-list">See all ${comments.length} comments</button>`:''}</section>`;
+  const notePencil='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 16-1 5 5-1L20 8l-4-4L4 16Zm10-10 4 4"/></svg>';
+  const noteButton=(label,attrs='',outline=true)=>`<button type="button" class="pilot-button${outline?' is-outline':''}" ${attrs}>${label}</button>`;
+  const noteHelper=isPublic=>isPublic?'Attached to your vouch · shown with your name':'Only you can see this. Your vouch is private. <a href="/account?visibility=1">Change in your profile</a>';
+  function mountItemComments(host,{people,myVerdict,myNote,signedIn,author,justPosted,goToVote,openEditor,removeNote}){
+    const canWrite=signedIn&&myVerdict==='yes',ownText=canWrite?myNote?.text:'';
+    const publicNotes=people.filter(p=>typeof p.comment==='string'&&p.comment.trim());
+    const comments=publicNotes.filter(person=>!ownText||person.handle!==author?.handle);
+    const count=comments.length+(ownText&&myNote.isPublic?1:0);
+    host.innerHTML='';
+    if(!canWrite&&!count)return;
+    const avatar=(person,index)=>window.VouchPeople.avatar(person,index,{profilePath});
+    const viewerAvatar=canWrite?avatar({...author,handle:null},0):'';
+    const otherNotes=comments.map((p,i)=>`<article class="item-comment"><p>${esc(p.comment)}</p><div class="item-comment-by">${avatar(p,i)}<strong>${p.handle?`<a href="${esc(profilePath(p.handle))}">${esc(window.VouchPeople.shortName(p.displayName))}</a>`:esc(p.displayName||'Anonymous')}</strong><time datetime="${esc(p.updatedAt||'')}">${esc(itemRelativeDate(p.updatedAt))}</time></div></article>`).join('');
+    const ownMarkup=ownText?`<article class="item-own-note"><div class="item-own-byline">${viewerAvatar}<strong>${esc(author?.displayName||'You')}</strong><time datetime="${esc(author?.updatedAt||'')}">${esc(justPosted?'Just now':itemRelativeDate(author?.updatedAt))}</time><div class="item-note-actions"><button type="button" data-note-edit>Edit</button><button type="button" data-note-remove>Remove</button></div></div><p>${esc(ownText)}</p>${myNote.isPublic?'':`<div class="item-note-helper">${noteHelper(false)}</div>`}<div class="item-note-confirm" hidden><strong>Remove your note?</strong>${noteButton('Remove','data-note-confirm')}${noteButton('Keep','data-note-keep')}</div><p class="item-note-error" role="alert"></p></article>`:'';
+    const composer=canWrite&&!ownText?`<div class="item-note-rest-row">${viewerAvatar}<button type="button" data-note-start class="item-note-rest">${notePencil}<span>${comments.length?'What should someone know?':'Be the first to say why. What should someone know?'}</span></button></div><p class="item-note-helper item-note-rest-help">${noteHelper(myNote?.isPublic)}</p>`:'';
+    const prompt=!canWrite&&(!signedIn||!myVerdict)?`<div class="item-note-prompt">${notePencil}<p><strong>Tried it?</strong> <span>Vote first, then add a note.</span></p>${noteButton('<span class="item-note-arrow" aria-hidden="true">←</span> Go to vote','data-note-vote')}</div>`:'';
+    host.innerHTML=`<section class="item-comments" id="item-comments" data-count="${comments.length}"><h2>What people say${count?` <small>${count}</small>`:''}</h2><div data-note-panel>${ownMarkup||composer||prompt}</div><div class="item-comment-grid" id="item-comment-list">${otherNotes}</div>${comments.length>2?`<button type="button" class="item-see-all" data-more-comments aria-expanded="false" aria-controls="item-comment-list">See all ${comments.length} comments</button>`:''}</section>`;
+    host.querySelector('[data-more-comments]')?.addEventListener('click',event=>{
+      const expanded=host.firstElementChild.classList.toggle('is-expanded');
+      event.currentTarget.setAttribute('aria-expanded',String(expanded));
+      event.currentTarget.textContent=expanded?'Show fewer comments':'See all '+comments.length+' comments';
+    });
+    host.querySelector('[data-note-vote]')?.addEventListener('click',goToVote);
+    for(const trigger of host.querySelectorAll('[data-note-start],[data-note-edit]')){
+      trigger.addEventListener('click',()=>openEditor(trigger));
+      if(trigger.hasAttribute('data-note-start'))trigger.addEventListener('focus',()=>{
+        if(trigger.matches(':focus-visible')&&!matchMedia('(max-width:700px)').matches)openEditor(trigger);
+      });
+    }
+    const remove=host.querySelector('[data-note-remove]');
+    if(!remove)return;
+    const confirmation=host.querySelector('.item-note-confirm'),keep=host.querySelector('[data-note-keep]'),confirm=host.querySelector('[data-note-confirm]');
+    remove.onclick=()=>{confirmation.hidden=false;keep.focus();};
+    keep.onclick=()=>{confirmation.hidden=true;remove.focus();};
+    confirm.onclick=async()=>{
+      const error=host.querySelector('.item-note-error');
+      for(const button of host.querySelectorAll('.item-own-note button'))button.disabled=true;
+      error.textContent='';
+      try{await removeNote();}
+      catch(failure){
+        for(const button of host.querySelectorAll('.item-own-note button'))button.disabled=false;
+        error.textContent=failure.message;
+        keep.focus();
+      }
+    };
   }
   let pendingProductVouch=null;
   try{pendingProductVouch=JSON.parse(sessionStorage.getItem('vouch-pending-product')||'null')}catch{}
@@ -651,7 +705,7 @@
     const rating=ratingMarkup(result,resultsUnavailable),people=contributors.filter(c=>c.verdict==='yes');
 
     document.title=(p.name||'Product')+' — Vouch';
-    shell(`<nav class="item-navigation" aria-label="Product navigation"><a class="item-back" href="${esc(backPath)}"><span class="item-back-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5-5 5 5 5M4 10h12"/></svg></span><span>${experimentId?'The Board':'Vouch home'}</span></a>${p.category?`<span class="item-nav-category">${esc(p.category)}</span>`:''}<button type="button" class="item-share" data-item-share aria-label="Share product">${icon('share')}<span>Share</span></button><span class="item-share-status" role="status"></span></nav><article class="item-detail"><div class="item-photo">${window.VouchGallery.markup(p,'product-page-gallery')}</div><div class="item-story"><p class="brand">${esc(p.brand)}${p.category?' / '+esc(p.category):''}</p><div class="item-title-row"><h1>${esc(p.name||'Product')}</h1>${rating.score}</div>${itemPeopleSection(people)}${productTagSection(data)}${itemCommentsSection(people)}${rating.panel}<div class="item-purchase-area">${data.newToVouch?`<div class="item-first-vote"><span class="item-first-vote-badge">New to Vouch</span><span>Tried it? Be the first to weigh in.</span><button type="button"><span aria-hidden="true">←</span> Vote</button></div>`:''}<div data-item-buy></div></div><div data-item-picks></div><div class="item-vote-feedback"><p class="account-status" role="status" aria-live="polite"></p><div data-item-vote-controls></div></div></div></article>`);
+    shell(`<nav class="item-navigation" aria-label="Product navigation"><a class="item-back" href="${esc(backPath)}"><span class="item-back-icon" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5-5 5 5 5M4 10h12"/></svg></span><span>${experimentId?'The Board':'Vouch home'}</span></a>${p.category?`<span class="item-nav-category">${esc(p.category)}</span>`:''}<button type="button" class="item-share" data-item-share aria-label="Share product">${icon('share')}<span>Share</span></button><span class="item-share-status" role="status"></span></nav><article class="item-detail"><div class="item-photo">${window.VouchGallery.markup(p,'product-page-gallery')}</div><div class="item-story"><p class="brand">${esc(p.brand)}${p.category?' / '+esc(p.category):''}</p><div class="item-title-row"><h1>${esc(p.name||'Product')}</h1>${rating.score}</div>${itemPeopleSection(people)}${productTagSection(data)}<div data-item-comments></div>${rating.panel}<div class="item-purchase-area">${data.newToVouch?`<div class="item-first-vote"><span class="item-first-vote-badge">New to Vouch</span><span>Tried it? Be the first to weigh in.</span><button type="button"><span aria-hidden="true">←</span> Vote</button></div>`:''}<div data-item-buy></div></div><div data-item-picks></div><div class="item-vote-feedback"><p class="account-status" role="status" aria-live="polite"></p><div data-item-vote-controls></div></div></div></article>`);
     const shareItemLink=async trigger=>{
       const status=root.querySelector('.item-share-status');
       const url=new URL(productPath(id),location.origin).href;
@@ -684,26 +738,43 @@
       else shareItemLink(trigger);
     });
     root.querySelectorAll('[data-more-people]').forEach(button=>button.addEventListener('click',()=>{const panel=root.querySelector('.item-more-people');panel.hidden=!panel.hidden;root.querySelectorAll('[data-more-people]').forEach(b=>b.setAttribute('aria-expanded',String(!panel.hidden)));}));
-    root.querySelector('[data-more-comments]')?.addEventListener('click',event=>{const section=root.querySelector('.item-comments'),expanded=section.classList.toggle('is-expanded');event.currentTarget.setAttribute('aria-expanded',String(expanded));event.currentTarget.textContent=expanded?'Show fewer comments':'See all '+section.dataset.count+' comments';});
     const message=root.querySelector('.item-vote-feedback p'),controls=root.querySelector('[data-item-vote-controls]');
     const firstVote=root.querySelector('.item-first-vote');
+    const commentsHost=root.querySelector('[data-item-comments]');
+    let commentPeople=people, draft=null, editorOpen=false, restoringFocus=false, savingNote=false, justPosted=false;
+    const phone=matchMedia('(max-width:700px)');
+    const scrollBehavior=()=>matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth';
     const picksHost=root.querySelector('[data-item-picks]');
     if(data.newToVouch){root.querySelector('.item-score').hidden=true;root.querySelector('.item-community').hidden=true;}
     const bar=document.createElement('div');bar.className='photo-vote-bar';bar.id='item-product-vote';bar.tabIndex=-1;bar.setAttribute('role','group');bar.setAttribute('aria-label','Your take on this product');root.querySelector('.item-photo').append(bar);
     let selected=data.myVerdict||null,collapsed=!!selected,saving=false;
+    function mountComments(){
+      mountItemComments(commentsHost,{
+        people:commentPeople,myVerdict:data.myVerdict,myNote:data.myNote,signedIn:!!data.myNote,
+        author:data.myNoteAuthor,justPosted,goToVote,openEditor,removeNote:()=>saveNote('')
+      });
+    }
     function paintVoteBar(focus=false){
+      const note=data.myVerdict==='yes'?data.myNote?.text:'';
+      const add=selected==='yes'&&data.myNote&&!note?`<button type="button" class="photo-vote-note" aria-label="Add a note">${notePencil}<span>Add a note</span><span>Note</span></button>`:'';
+      const warning=!collapsed&&note;
+      bar.classList.toggle('has-note-warning',!!warning);
       bar.classList.toggle('is-collapsed',collapsed);bar.setAttribute('aria-busy',String(saving));
-      bar.innerHTML=collapsed?`<span class="photo-vote-summary" tabindex="-1"><span class="photo-vote-icon" data-verdict="${selected}">${window.VouchPhotoVote.icon(selected)}</span><span>${photoVoteText[selected]}</span></span><button type="button" class="photo-vote-change">${selected==='skip'?'Undo':'Change'}</button>`:window.VouchPhotoVote.options(selected);
-      bar.querySelectorAll('button').forEach(button=>button.disabled=saving);
+      bar.innerHTML=collapsed?`<span class="photo-vote-summary" tabindex="-1"><span class="photo-vote-icon" data-verdict="${selected}">${window.VouchPhotoVote.icon(selected)}</span><span>${photoVoteText[selected]}</span></span>${add}<button type="button" class="photo-vote-change">${selected==='skip'?'Undo':'Change'}</button>`:warning?`<div class="photo-vote-note-warning"><span aria-hidden="true">ⓘ</span><div><strong>Changing your vote removes your note.</strong><p>“${esc(note.slice(0,40))}${note.length>40?'…':''}” was written for your Vouch.</p></div></div><div class="photo-vote-options">${window.VouchPhotoVote.options(selected)}</div>${noteButton('Keep vote','data-keep-vote')}`:window.VouchPhotoVote.options(selected);
+      bar.querySelectorAll('button').forEach(button=>button.disabled=saving||savingNote);
+      bar.querySelector('[data-keep-vote]')?.addEventListener('click',()=>{collapsed=true;paintVoteBar(true)});
+      bar.querySelector('.photo-vote-note')?.addEventListener('click',event=>openEditor(event.currentTarget));
       bar.querySelector('.photo-vote-change')?.addEventListener('click',()=>{collapsed=false;paintVoteBar(true)});
       bar.querySelectorAll('.photo-vote-option').forEach(button=>button.addEventListener('click',()=>choose(button.dataset.verdict)));
       if(focus)(collapsed?bar.querySelector('.photo-vote-summary'):bar.querySelector('[aria-pressed="true"]')||bar.querySelector('button'))?.focus({preventScroll:true});
     }
-    firstVote?.querySelector('button').addEventListener('click',()=>{
+    function goToVote(){
       if(collapsed){collapsed=false;paintVoteBar()}
-      bar.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+      bar.scrollIntoView({block:'center',behavior:scrollBehavior()});
       bar.querySelector('.photo-vote-option')?.focus({preventScroll:true});
-    });
+    }
+    firstVote?.querySelector('button').addEventListener('click',goToVote);
+    let refreshTags;
     async function refreshPeople(){
       // A product-page verdict can change public review evidence immediately.
       try{const fresh=await request('/api/products/'+encodeURIComponent(id)),people=(fresh.contributors||[]).filter(c=>c.verdict==='yes');
@@ -721,19 +792,152 @@
           if(!fresh.newToVouch)document.head.querySelector('meta[name="robots"][content="noindex"]')?.remove();
         }
         const section=root.querySelector('.item-people');if(section)section.outerHTML=itemPeopleSection(people);
-        root.querySelector('.item-comments')?.remove();root.querySelector('.item-tags')?.insertAdjacentHTML('afterend',itemCommentsSection(people));
+        data.myNote=fresh.myNote;
+        data.myNoteAuthor=fresh.myNoteAuthor;
+        commentPeople=people;
+        mountComments();
+        refreshTags?.(fresh);
         root.querySelectorAll('[data-more-people]').forEach(button=>button.addEventListener('click',()=>{const panel=root.querySelector('.item-more-people');panel.hidden=!panel.hidden;root.querySelectorAll('[data-more-people]').forEach(b=>b.setAttribute('aria-expanded',String(!panel.hidden)))}));
-        root.querySelector('[data-more-comments]')?.addEventListener('click',event=>{const section=root.querySelector('.item-comments'),expanded=section.classList.toggle('is-expanded');event.currentTarget.setAttribute('aria-expanded',String(expanded));event.currentTarget.textContent=expanded?'Show fewer comments':'See all '+section.dataset.count+' comments';});
       }catch{/* A successful opinion save must not be reported as failed if attribution is unavailable. */}
     }
+    async function saveNote(text){
+      if(saving||savingNote)throw Error('Please wait for the current save to finish.');
+      savingNote=true;
+      const voteButtons=[...bar.querySelectorAll('button')];
+      voteButtons.forEach(button=>button.disabled=true);
+      try{
+        const {profile}=await request('/api/account/profile',{opinions:[{productId:id,comment:text}]});
+        const opinion=profile.opinions.find(row=>row.productId===id);
+        const isPublic=profile.visibility==='public'&&profile.showName!==false&&opinion?.visibility==='public'&&opinion.verdict==='yes';
+        data.myNote={text:opinion?.comment||'',isPublic};
+        data.myNoteAuthor={handle:profile.handle,displayName:profile.displayName,photo:profile.photo,updatedAt:opinion?.commentEditedAt||opinion?.updatedAt};
+        commentPeople=commentPeople.map(person=>person.handle===profile.handle?{...person,comment:isPublic?data.myNote.text:''}:person);
+        justPosted=!!text;
+        draft=null;
+        message.textContent=text?'Note posted to your profile.':'Note removed.';
+        mountComments();
+        await refreshPeople();
+      }finally{
+        savingNote=false;
+        voteButtons.forEach(button=>button.disabled=false);
+      }
+      paintVoteBar();
+      if(!editorOpen)focusNoteControl();
+    }
+    function focusNoteControl(){
+      // Restoring focus should not immediately reopen the desktop editor.
+      restoringFocus=true;
+      commentsHost.querySelector('[data-note-start],[data-note-edit]')?.focus({preventScroll:true});
+      restoringFocus=false;
+    }
+    async function openEditor(trigger){
+      if(editorOpen||restoringFocus||saving||savingNote||data.myVerdict!=='yes')return;
+      editorOpen=true;
+      const savedText=data.myNote?.text||'',isPublic=data.myNote?.isPublic,mobile=phone.matches;
+      const panel=commentsHost.querySelector('[data-note-panel]');
+      const container=document.createElement(mobile?'dialog':'div');
+      const thumbnail=root.querySelector('.product-page-gallery .gallery-image')?.getAttribute('src');
+      container.className=mobile?'pilot-dialog note-sheet':'item-note-inline';
+      if(mobile)container.setAttribute('aria-labelledby','item-note-title');
+      const heading=mobile?`<div class="note-sheet-handle" aria-hidden="true"></div><div class="note-sheet-heading"><h2 id="item-note-title">${savedText?'Edit your note':'Add a note'}</h2><button type="button" data-note-cancel aria-label="Close without posting">×</button></div><div class="note-sheet-product">${thumbnail?`<img src="${esc(thumbnail)}" alt="">`:'<span aria-hidden="true"></span>'}<div><strong>${esc(p.name||'Product')}</strong><small>You vouched</small></div></div>`:'';
+      const counterMarkup='<span class="item-note-counter" id="item-note-counter"></span>';
+      const helper=mobile&&isPublic?'Shown with your name':noteHelper(isPublic);
+      container.innerHTML=`${heading}<form>
+        <label class="sr-only" for="item-note-text">Your note about this product</label>
+        <textarea id="item-note-text" rows="3" maxlength="240" aria-describedby="item-note-helper item-note-counter"></textarea>
+        <p class="item-note-error" role="alert"></p>
+        <div class="item-note-footer">
+          <div class="item-note-helper"><span id="item-note-helper">${helper}</span>${mobile?`${isPublic?' · ':' '}${counterMarkup}`:''}</div>
+          <div class="item-note-actions">${mobile?'':counterMarkup+noteButton('Cancel','data-note-cancel')}<button type="submit" class="pilot-button">Post</button></div>
+        </div>
+      </form>`;
+      const textarea=container.querySelector('textarea'),counter=container.querySelector('.item-note-counter'),post=container.querySelector('[type=submit]');
+      textarea.value=draft??savedText;
+      function update(){
+        const length=textarea.value.length;
+        if(length>=220)counter.setAttribute('aria-live','polite');
+        else counter.removeAttribute('aria-live');
+        counter.textContent=length+'/240';
+        post.disabled=savingNote||!textarea.value.trim()||textarea.value.trim()===savedText;
+      }
+      textarea.addEventListener('input',()=>{draft=textarea.value;update();});
+      const close=()=>{
+        if(savingNote)return;
+        if(mobile)container.close();
+        else{container.remove();panel.hidden=false;editorOpen=false;focusNoteControl();}
+      };
+      container.querySelector('[data-note-cancel]').onclick=close;
+      container.querySelector('form').onsubmit=async event=>{
+        event.preventDefault();
+        if(post.disabled)return;
+        const error=container.querySelector('.item-note-error');
+        error.textContent='';
+        textarea.readOnly=true;post.disabled=true;post.textContent='Posting…';post.setAttribute('aria-busy','true');
+        try{
+          await saveNote(textarea.value.trim());
+          close();
+          focusNoteControl();
+        }catch(failure){
+          error.textContent=failure.message;
+          textarea.readOnly=false;post.textContent='Post';post.removeAttribute('aria-busy');update();
+        }
+      };
+      if(mobile){
+        try{
+          const {showPilotDialog}=await import('/pilot-dialog.js');
+          const viewport=window.visualViewport;
+          const positionSheet=()=>{
+            container.style.setProperty('--note-keyboard-offset',Math.max(0,window.innerHeight-viewport.height-viewport.offsetTop)+'px');
+            container.style.setProperty('--note-viewport-height',viewport.height+'px');
+          };
+          container.addEventListener('cancel',event=>{event.preventDefault();close();});
+          const outside=event=>{
+            const rect=container.getBoundingClientRect();
+            return event.target===container&&(event.clientY<rect.top||event.clientY>rect.bottom||event.clientX<rect.left||event.clientX>rect.right);
+          };
+          let backdropDown=false;
+          container.addEventListener('pointerdown',event=>{backdropDown=outside(event);});
+          container.addEventListener('click',event=>{if(backdropDown&&outside(event))close();});
+          panel.hidden=true;
+          showPilotDialog(container,trigger,()=>{
+            panel.hidden=false;editorOpen=false;
+            viewport?.removeEventListener('resize',positionSheet);
+            viewport?.removeEventListener('scroll',positionSheet);
+          });
+          if(viewport){
+            positionSheet();
+            viewport.addEventListener('resize',positionSheet);
+            viewport.addEventListener('scroll',positionSheet);
+          }
+        }catch{
+          panel.hidden=false;editorOpen=false;container.remove();
+          message.textContent='Could not open the note editor. Try again.';
+          return;
+        }
+      }else{
+        container.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();close();}});
+        panel.hidden=true;
+        panel.after(container);
+        if(trigger.matches('.photo-vote-note'))commentsHost.scrollIntoView({block:'center',behavior:scrollBehavior()});
+      }
+      update();
+      textarea.focus({preventScroll:true});
+      textarea.setSelectionRange(textarea.value.length,textarea.value.length);
+    }
     const save=async(verdict,editId)=>{
+      if(saving||savingNote||editorOpen)return;
       controls.querySelector('[data-share-saved-vouch]')?.remove();
-      if(saving)return;saving=true;paintVoteBar();message.textContent='Saving…';
+      saving=true;paintVoteBar();message.textContent='Saving…';
       controls.querySelectorAll('[data-nomination-action]').forEach(node=>node.remove());
       try{
         const result=await request('/api/account/vouch',{productId:id,verdict,...(editId?{editId}:{})});
         if(!result.saved)throw Error('Could not save. Please try again.');
         setPendingProduct(null);selected=verdict;data.myVerdict=verdict==='skip'?null:verdict;collapsed=true;message.textContent=verdict==='skip'?'Your previous take was cleared.':'Saved to your profile.';
+        if(verdict!=='yes'){
+          if(data.myNoteAuthor)commentPeople=commentPeople.filter(person=>person.handle!==data.myNoteAuthor.handle);
+          data.myNote={text:'',isPublic:false};
+          draft=null;justPosted=false;mountComments();
+        }
         data.canShareVouch=verdict==='yes'&&result.canShareVouch===true;
         if(data.canShareVouch&&window.VouchShare){
           const share=document.createElement('button');
@@ -756,7 +960,7 @@
       finally{saving=false;paintVoteBar(true)}
     };
     async function choose(verdict){
-      if(saving)return;
+      if(saving||savingNote||editorOpen)return;
       if(verdict==='skip'&&!data.myVerdict){selected='skip';collapsed=true;paintVoteBar(true);return;}
       saving=true;paintVoteBar();message.textContent='Checking your account…';
       try{me=await request('/api/account/me');
@@ -764,6 +968,7 @@
         saving=false;await save(verdict);
       }catch(error){saving=false;message.textContent=error.message;paintVoteBar(true)}
     }
+    mountComments();
     paintVoteBar();
     const buy=root.querySelector('[data-item-buy]');
     const pilotEdit=data.pilotExperimentId;
@@ -777,7 +982,7 @@
     loadWhereToBuy(id,p,buy,{retailerUrl,retailerOffers});
     loadItemCategoryPicks(picksHost,p,requestedId,!!data.newToVouch);
     if(pendingProductVouch?.id===id){me=await request('/api/account/me');if(me.authenticated&&!me.browserProfile&&!me.profile?.browserProfile)await save(pendingProductVouch.verdict);else{auth=await request('/api/auth/status');renderAnonymous();return;}}
-    wireProductTags(id,data);
+    refreshTags=wireProductTags(id,data);
     if(location.hash==='#item-product-vote'){
       bar.scrollIntoView({block:'center'});
       bar.focus({preventScroll:true});

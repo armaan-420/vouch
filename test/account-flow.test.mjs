@@ -245,6 +245,13 @@ test('an item vouch share requires its owner’s opt-in and follows current visi
  assert.match(html,/Works &lt;well&gt;\./);
  assert.match(html,/Join the Wharton experiments/);
  assert.match((await owner(page)).data,/See it on Vouch/);
+ const writeNote=comment=>owner('/api/account/profile',{opinions:[{productId:item.product.id,comment}]});
+ assert.equal((await writeNote('Edited on the product page')).status,200);
+ assert.match((await reader(page)).data,/Edited on the product page/);
+ assert.equal((await owner(api,{})).data.review,'Edited on the product page');
+ assert.equal((await writeNote('')).status,200);
+ assert.doesNotMatch((await reader(page)).data,/Edited on the product page|Works &lt;well&gt;/);
+ assert.equal((await owner(api,{})).data.review,null);
  for(const changes of [{showName:false},{showName:true,visibility:'private'},{visibility:'public',opinions:[{productId:'boj',visibility:'private'}]}]){
    assert.equal((await owner('/api/account/profile',changes)).status,200);
    assert.equal((await owner(api,{})).status,404);

@@ -9,6 +9,8 @@ import {createRequestStore} from './request-store.mjs';
 import {createD1Store} from './d1-store';
 import {createProductSearch} from '../product-search.mjs';
 import {createApplicationApi} from './application-api.mjs';
+import {createEmailAuth} from './account-auth.mjs';
+import {readPageAccount} from './page-shell.mjs';
 import {createResendDelivery,createSuggestionDelivery} from './email-delivery.mjs';
 import initialCatalog from '../data/catalog-bootstrap.json';
 const initializeSearch=async(store:ReturnType<typeof createD1Store>)=>createCatalogRuntime({local:await createProductSearch({storage:store.catalog,initialCatalog}),env,db:env.DB,store,development:import.meta.env.DEV});
@@ -18,6 +20,12 @@ export function hostedAdminAuth(){
 }
 export async function isOrganizer(request:Request){
  return !!env.DB&&hostedAdminAuth().authorize(request);
+}
+export function hostedPageAccount(request:Request){
+ if(!env.DB)return null;
+ const store=createRequestStore(createD1Store(env.DB));
+ const auth=createEmailAuth({store,secret:env.VOUCH_AUTH_SECRET,sendCode:createResendDelivery({apiKey:env.RESEND_API_KEY,from:env.VOUCH_EMAIL_FROM}),previewDelivery:import.meta.env.DEV&&!env.RESEND_API_KEY});
+ return readPageAccount(request,{store,auth});
 }
 export async function hostedApi(request:Request){
   if(!env.DB)return Response.json({error:'Database unavailable.'},{status:503});

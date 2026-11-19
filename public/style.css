@@ -477,3 +477,17 @@ html.nomination-search-open,html.nomination-search-open body{overflow:hidden;ove
 @media(max-width:360px){.board-category-chips{flex-wrap:wrap}}
 
 .board .your-vote[hidden]{display:none}
+
+/* Keep navigation in place while the requested page prepares its main content. */
+.page-loading{display:grid;place-items:center;min-height:clamp(260px,52vh,520px);padding:24px;text-align:center;color:var(--muted)}
+.page-loading p{display:grid;justify-items:center;gap:12px;margin:0;font-size:14px;animation:page-loading-show 1ms 150ms backwards}
+.page-loading-ring{width:25px;height:25px;border:2px solid var(--line);border-right-color:#697837;border-bottom-color:#697837;border-radius:50%;animation:page-loading-sweep 220ms 150ms ease-out}
+.page-reveal{animation:page-content-enter 200ms ease-out}
+@keyframes page-loading-show{from{opacity:0}to{opacity:1}}
+@keyframes page-loading-sweep{from{transform:rotate(-270deg)}to{transform:rotate(0)}}
+@keyframes page-content-enter{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.page-loading p,.page-loading-ring,.page-reveal{animation:none}}
+
+.site-header .leaderboard-link.profile-link,.site-header .leaderboard-link[data-account-state="pending"]{position:relative;flex:0 0 44px;width:44px;height:44px;min-width:44px;padding:0;background:#e9eddd;color:var(--ink);border-color:var(--line);overflow:hidden}
+.site-header .profile-link img{position:absolute;inset:0;display:block}
+.site-header .leaderboard-link[data-account-state="pending"]::before{content:"";width:10px;height:10px;background:none;border-radius:50%;border:2px solid #697837;mask:none}

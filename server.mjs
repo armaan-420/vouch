@@ -5,11 +5,15 @@ import {filePhotoStorage} from './lib/file-photos.mjs';
 import http from 'node:http';import fs from 'node:fs/promises';import path from 'node:path';import {fileURLToPath} from 'node:url';import {createProductSearch} from './product-search.mjs';import {createApplicationApi} from './lib/application-api.mjs';
 import {isAccountPage,accountPage} from './lib/account-pages.mjs';import {createFileStore} from './lib/file-store.mjs';
 import {experimentPage} from './lib/experiment-pages.mjs';
+import {createEmailAuth} from './lib/account-auth.mjs';
+import {accountLoading,publicPage,readPageAccount} from './lib/page-shell.mjs';
 export async function createVouchServer({directory=path.resolve('.data'),root=path.resolve('public'),productSearch,authOptions={previewDelivery:true},autoOptions={},adminAuthOptions}={}){
  const store=await createFileStore(directory);
  const adminAuth=adminAuthOptions||process.env.VOUCH_ADMIN_PIN?createAdminAuth({store,pin:process.env.VOUCH_ADMIN_PIN,...adminAuthOptions}):null;
  const local=productSearch||await createProductSearch({directory});
  const search=productSearch||createCatalogRuntime({local,env:autoOptions.env||process.env,store,development:true}),api=createApplicationApi({store,search,authorizeAdmin:adminAuth?adminAuth.authorize:()=>true,storageLabel:'local-files',authOptions,photoStorage:filePhotoStorage(directory),autoOptions:{env:process.env,development:true,notify:async message=>{const inbox=await store.scope('suggestion-notifications',()=>({messages:[]}));await inbox.transaction(d=>{d.messages.push({...message,delivery:'Local test inbox — no email was sent.',at:new Date().toISOString()});});},...autoOptions}});
+ const pageAuth=createEmailAuth({store,...authOptions});
+ const readAccount=request=>readPageAccount(request,{store,auth:pageAuth});
  const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,'http://'+req.headers.host);if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/share/')){const chunks=[];let size=0;for await(const chunk of req){size+=chunk.length;if(size>(url.pathname==='/api/catalog/image-search'?2100000:1100000)){res.statusCode=413;res.end('Request too large');return}chunks.push(chunk)}const request=new Request(url,{method:req.method,headers:req.headers,...(['GET','HEAD'].includes(req.method)?{}:{body:Buffer.concat(chunks)})}),response=await adminAuth?.handle(request)||await api(request);res.statusCode=response.status;for(const [k,v] of response.headers){if(k!=='set-cookie')res.setHeader(k,v)}if(response.headers.getSetCookie().length)res.setHeader('Set-Cookie',response.headers.getSetCookie());res.end(Buffer.from(await response.arrayBuffer()));return}
  if(url.pathname==='/admin/login'){res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','private, no-store');res.end(await fs.readFile(new URL('./lib/admin-login.html',import.meta.url),'utf8'));return}
  if(['/admin','/admin/','/admin.html'].includes(url.pathname)){const authorized=!adminAuth||await adminAuth.authorize(new Request(url,{headers:req.headers}));res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','private, no-store');res.end(await fs.readFile(new URL(authorized?'./lib/admin-page.html':'./lib/admin-login.html',import.meta.url),'utf8'));return}
@@ -19,11 +23,16 @@ export async function createVouchServer({directory=path.resolve('.data'),root=pa
   for(const [key,value] of response.headers)res.setHeader(key,value);
   res.end(await response.text());return
  }
- if(url.pathname==='/categories'||url.pathname==='/categories/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','no-cache');res.end(await fs.readFile(new URL('./lib/categories-page.html',import.meta.url),'utf8'));return}
- if(url.pathname==='/search'||url.pathname==='/search/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','no-cache');res.end(await fs.readFile(new URL('./lib/search-page.html',import.meta.url),'utf8'));return}
- if(url.pathname==='/find'||url.pathname==='/find/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','no-cache');res.end(await fs.readFile(new URL('./lib/find-page.html',import.meta.url),'utf8'));return}
- if(isAccountPage(url.pathname)){const response=accountPage(await fs.readFile(new URL('./lib/account-page.html',import.meta.url),'utf8'));res.statusCode=response.status;for(const [key,value]of response.headers)res.setHeader(key,value);res.end(await response.text());return}
- if(url.pathname==='/'||url.pathname==='/index.html'||/^\/[a-z0-9-]+\/?$/.test(url.pathname)&&url.pathname!=='/admin'){const response=await experimentPage(new Request(url,{headers:req.headers}),{home:await fs.readFile(new URL('./lib/home-page.html',import.meta.url),'utf8'),experiment:await fs.readFile(new URL('./lib/experiment-page.html',import.meta.url),'utf8'),api});res.statusCode=response.status;for(const [key,value]of response.headers)res.setHeader(key,value);res.end(await response.text());return}
+ const publicTemplate=['categories','search','find'].find(page=>url.pathname==='/'+page||url.pathname==='/'+page+'/');
+ const accountRoute=isAccountPage(url.pathname);
+ if(publicTemplate||accountRoute){
+  const request=new Request(url,{headers:req.headers});
+  const html=await fs.readFile(new URL('./lib/'+(publicTemplate||'account')+'-page.html',import.meta.url),'utf8');
+  const response=await publicPage(html,request,readAccount,{loading:accountRoute?accountLoading(url.pathname):undefined});
+  for(const [key,value] of response.headers)res.setHeader(key,value);
+  res.end(await response.text());return
+ }
+ if(url.pathname==='/'||url.pathname==='/index.html'||/^\/[a-z0-9-]+\/?$/.test(url.pathname)&&url.pathname!=='/admin'){const response=await experimentPage(new Request(url,{headers:req.headers}),{home:await fs.readFile(new URL('./lib/home-page.html',import.meta.url),'utf8'),experiment:await fs.readFile(new URL('./lib/experiment-page.html',import.meta.url),'utf8'),api,readAccount});res.statusCode=response.status;for(const [key,value]of response.headers)res.setHeader(key,value);res.end(await response.text());return}
  const relative=url.pathname==='/admin'?'admin.html':url.pathname==='/'?'index.html':decodeURIComponent(url.pathname).slice(1);let file=path.resolve(root,relative);if(relative==='admin.html')file=path.resolve('lib/admin-page.html');else if(!file.startsWith(root+path.sep))throw Error();const b=await fs.readFile(file);res.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/javascript','.svg':'image/svg+xml','.ico':'image/x-icon','.webmanifest':'application/manifest+json','.png':'image/png','.wasm':'application/wasm','.json':'application/json'})[path.extname(file)]||'application/octet-stream');res.setHeader('Cache-Control','no-cache');res.end(b)}catch{res.statusCode=404;res.end('Not found')}});const timer=setInterval(()=>api.advanceSuggestions().catch(()=>{}),1000);timer.unref();server.on('close',()=>clearInterval(timer));server.warmProductSearch=()=>search.refresh();return server;
 }
 if(process.argv[1]&&fileURLToPath(import.meta.url)===path.resolve(process.argv[1])){const server=await createVouchServer();server.listen(Number(process.env.PORT||4173),'127.0.0.1',()=>{server.warmProductSearch().catch(()=>{});console.log(`Vouch: http://127.0.0.1:${server.address().port}\nOrganizer: http://127.0.0.1:${server.address().port}/admin`)})}

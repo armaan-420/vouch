@@ -1,6 +1,7 @@
 const experimentId=decodeURIComponent(location.pathname.split('/').filter(Boolean)[0]||'');
 const experimentPath='/'+encodeURIComponent(experimentId);
-const whartonFlow=new URLSearchParams(location.search).get('wharton')==='1';
+const initialRoute=new URLSearchParams(location.search);
+const whartonFlow=initialRoute.get('wharton')==='1';
 document.querySelector('footer a[href="/account"]')?.setAttribute('href','/account?experiment='+encodeURIComponent(experimentId));
 let demoId=null,demoStorageLoaded=false;
 let experiment=null,products=[],accountSignedIn=false,accountStatusKnown=false,accountProfile=null;
@@ -8,12 +9,12 @@ const KEY='vouch-experiment-'+experimentId;
 const initial=()=>({votes:{},nomination:null});
 let state;try{state=JSON.parse(localStorage.getItem(KEY))||initial()}catch{state=initial()}
 let communityProducts=[],baseBoard={};
-let screen='home',index=0;const app=document.getElementById('app');
+let screen=null,index=0;const app=document.getElementById('app');
 let trackingQueue=Promise.resolve(),profileSyncState=null,resumeAnswers=null;
 function apiUrl(path){const u=new URL(path,location.origin);u.searchParams.set('experiment',experimentId);if(new URLSearchParams(location.search).get('preview')==='1')u.searchParams.set('preview','1');return u.pathname+u.search}
 async function api(url,payload){if(experiment?.status==='draft'&&payload)throw Error('This is a private draft. Approve it before voting.');const response=await fetch(apiUrl(url),{method:payload?'POST':'GET',headers:payload?{'Content-Type':'application/json'}:{},body:payload?JSON.stringify(payload):undefined,credentials:'same-origin'});const result=await response.json();if(!response.ok)throw Object.assign(Error(result.error||'Could not save. Please try again.'),{experimentSaved:result.experimentSaved});if(result.profileSync){profileSyncState=result.profileSync;accountSignedIn=result.profileSync!=='signed-out';accountStatusKnown=true;}return result}
 function report(error){let notice=document.getElementById('save-error');if(!notice){notice=document.createElement('p');notice.id='save-error';notice.className='save-error';notice.setAttribute('role','alert');app.prepend(notice)}notice.textContent=error.message+(error.experimentSaved?'':' Your response has not been saved.')}
-function track(type,extra={}){if(demoId)return Promise.resolve();const job=trackingQueue.then(()=>api('/api/events',{type,...extra}));trackingQueue=job.catch(error=>report(error));return job}
+function track(type,extra={}){if(demoId)return Promise.resolve();const job=trackingQueue.then(()=>api('/api/events',{type,...extra}));trackingQueue=job.catch(error=>{if(type!=='leaderboard')report(error)});return job}
 function watchEnd(){const section=document.getElementById('nominate');if(!section)return;const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){track('end_seen').catch(()=>{});observer.disconnect()}},{threshold:0.25});observer.observe(section)}
 
 function readDemoState(id){
@@ -31,7 +32,7 @@ function save(){try{
  else localStorage.setItem(KEY,JSON.stringify(state));
 }catch{}}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function refreshCommunity(){try{await trackingQueue;const [community,boardData,me]=await Promise.all([api('/api/community'),api('/api/board'),api('/api/me')]);if(!demoId){state.comments=me.comments||{};for(const product of products){const opinion=accountProfile?.opinions?.find(o=>o.productId===(product.skuId||product.onBoardId||product.id));if(opinion)state.comments[product.id]=opinion.comment||'';}state.nominations=me.nominations||[];state.nomination=me.nomination;}communityProducts=community.products.map(p=>demoId?{...p,myVote:state.communityVotes?.[p.id]||null}:p);baseBoard=Object.fromEntries(boardData.products.map(p=>[p.id,p]));if(!demoId)state.votes=Object.fromEntries(boardData.products.filter(p=>p.myVote).map(p=>[p.id,p.myVote]));save();if(screen==='board')board()}catch(error){report(error)}}
+async function loadCommunity(){await trackingQueue;const [community,boardData,me]=await Promise.all([api('/api/community'),api('/api/board'),api('/api/me')]);if(!demoId){state.comments=me.comments||{};for(const product of products){const opinion=accountProfile?.opinions?.find(o=>o.productId===(product.skuId||product.onBoardId||product.id));if(opinion)state.comments[product.id]=opinion.comment||'';}state.nominations=me.nominations||[];state.nomination=me.nomination;}communityProducts=community.products.map(p=>demoId?{...p,myVote:state.communityVotes?.[p.id]||null}:p);baseBoard=Object.fromEntries(boardData.products.map(p=>[p.id,p]));if(!demoId)state.votes=Object.fromEntries(boardData.products.filter(p=>p.myVote).map(p=>[p.id,p.myVote]));save();}
 function verdictLabel(value){return {yes:'vouched for the item 👍',brand:'trust the brand 🤝',no:'don’t recommend 👎',skip:'Skip this one'}[value]||''}
 const compactVotes=value=>new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:1}).format(value);
 const voucherCache=new Map();
@@ -71,7 +72,46 @@ document.addEventListener('keydown',event=>{
 });
 function communityCard(p,i){return rankedRow(p,i,true)}
 function score(p){return baseBoard[p.id]?.score??null}
-function go(s){if(s==='board'&&hasAnsweredAll()&&!demoId&&!accountProfile&&!state.attributionDismissed&&experiment?.status!=='draft'&&experimentStatus()==='open')s='attribution';history.replaceState(null,'',experimentPath+(experiment?.status==='draft'?'?preview=1':whartonFlow?'?wharton=1':''));screen=s;if(s!=='game'){const announcement=document.getElementById('voting-announcement');if(announcement)announcement.textContent=''}render();window.scrollTo({top:0,behavior:'instant'});if(s==='board'){if(experimentStatus()==='open')track('leaderboard').catch(()=>{});return refreshCommunity()}}
+function go(s){
+ if(s==='board'&&hasAnsweredAll()&&!demoId&&!accountProfile&&!state.attributionDismissed&&experiment?.status!=='draft'&&experimentStatus()==='open')s='attribution';
+ const query=new URLSearchParams();
+ if(experiment?.status==='draft')query.set('preview','1');
+ if(whartonFlow)query.set('wharton','1');
+ if(s==='board')query.set('board','1');
+ history.replaceState(null,'',experimentPath+(query.size?'?'+query:''));
+ if(s!=='game')document.getElementById('voting-announcement').textContent='';
+ window.scrollTo({top:0,behavior:'instant'});
+ if(s==='board')return openBoard({record:experimentStatus()==='open'});
+ showScreen(s);
+}
+function showScreen(target,{reveal=false}={}){
+ screen=target;
+ render();
+ if(reveal)window.VouchPageLoading.reveal(app);
+}
+function showLoading(label){
+ screen=null;
+ delete document.body.dataset.screen;
+ document.querySelector('header').classList.remove('voting-header');
+ document.querySelector('.header-label').hidden=true;
+ document.getElementById('landing-standings').hidden=true;
+ window.VouchPageLoading.show(app,label);
+}
+function loadError(title,error,retry){
+ screen=null;
+ app.innerHTML='<section class="board"><h1>'+esc(title)+'</h1><p role="alert">'+esc(error.message)+'</p><button class="primary" id="retry-load">Try again</button></section>';
+ document.getElementById('retry-load').onclick=retry;
+ focusScreenHeading();
+}
+async function openBoard({record=false}={}){
+ showLoading('Opening the Board…');
+ try{
+  await loadCommunity();
+  showScreen('board',{reveal:true});
+  if(experiment.status==='draft')app.querySelectorAll('button').forEach(button=>button.disabled=true);
+  if(record)track('leaderboard').catch(()=>{});
+ }catch(error){loadError('Could not open the Board.',error,()=>openBoard({record}));}
+}
 function focusScreenHeading(){if(screen==='game'&&index<products.length){app.querySelector('[data-vote="yes"]')?.focus({preventScroll:true});return}const heading=app.querySelector('h1,h2');if(!heading)return;heading.tabIndex=-1;heading.focus({preventScroll:true})}
 let screenHasRendered=false;
 function render(){updateHeader();if(screen==='home')home();else if(screen==='game')game();else if(screen==='edit')personalEdit();else if(screen==='attribution')attribution();else board();if(screenHasRendered||screen!=='home')focusScreenHeading();screenHasRendered=true}
@@ -87,17 +127,8 @@ function updateHeader(){
  if(!experiment)return;
  document.querySelectorAll('[data-suggest-edit]').forEach(trigger=>trigger.hidden=!!demoId||experiment.status==='draft');
  document.body.dataset.screen=screen==='game'&&index<products.length?'rating':screen;
- const button=document.querySelector('header .leaderboard-link'),voting=screen==='game';
+ const voting=screen==='game';
  document.querySelector('header').classList.toggle('voting-header',voting);
- button.classList.toggle('profile-link',accountSignedIn);
- button.dataset.action='account';
- button.href=demoId?'/wharton':'/account?experiment='+encodeURIComponent(experimentId)+(accountSignedIn?'':'&signin=1');
- const profileName=accountProfile?.displayName||'Vouch member';
- const photo=accountProfile?.photo;
- const safePhoto=typeof photo==='string'&&photo.startsWith('/api/account/photos/');
- const headerContent=demoId?'Demo':accountProfile?.verificationRequired?'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22v-3a8 8 0 0 1 16 0v3"/></svg>':accountSignedIn?(safePhoto?'<img src="'+esc(photo)+'" alt="">':'<span aria-hidden="true">'+esc(profileName.trim().charAt(0).toUpperCase()||'V')+'</span>'):'Sign in';
- if(button.innerHTML!==headerContent)button.innerHTML=headerContent;
- button.setAttribute('aria-label',demoId?'Wharton demo home':accountSignedIn?'My profile':'Sign in');
  const footerLink=document.getElementById('landing-standings');
  footerLink.hidden=screen!=='home'||hasAnsweredAll()||experimentStatus()!=='open';
  footerLink.href=experimentPath+'?board=1';
@@ -108,9 +139,20 @@ function updateHeader(){
  document.querySelector('.header-label').innerHTML=`${timing}`;
  window.VouchSiteNav?.configure({experimentId,experimentPath,category:experiment.category,draft:experiment.status==='draft',voting,searchUrl:q=>apiUrl('/api/products/search?q='+encodeURIComponent(q)),productPath:standingsProductPath,canNominate:!demoId&&experimentStatus()==='open'&&experiment.status!=='draft',nominate:nominateFromNav});
 }
-async function refreshAccountStatus(){try{const me=await api('/api/account/me');if(me.demo&&!demoStorageLoaded){demoId=me.demoId;demoStorageLoaded=true;state=readDemoState(experimentId);}accountSignedIn=!!me.authenticated;accountProfile=me.profile;accountStatusKnown=true}catch{}updateHeader();}
+let accountRefresh=0;
+async function refreshAccountStatus(){
+ const sequence=++accountRefresh;
+ let me;
+ try{me=await api('/api/account/me')}catch{return;}
+ if(sequence!==accountRefresh)return;
+ if(me.demo&&!demoStorageLoaded){demoId=me.demoId;demoStorageLoaded=true;state=readDemoState(experimentId);}
+ accountSignedIn=!!me.authenticated;
+ accountProfile=me.profile;
+ accountStatusKnown=true;
+ window.VouchSiteNav?.presentAccount(me,{experimentId});
+}
 function updateTimers(){
- if(!experiment)return;
+ if(!experiment||!screen)return;
  const status=experimentStatus();updateHeader();
  app.querySelectorAll('[data-action="start"]').forEach(b=>b.disabled=status!=='open');
  if(screen==='game'&&status!=='open'){screen='board';board()}
@@ -192,35 +234,65 @@ document.addEventListener('click',async e=>{const communityButton=e.target.close
   return;
  }
 }
-if(!experiment||experimentStatus()!=='open'&&action==='start')return;if(action&&e.target.closest('a'))e.preventDefault();if(action==='account'){if(demoId){location.assign('/wharton');return}location.assign('/account?experiment='+encodeURIComponent(experimentId)+(accountSignedIn?'':'&signin=1'));return}if(action==='home')go('home');if(action==='board'){if(screen==='game'&&index===products.length){document.getElementById('nomination-form')?.requestSubmit();return}go('board')};if(action==='edit')go('edit');if(action==='start'){try{await track('start')}catch{return}index=0;go('game')}if(action==='back'){index=Math.max(0,index-1);render()}});
+if(!experiment||!screen||experimentStatus()!=='open'&&action==='start')return;if(action&&e.target.closest('a'))e.preventDefault();if(action==='home')go('home');if(action==='board'){if(screen==='game'&&index===products.length){document.getElementById('nomination-form')?.requestSubmit();return}go('board')};if(action==='edit')go('edit');if(action==='start'){try{await track('start')}catch{return}index=0;go('game')}if(action==='back'){index=Math.max(0,index-1);render()}});
 document.getElementById('prototype').onclick=()=>document.getElementById('info').showModal();document.getElementById('reset').onclick=()=>{document.getElementById('info').close();go('home')};
 async function overall(){
-  screen='overall';updateHeader();app.innerHTML='<section class="board"><h1>The overall board.</h1><p>Loading results…</p></section>';
-  try{const data=await api('/api/overall');app.innerHTML='<section class="board"><h1>The overall board.</h1><p>Rankings reflect the collective pool of item vouches, brand trust and don’t-recommend responses across included collections. Each browser contributes one latest verdict per product across those collections.</p>'+data.products.map((p,i)=>rankedRow(p,i,!!p.communityNominated)).join('')+(data.products.length?'':'<p>No collections have been included yet.</p>')+ '<div data-pilot-next></div></section>';mountBoardPeople();const host=app.querySelector('[data-pilot-next]');const {mountNext}=await import('/pilot-next.js');if(host.isConnected)mountNext(host,{profile:accountProfile})}catch(error){report(error)}
+ showLoading('Opening the overall board…');
+ try{
+  const data=await api('/api/overall');
+  screen='overall';updateHeader();
+  app.innerHTML='<section class="board"><h1>The overall board.</h1><p>Rankings reflect the collective pool of item vouches, brand trust and don’t-recommend responses across included collections. Each browser contributes one latest verdict per product across those collections.</p>'+data.products.map((p,i)=>rankedRow(p,i,!!p.communityNominated)).join('')+(data.products.length?'':'<p>No collections have been included yet.</p>')+'<div data-pilot-next></div></section>';
+  window.VouchPageLoading.reveal(app);focusScreenHeading();mountBoardPeople();
+  const host=app.querySelector('[data-pilot-next]');
+  import('/pilot-next.js').then(({mountNext})=>{if(host.isConnected)mountNext(host,{profile:accountProfile})}).catch(()=>{});
+ }catch(error){loadError('Could not open the overall board.',error,overall);}
 }
-document.getElementById('overall').onclick=()=>{history.replaceState(null,'',experimentPath+'?overall=1');overall()};
+document.getElementById('overall').onclick=()=>{
+ if(!screen)return;
+ history.replaceState(null,'',experimentPath+'?overall=1'+(whartonFlow?'&wharton=1':''));
+ overall();
+};
 async function boot(){
-  app.innerHTML='<section class="board"><p role="status">Loading products…</p></section>';
-  try{
-    experiment=(await api('/api/experiment')).experiment;products=experiment.products;
-    document.title='Vouch — '+experiment.title;
-    if(experiment.status==='draft'){screen='board';await refreshCommunity();render();app.querySelectorAll('button').forEach(b=>b.disabled=true);return;}
-    await refreshAccountStatus();
-    if(whartonFlow&&!demoId&&(!accountSignedIn||!accountProfile?.whartonEmailVerified)){location.replace('/wharton');return;}
-    document.getElementById('experiment-info').textContent='This collection contains '+products.length+' products. Responses and nominations stay within this collection. Only collections explicitly included by the organizer contribute to the overall board.';
-    if(new URLSearchParams(location.search).has('overall')){await overall();return}
-    if(new URLSearchParams(location.search).has('board')){screen='board';if(whartonFlow&&experimentStatus()==='open')await track('leaderboard').catch(()=>{});await refreshCommunity();render();return}
-    if(experimentStatus()!=='open'){screen='home';await refreshCommunity();render();return}
-    await track('visit');await refreshCommunity();
-    if(new URLSearchParams(location.search).get('start')==='1'){await track('start');index=0;if(new URLSearchParams(location.search).has('resume')){if(demoId){resumeAnswers=new Set(Object.keys(state.votes));const next=products.findIndex(p=>!resumeAnswers.has(p.id));index=next===-1?products.length:next;}else{const result=await api('/api/category-participation?id='+encodeURIComponent(experimentId)),progress=result.categories[experimentId];resumeAnswers=new Set(progress.answeredProductIds);index=progress.nextProductId?products.findIndex(p=>p.id===progress.nextProductId):products.length;}}go('game');return}
-    render();
-  }catch(error){app.innerHTML='<section class="board"><h1>Could not open this collection.</h1><p role="alert">'+esc(error.message)+'</p><button class="primary" id="retry-load">Try again</button></section>';document.getElementById('retry-load').onclick=boot}
+ const route=new URLSearchParams(location.search);
+ const destination=route.has('overall')?'overall':route.has('board')?'board':route.get('start')==='1'?'game':'home';
+ showLoading(app.querySelector('.page-loading p')?.textContent||{
+  overall:'Opening the overall board…',board:'Opening the Board…',game:'Opening voting…',home:'Opening the Edit…',
+ }[destination]);
+ try{
+  experiment=(await api('/api/experiment')).experiment;products=experiment.products;
+  document.title='Vouch — '+experiment.title;
+  if(experiment.status==='draft'){await openBoard();return;}
+  await refreshAccountStatus();
+  if(whartonFlow&&!demoId&&!accountStatusKnown)throw Error('Could not check your account. Please try again.');
+  if(whartonFlow&&!demoId&&(!accountSignedIn||!accountProfile?.whartonEmailVerified)){location.replace('/wharton');return;}
+  document.getElementById('experiment-info').textContent='This collection contains '+products.length+' products. Responses and nominations stay within this collection. Only collections explicitly included by the organizer contribute to the overall board.';
+  if(destination==='overall'){await overall();return;}
+  if(destination==='board'){await openBoard({record:whartonFlow&&experimentStatus()==='open'});return;}
+  if(experimentStatus()!=='open'){await loadCommunity();showScreen('home',{reveal:true});return;}
+  await track('visit');await loadCommunity();
+  if(destination==='game'){
+   await track('start');index=0;
+   if(route.has('resume')){
+    if(demoId){
+     resumeAnswers=new Set(Object.keys(state.votes));
+     const next=products.findIndex(p=>!resumeAnswers.has(p.id));index=next===-1?products.length:next;
+    }else{
+     const result=await api('/api/category-participation?id='+encodeURIComponent(experimentId)),progress=result.categories[experimentId];
+     resumeAnswers=new Set(progress.answeredProductIds);
+     index=progress.nextProductId?products.findIndex(p=>p.id===progress.nextProductId):products.length;
+    }
+   }
+   history.replaceState(null,'',experimentPath+(whartonFlow?'?wharton=1':''));
+   showScreen('game',{reveal:true});return;
+  }
+  showScreen('home',{reveal:true});
+ }catch(error){loadError('Could not open this collection.',error,boot);}
 }
 setInterval(updateTimers,1000);
 let scheduleRefreshing=false;
-async function refreshSchedule(){if(!experiment||scheduleRefreshing)return;scheduleRefreshing=true;try{const next=(await api('/api/experiment')).experiment;const previous=experimentStatus();experiment=next;const current=experimentStatus();if(previous!==current&&screen!=='overall')render();updateTimers()}catch{}finally{scheduleRefreshing=false}}
+async function refreshSchedule(){if(!experiment||!screen||scheduleRefreshing)return;scheduleRefreshing=true;try{const next=(await api('/api/experiment')).experiment;const previous=experimentStatus();experiment=next;const current=experimentStatus();if(previous!==current&&screen&&screen!=='overall')render();updateTimers()}catch{}finally{scheduleRefreshing=false}}
 setInterval(refreshSchedule,30000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden){refreshSchedule();refreshAccountStatus()}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&experiment?.status!=='draft'&&screen){refreshSchedule();refreshAccountStatus()}});
 boot();
 function flowProgress(){const total=products.length,current=Math.min(index+1,total),optional=index===total;return `<div class="game-top"><span>${optional?'Nominations · Optional':'Your take'}${!optional?` <a class="rating-board-link" href="${experimentPath}?board=1" data-action="board">The Board →</a>`:''}</span><div class="game-position">${index>0?'<button class="previous-arrow" data-action="back" aria-label="Previous product" title="Previous product">←</button>':''}<span>${current} of ${total}</span></div></div><div class="progress" role="progressbar" aria-label="Product progress" aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${current}" aria-valuetext="${optional?'All products answered. Nominations are optional.':'Product '+current+' of '+total}">${Array.from({length:total},(_,i)=>`<i class="${i<current?'done':''}"></i>`).join('')}</div>`}
 function nominationCard(){app.innerHTML=`<section class="game nomination-step">${flowProgress()}${nominationView({inFlow:true})}<div class="nomination-actions"><button class="primary nomination-continue" id="nomination-continue" type="submit" form="nomination-form">See the board →</button></div></section>`;mountNomination();watchEnd();const announcement=document.getElementById('voting-announcement');if(announcement)announcement.textContent=`All ${products.length} products answered. Nominations are optional.`;}

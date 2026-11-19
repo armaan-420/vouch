@@ -1,2 +1,5 @@
 import html from '../../lib/search-page.html?raw';
-export async function GET(){return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache'}})}
+import {publicPage} from '../../lib/page-shell.mjs';
+import {hostedPageAccount} from '../../lib/hosted-api';
+export const dynamic='force-dynamic';
+export async function GET(request:Request){return publicPage(html,request,hostedPageAccount)}

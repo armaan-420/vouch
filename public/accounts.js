@@ -43,9 +43,9 @@
   const stats=counts=>`<div class="account-stats" aria-label="Opinion summary"><span class="account-stat"><strong>${Number(counts?.yes)||0}</strong> item vouch${Number(counts?.yes)===1?'':'es'}</span><span class="account-stat"><strong>${Number(counts?.no)||0}</strong> ${Number(counts?.no)===1?'pass':'passes'}</span><span class="account-stat"><strong>${Number(counts?.brand)||0}</strong> brand endorsement${Number(counts?.brand)===1?'':'s'}</span></div>`;
   const countOpinions=opinions=>opinions.reduce((a,o)=>{if(Object.hasOwn(a,o.verdict))a[o.verdict]++;return a},{yes:0,no:0,brand:0});
   const date=value=>{const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleDateString(undefined,{dateStyle:'medium'}):''};
-  async function request(path,payload){const response=await fetch(path,{method:payload===undefined?'GET':'POST',credentials:'same-origin',headers:payload===undefined?{}:{'Content-Type':'application/json'},body:payload===undefined?undefined:JSON.stringify(payload)});let data;try{data=await response.json()}catch{throw Error('Could not connect. Please try again.')}if(!response.ok)throw Error(data.error||'Could not save. Please try again.');return data}
+  async function request(path,payload){const response=await fetch(path,{method:payload===undefined?'GET':'POST',credentials:'same-origin',headers:payload===undefined?{}:{'Content-Type':'application/json'},body:payload===undefined?undefined:JSON.stringify(payload)});let data;try{data=await response.json()}catch{throw Error('Could not connect. Please try again.')}if(!response.ok)throw Object.assign(Error(data.error||'Could not save. Please try again.'),{status:response.status});return data}
   function focusHeading(){if(document.querySelector('dialog[open]'))return;const heading=root.querySelector('h1');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}}
-  function shell(html){document.body.classList.toggle('signin-page',html.includes('signin-layout'));profileObserver?.disconnect();categoryObserver?.disconnect();if(!html.includes('profile-layout'))document.body.classList.remove('collection-page');root.innerHTML='<section class="account-shell">'+html+'</section>';focusHeading()}
+  function shell(html){const wasLoading=!!root.querySelector('.page-loading');document.body.classList.toggle('signin-page',html.includes('signin-layout'));profileObserver?.disconnect();categoryObserver?.disconnect();if(!html.includes('profile-layout'))document.body.classList.remove('collection-page');root.innerHTML='<section class="account-shell">'+html+'</section>';if(wasLoading)window.VouchPageLoading.reveal(root);focusHeading()}
   function failure(error,target){const el=target||root.querySelector('[data-status]');if(el){el.className='account-status account-error';el.setAttribute('role','alert');el.textContent=error.message;el.focus?.()}else shell(`<h1>Could not open this page.</h1><p class="account-error" role="alert">${esc(error.message)}</p><button class="primary" data-retry>Try again</button>`);root.querySelector('[data-retry]')?.addEventListener('click',load)}
   function statusMarkup(){return '<p class="account-status" data-status role="status" aria-live="polite"></p>'}
   const libraryTags=o=>(o.tags||[]).length?`<span class="library-tags" aria-label="Product tags">${o.tags.map(t=>`<span>${esc(t.label)}</span>`).join('')}</span>`:'';
@@ -295,7 +295,7 @@
     stopMeasuringTopStrip?.();
     stopMeasuringTopStrip=null;
     document.title='Wharton leaderboard — Vouch';
-    shell(`<p class="eyebrow">THE PEOPLE BEHIND THE PICKS</p><h1>Wharton leaderboard</h1><p role="status">Loading recommendations shared…</p>`);
+    window.VouchPageLoading.show(root,'Opening the leaderboard…');
     try{
       const data=await request('/api/community-leaderboard?community=wharton&offset='+offset),viewer=data.viewer;
       const categories=data.whoToAsk?.categories||[], top=data.top||[];
@@ -344,7 +344,6 @@
     }catch(error){shell(`<a href="/">← Vouch home</a><h1>Wharton leaderboard</h1><p class="account-error" role="alert">${esc(error.message)}</p><button class="profile-outline" data-retry-leaderboard>Try again</button>`);root.querySelector('[data-retry-leaderboard]').onclick=()=>renderLeaderboard(offset,{restoreFragment});}
   }
   function renderProfile(profile,owner=false,saved=false,showMoreCategories=false){
-    window.VouchSiteNav?.refreshAccount();
     if(!profile){renderReview();return}
     document.body.classList.add('collection-page');
     const opinions=(profile.opinions||[]).filter(o=>o.verdict==='yes'&&(owner||o.visibility==='public'));
@@ -624,8 +623,16 @@
   const photoVoteText={yes:'You vouched',brand:'You trust the brand',no:'You said nope',skip:'Not tried'};
   async function renderProduct(id){
     document.body.classList.remove('signin-page');
+    window.VouchPageLoading.show(root,'Opening product…');
     const {retailerUrl,retailerOffers}=await import('/retailer-offers.js');
-    let data;try{data=await request('/api/products/'+encodeURIComponent(id));}catch{shell('<h1>This product isn’t available anymore.</h1><p>Try searching for it again.</p><a href="/find">Search products</a>');return}const p=data.product||{},contributors=data.contributors||[];
+    let data;
+    try{data=await request('/api/products/'+encodeURIComponent(id));}
+    catch(error){
+      if(error.status!==404)throw error;
+      shell('<h1>This product isn’t available anymore.</h1><p>Try searching for it again.</p><a href="/find">Search products</a>');
+      return;
+    }
+    const p=data.product||{},contributors=data.contributors||[];
     const requestedId=id;
     if(p.id&&p.id!==id){id=p.id;history.replaceState(null,'','/products/'+encodeURIComponent(id)+location.search)}
     if(data.newToVouch){const robots=document.createElement('meta');robots.name='robots';robots.content='noindex';document.head.append(robots)}
@@ -778,6 +785,50 @@
     if(location.hash==='#item-people')root.querySelector('#item-people')?.scrollIntoView({block:'start'});
   }
   function pendingPicks(){const current=new Map((me?.profile?.opinions||[]).map(o=>[o.productId,o]));return (edit?.opinions||[]).filter(o=>o.claimable!==false&&(!current.has(o.productId)||current.get(o.productId).updatedAt<o.updatedAt));}
-  async function load(){if(location.pathname.startsWith('/community-leaderboard')){await renderLeaderboard(0,{restoreFragment:true});return}if(verificationToken){shell(`${topLine()}<h1>Verify your email.</h1><p>Confirm this email address and sign in to your Vouch account.</p><button type="button" class="primary" id="confirm-email-link">Verify email and sign in</button>${statusMarkup()}`);root.querySelector('#confirm-email-link').onclick=async event=>{event.target.disabled=true;try{await request('/api/auth/verify-email',{token:verificationToken});verificationToken=null;clearAttempt();await load();}catch(error){event.target.disabled=false;failure(error);}};return;}window.VouchSiteNav?.refreshAccount();try{const parts=location.pathname.split('/').filter(Boolean);if(parts[0]==='profiles'){const data=await request('/api/profiles/'+encodeURIComponent(decodeURIComponent(parts.slice(1).join('/'))));renderProfile(data.profile,false);return}if(parts[0]==='products'){await renderProduct(decodeURIComponent(parts.slice(1).join('/')));return}me=await request('/api/account/me');auth=await request('/api/auth/status');if(auth.demo){location.replace('/wharton');return}edit=null;if(experimentId||!me.authenticated||params.get('review')==='1'||!me.profile)edit=await request('/api/account/edit'+experimentQuery);if(me.profile?.verificationRequired){if(challenge&&authEmail!==me.profile.email)clearAttempt();if(challenge)renderAnonymous();else renderPendingVerification();return}if(!me.authenticated){renderAnonymous();return}if(edit&&!me.profile){if(!auth?.identity?.email){renderAnonymous();return}renderSignup();return}if(edit&&params.get('review')==='1'){renderReview();return}if(!me.profile){edit={opinions:[],counts:{yes:0,no:0,brand:0},claimToken:null};renderReview();return}if(params.get('visibility')==='1')renderOpinionSettings(me.profile,false);else renderProfile(me.profile,true)}catch(error){failure(error)}}
+  async function load(){
+    if(location.pathname.startsWith('/community-leaderboard')){await renderLeaderboard(0,{restoreFragment:true});return;}
+    if(verificationToken){
+      shell(`${topLine()}<h1>Verify your email.</h1><p>Confirm this email address and sign in to your Vouch account.</p><button type="button" class="primary" id="confirm-email-link">Verify email and sign in</button>${statusMarkup()}`);
+      root.querySelector('#confirm-email-link').onclick=async event=>{
+        event.target.disabled=true;
+        try{
+          await request('/api/auth/verify-email',{token:verificationToken});
+          verificationToken=null;clearAttempt();
+          window.VouchSiteNav?.refreshAccount();
+          await load();
+        }catch(error){event.target.disabled=false;failure(error);}
+      };
+      return;
+    }
+    try{
+      const parts=location.pathname.split('/').filter(Boolean);
+      if(parts[0]==='profiles'){
+        window.VouchPageLoading.show(root,'Opening profile…');
+        const data=await request('/api/profiles/'+encodeURIComponent(decodeURIComponent(parts.slice(1).join('/'))));
+        renderProfile(data.profile,false);return;
+      }
+      if(parts[0]==='products'){await renderProduct(decodeURIComponent(parts.slice(1).join('/')));return;}
+      window.VouchPageLoading.show(root,'Opening your account…');
+      me=await request('/api/account/me');
+      window.VouchSiteNav?.presentAccount(me);
+      auth=await request('/api/auth/status');
+      if(auth.demo){location.replace('/wharton');return;}
+      edit=null;
+      if(experimentId||!me.authenticated||params.get('review')==='1'||!me.profile)edit=await request('/api/account/edit'+experimentQuery);
+      if(me.profile?.verificationRequired){
+        if(challenge&&authEmail!==me.profile.email)clearAttempt();
+        if(challenge)renderAnonymous();else renderPendingVerification();
+        return;
+      }
+      if(!me.authenticated){renderAnonymous();return;}
+      if(edit&&!me.profile){
+        if(!auth?.identity?.email){renderAnonymous();return;}
+        renderSignup();return;
+      }
+      if(edit&&params.get('review')==='1'){renderReview();return;}
+      if(!me.profile){edit={opinions:[],counts:{yes:0,no:0,brand:0},claimToken:null};renderReview();return;}
+      if(params.get('visibility')==='1')renderOpinionSettings(me.profile,false);else renderProfile(me.profile,true);
+    }catch(error){failure(error);}
+  }
   load();
 })();

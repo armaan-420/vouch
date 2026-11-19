@@ -87,10 +87,12 @@
  async function runSearch(){
   allResults.hidden=true;const query=input.value.trim();allResults.href='/find?q='+encodeURIComponent(query);if(!picker){await pickerReady;}if(!context||query.length<2){picker?.clear();hideResults();return;}
   const label=Array.from(query);nominate.textContent='Vouch for “'+label.slice(0,40).join('')+(label.length>40?'…':'')+'”';
-  const current=++version;controller?.abort();controller=new AbortController();picker.clear();popover.hidden=false;input.setAttribute('aria-expanded','true');window.VouchSearchStatus?.(status,{loading:true});nominate.hidden=true;
+  const current=++version;controller?.abort();const requestController=new AbortController();controller=requestController;picker.clear();popover.hidden=false;input.setAttribute('aria-expanded','true');window.VouchSearchStatus?.(status,{loading:true});nominate.hidden=true;
+  let deadline;
   try{
-   if(/^https:\/\//i.test(query)){const config=await window.VouchCatalog.config();if(!config.linkPaste)throw Error('Link lookup unavailable');const response=await fetch('/api/catalog/lookup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:query}),signal:controller.signal});const data=await response.json();if(current!==version)return;if(!response.ok)throw Error(data.error);choose({discoveryHref:'/products/'+encodeURIComponent(data.product.id)});return;}
-   const options={signal:AbortSignal.any([controller.signal,AbortSignal.timeout(12000)])};
+   if(/^https:\/\//i.test(query)){const config=await window.VouchCatalog.config();if(!config.linkPaste)throw Error('Link lookup unavailable');const response=await fetch('/api/catalog/lookup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:query}),signal:requestController.signal});const data=await response.json();if(current!==version)return;if(!response.ok)throw Error(data.error);choose({discoveryHref:'/products/'+encodeURIComponent(data.product.id)});return;}
+   deadline=setTimeout(()=>requestController.abort(),12000);
+   const options={signal:requestController.signal};
    const groups={vouch:[],catalog:[]};let catalogPending=query.length>=3,localPending=true,partial=false;
    const paint=()=>{if(current!==version||localPending)return;const known=new Set(groups.vouch.map(p=>p.id));const products=[...groups.vouch,...groups.catalog.filter(p=>!known.has(p.id))];picker.setProducts(products.slice(0,8));popover.hidden=false;input.setAttribute('aria-expanded','true');window.VouchSearchStatus(status,{loading:catalogPending,count:products.length,partial});allResults.hidden=catalogPending;nominate.hidden=products.length>0||!context.canNominate;};
    await Promise.all(['vouch',...(query.length>=3?['catalog']:[])].map(async source=>{try{const response=await fetch('/api/search?q='+encodeURIComponent(query)+'&source='+source,options);if(!response.ok)throw Error();const data=await response.json();groups[source]=data.products||[];partial=partial||data.partial;}catch{partial=true;}finally{if(source==='catalog')catalogPending=false;else localPending=false;paint();}}));
@@ -98,7 +100,7 @@
    const products=[...groups.vouch,...groups.catalog];
    nominate.hidden=products.length>0||!context.canNominate;
   }catch(error){if(current!==version||error.name==='AbortError')return;picker.clear();popover.hidden=false;input.setAttribute('aria-expanded','true');window.VouchSearchStatus(status,{partial:true});allResults.hidden=false;nominate.hidden=!context?.canNominate;}
-
+  finally{clearTimeout(deadline);}
  }
  input.addEventListener('input',()=>{syncSearchShortcuts();const normalized=normalizeQuery(input.value);if(normalized===lastQuery)return;lastQuery=normalized;version++;controller?.abort();clearTimeout(timer);picker?.clear();hideResults();if(input.value.trim().length>=2){popover.hidden=false;input.setAttribute('aria-expanded','true');window.VouchSearchStatus?.(status,{loading:true});nominate.hidden=true;timer=setTimeout(runSearch,250);}});
  input.addEventListener('click',()=>{if(!searchOpen)openSearch(window.innerWidth<=760?searchToggle:input);});

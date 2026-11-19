@@ -5,6 +5,8 @@ await (await import('node:fs/promises')).mkdir('outputs',{recursive:true});
 const browser=await chromium.launch({headless:true});
 try{
  const page=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+ // Exercise mobile search without the AbortSignal helpers missing in older Safari.
+ await page.addInitScript(()=>{delete AbortSignal.any;delete AbortSignal.timeout;});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  let submissions=0,saved=[],failNext=false,holdSave=false,finishSave;
  await page.route('**/api/catalog/config**',route=>route.fulfill({json:{barcode:true,photo:true,linkPaste:true}}));

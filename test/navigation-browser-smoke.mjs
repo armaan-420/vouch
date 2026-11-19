@@ -5,6 +5,8 @@ const browser=await chromium.launch({headless:true}),origin='http://127.0.0.1:41
 try{
  for(const width of [320,390,760,768,900,1100,1440]){
   const context=await browser.newContext({viewport:{width,height:852}}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(10000);
+  // Older Safari supports AbortController without these static helpers.
+  if(width===390)await page.addInitScript(()=>{delete AbortSignal.any;delete AbortSignal.timeout;});
   await page.route('**/api/search?**',async route=>{const url=new URL(route.request().url()),q=url.searchParams.get('q');if(q==='timeout')return route.fulfill({status:503,contentType:'application/json',body:'{}'});return route.fulfill({contentType:'application/json',body:JSON.stringify({products:q==='nomatch'?[]:url.searchParams.get('source')==='catalog'?[]:[{id:'sku-owala-freesip-24oz',brand:'Owala',name:'FreeSip Stainless Steel 24 oz',image:'/assets/water-bottles/owala.png',discoveryHref:'/products/sku-owala-freesip-24oz',vouchStatus:'listed'}]})});});
   for(const route of ['/waterbottle?start=1','/waterbottle?board=1','/products/sku-owala-freesip-24oz?experiment=waterbottle','/categories','/account']){
    await page.goto(origin+route);await page.locator('.site-header.has-product-search').waitFor();await page.waitForTimeout(100);

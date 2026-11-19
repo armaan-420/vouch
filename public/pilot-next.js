@@ -1,5 +1,66 @@
-import {categoriesUnlocked,extraCategories} from './wharton-categories.js';
+import {categoriesUnlocked,categoryHref,extraCategories} from './wharton-categories.js';
 import {showPilotDialog} from './pilot-dialog.js';
+import {progressMarkup} from './pilot-progress.js';
+
+export function mountBoardContinuation(host,{items,states,experimentId}) {
+  if(states[experimentId]?.status!=='done')return;
+  const live=items.filter(item=>item.experiment);
+  const done=live.filter(item=>states[item.experiment.id]?.status==='done').length;
+  const next=live.find(item=>states[item.experiment.id]?.status!=='done');
+  const nextStatus=next&&states[next.experiment.id]?.status;
+  const progress=`${done} of ${live.length} categories vouched`;
+  const rows=host.closest('.board').querySelectorAll('.rank-row');
+  const revealAfter=rows[Math.min(3,rows.length)-1];
+  const inviteUrl='https://v4ch.app/wharton';
+  host.innerHTML=`<section class="pilot-board-card pilot-continuation-card" aria-labelledby="pilot-continuation-title">
+    <div class="pilot-continuation-progress">
+      <p><span aria-hidden="true">✓</span> ${progress}</p>
+      ${progressMarkup(done,progress,{segments:live.length,role:'img'})}
+    </div>
+    <div class="pilot-continuation-main">
+      <h2 id="pilot-continuation-title">${next?'Up next: '+next.name:'You’re all caught up'}</h2>
+      <div class="pilot-continuation-actions">
+        ${next?`<a class="pilot-button is-lime" href="${categoryHref(next.experiment.id,nextStatus==='partial'?'partial':'new',true)}">${nextStatus==='partial'?'Continue':'Rate'} ${next.name.toLowerCase()} <span aria-hidden="true">→</span></a>`:''}
+        <button type="button" class="pilot-button is-outline" aria-controls="pilot-invite-link" aria-expanded="false" data-pilot-invite>Invite a classmate</button>
+      </div>
+    </div>
+    <div class="pilot-invite-link" id="pilot-invite-link" hidden>
+      <label for="pilot-wharton-url">Share the Wharton invite link</label>
+      <div class="pilot-invite-controls"><input id="pilot-wharton-url" type="text" value="${inviteUrl}" readonly>
+      <button type="button" class="pilot-button is-outline" data-copy-invite>Copy link</button></div>
+      <p role="status"></p>
+    </div>
+  </section>`;
+
+  const invite=host.querySelector('[data-pilot-invite]');
+  const share=host.querySelector('.pilot-invite-link');
+  const status=share.querySelector('[role="status"]');
+  const input=share.querySelector('input');
+  invite.addEventListener('click',()=>{
+    share.hidden=!share.hidden;
+    invite.setAttribute('aria-expanded',String(!share.hidden));
+    status.textContent='';
+  });
+  share.querySelector('[data-copy-invite]').addEventListener('click',async()=>{
+    try{
+      await navigator.clipboard.writeText(inviteUrl);
+      status.textContent='Wharton link copied.';
+    }catch{
+      input.focus();
+      input.select();
+      status.textContent='Copy the selected link to send it to a classmate.';
+    }
+  });
+
+  const update=()=>host.classList.toggle('has-passed-rankings',!revealAfter||revealAfter.getBoundingClientRect().bottom<=0);
+  window.addEventListener('scroll',update,{passive:true});
+  window.addEventListener('resize',update);
+  update();
+  return ()=>{
+    window.removeEventListener('scroll',update);
+    window.removeEventListener('resize',update);
+  };
+}
 export function nextStep({items,states,pilot,profile,available=[]}) {
   if(!pilot||!profile?.whartonEmailVerified)return null;
   const state=items.filter(group=>states[group.experiment?.id]?.status==='done').length;

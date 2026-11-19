@@ -82,7 +82,7 @@ async function collapse(card) {
   ],{duration:180,easing:'ease-out',fill:'forwards'}).finished;
 }
 
-export async function mountWhartonHome(root,profile,{member,frame,error}) {
+export async function mountWhartonHome(root,profile,{member,frame,error,demo=false}) {
   const first=esc(profile.displayName.trim().split(/\s+/)[0]);
   const welcome=`<p class="eyebrow">YOUR TASTE BELONGS HERE</p><h1 tabindex="-1">What do you<br><em>know and love?</em></h1><p class="wharton-intro">Welcome, ${first}. Start with one category. Explore the rest whenever you like.</p>`;
   const container='<div data-categories aria-busy="true"></div>';
@@ -167,7 +167,7 @@ export async function mountWhartonHome(root,profile,{member,frame,error}) {
     }
 
     let states={};
-    if(member){
+    if(member&&!demo){
       try{states=await participation(openGroups.map(group=>group.experiment));}catch{}
     }
     const {state,live,done,next}=whartonProgress(groups,states);
@@ -216,6 +216,6 @@ export async function mountWhartonHome(root,profile,{member,frame,error}) {
       }
     };
   }catch(e){
-    failed(()=>mountWhartonHome(root,profile,{member,frame,error}),e);
+    failed(()=>mountWhartonHome(root,profile,{member,frame,error,demo}),e);
   }
 }

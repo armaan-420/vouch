@@ -256,3 +256,28 @@ test('an item vouch share requires its owner’s opt-in and follows current visi
    assert.equal((await reader(page)).status,404);
  }
 });
+
+test('Wharton demo resets on sign-in and cannot change votes or the existing participant identity',async t=>{
+ const {browser}=await fixture(t),demo=browser(),observer=browser();
+ await signin(demo,'regular@wharton.upenn.edu');
+ await demo('/api/events',{type:'answer',productId:'boj',value:'yes'});
+ const before=(await observer('/api/admin/export')).data.data;
+ const start=await demo('/api/auth/start',{email:' Demo@Vouch.Example ',whartonPilot:true});
+ assert.deepEqual(start.data,{demo:true});
+ const first=(await demo('/api/auth/status')).data;
+ assert.ok(first.demoId);
+ assert.equal(first.identity,null);
+ assert.equal((await demo('/api/account/me')).data.authenticated,false);
+ assert.equal((await demo('/api/board')).data.products.find(p=>p.id==='boj').myVote,null);
+ assert.equal((await demo('/api/events',{type:'answer',productId:'boj',value:'no'})).data.demo,true);
+ assert.equal((await demo('/api/pilot-events',{type:'intro_done',step:3})).data.demo,true);
+ for(const route of ['/api/community/vote','/api/products/boj','/api/account/opinions','/api/nominations','/api/suggestions']){
+  assert.equal((await demo(route,{})).status,403,route);
+ }
+ await demo('/api/auth/start',{email:'demo@vouch.example'});
+ assert.notEqual((await demo('/api/auth/status')).data.demoId,first.demoId);
+ assert.deepEqual((await observer('/api/admin/export')).data.data,before);
+ await demo('/api/auth/logout',{});
+ assert.equal((await demo('/api/auth/status')).data.identity.email,'regular@wharton.upenn.edu');
+ assert.equal((await demo('/api/board')).data.products.find(p=>p.id==='boj').myVote,'yes');
+});

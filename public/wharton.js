@@ -7,10 +7,11 @@ import {mountWhartonHome} from './wharton-home.js';
  try{attempt=JSON.parse(sessionStorage.getItem(key)||'{}')}catch{}
  const remember=()=>sessionStorage.setItem(key,JSON.stringify(attempt));
  async function api(path,body){const response=await fetch(path,{credentials:'same-origin',method:body===undefined?'GET':'POST',headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});const data=await response.json();if(!response.ok)throw Error(data.error||'Please try again.');return data;}
- function error(e){root.querySelector('[role=alert]').textContent=e.message;}
+ function error(e){const alert=root.querySelector('[role=alert]');if(alert)alert.textContent=e.message;}
  function frame(content){clearInterval(timer);root.innerHTML=content+'<p class="wharton-error" role="alert"></p>';root.querySelector('h1,h2')?.focus();}
  async function ready(){
   const status=await api('/api/auth/status');
+  if(status.demo){await openDemo(status.demoId);return;}
   if(!status.available){frame('<h1>We’ll be right back.</h1><p>Email sign-in is temporarily unavailable.</p><button class="primary" data-retry>Try again</button>');root.querySelector('[data-retry]').onclick=()=>ready().catch(error);return;}
   if(!status.identity){join();return;}
   if(!/@wharton\.upenn\.edu$/i.test(status.identity.email||'')){frame('<h1>This one’s for Wharton.</h1><p>Use your Wharton email to join this experiment.</p><button class="primary" data-switch>Use another email</button>');root.querySelector('[data-switch]').onclick=async()=>{try{await api('/api/auth/logout',{});attempt={};remember();join()}catch(e){error(e)}};return;}
@@ -20,12 +21,12 @@ import {mountWhartonHome} from './wharton-home.js';
  }
  function join(){
   const resume=attempt.challengeId&&attempt.expiresAt>Date.now();
-  frame(`<p class="eyebrow">THE WHARTON EXPERIMENTS</p><h1 tabindex="-1">Good picks.<br><em>Familiar faces.</em></h1><p class="wharton-intro">The everyday products Wharton swears by. Share your favorites, then meet the people behind the picks.</p><div class="wharton-auth-box"><form id="wharton-join"><label for="wharton-name">Full name</label><input id="wharton-name" name="name" autocomplete="name" minlength="2" maxlength="60" value="${esc(attempt.name||'')}" required><label for="wharton-email">Wharton email</label><input id="wharton-email" name="email" type="email" autocomplete="email" placeholder="you@wharton.upenn.edu" value="${esc(attempt.email||'')}" required maxlength="254"><button class="primary" type="submit">Find your people’s picks →</button><p class="wharton-help">One email code. No password.</p></form></div><ol class="wharton-steps"><li>Pick a category</li><li>Share your take</li><li>See who vouches</li></ol>`);
+  frame(`<p class="eyebrow">THE WHARTON EXPERIMENTS</p><h1 tabindex="-1">Good picks.<br><em>Familiar faces.</em></h1><p class="wharton-intro">The everyday products Wharton swears by. Share your favorites, then meet the people behind the picks.</p><div class="wharton-auth-box"><form id="wharton-join"><label for="wharton-name">Full name</label><input id="wharton-name" name="name" autocomplete="name" minlength="2" maxlength="60" value="${esc(attempt.name||'')}"><label for="wharton-email">Wharton email</label><input id="wharton-email" name="email" type="email" autocomplete="email" placeholder="you@wharton.upenn.edu" value="${esc(attempt.email||'')}" required maxlength="254"><button class="primary" type="submit">Find your people’s picks →</button><p class="wharton-help">One email code. No password.</p></form></div><ol class="wharton-steps"><li>Pick a category</li><li>Share your take</li><li>See who vouches</li></ol>`);
   if(!landingTracked){landingTracked=true;window.VouchPilot.track('wharton_landing',{ref:new URLSearchParams(location.search).get('ref')});}
   if(resume){verify();return;}
-  root.querySelector('form').onsubmit=async e=>{e.preventDefault();const data=new FormData(e.target);attempt.name=String(data.get('name')).trim();attempt.email=String(data.get('email')).trim().toLowerCase();if(!/^[^\s@]+@wharton\.upenn\.edu$/.test(attempt.email)){error(Error('Use your @wharton.upenn.edu email.'));return;}const button=e.target.querySelector('button');button.disabled=true;try{await send()}catch(e){error(e);button.disabled=false}};
+  root.querySelector('form').onsubmit=async e=>{e.preventDefault();const data=new FormData(e.target);attempt.name=String(data.get('name')).trim();attempt.email=String(data.get('email')).trim().toLowerCase();const button=e.target.querySelector('button');button.disabled=true;try{await send()}catch(e){error(e);button.disabled=false}};
  }
- async function send(){const data=await api('/api/auth/start',{email:attempt.email});window.VouchPilot.track('email_submitted');attempt={...attempt,...data,expiresAt:Date.now()+data.expiresIn*1000,resendAt:Date.now()+(data.resendAfter||30)*1000};remember();verify();}
+ async function send(){const data=await api('/api/auth/start',{email:attempt.email,whartonPilot:true});if(data.demo){await ready();return;}window.VouchPilot.track('email_submitted');attempt={...attempt,...data,expiresAt:Date.now()+data.expiresIn*1000,resendAt:Date.now()+(data.resendAfter||30)*1000};remember();verify();}
  function verify(){
   clearInterval(timer);
   if(!root.querySelector('.wharton-auth-box')){join();return;}
@@ -40,13 +41,31 @@ import {mountWhartonHome} from './wharton-home.js';
   frame(`<p class="eyebrow">PUT YOUR NAME TO GOOD TASTE</p><h1 tabindex="-1">Who’s behind<br><em>your picks?</em></h1><form><label for="wharton-name">Full name</label><input id="wharton-name" name="name" autocomplete="name" minlength="2" maxlength="60" value="${esc(attempt.name||'')}" required><button class="primary" type="submit">Choose my first category →</button></form>`);
   root.querySelector('form').onsubmit=async e=>{e.preventDefault();const button=e.target.querySelector('button');button.disabled=true;try{await createProfile(email,new FormData(e.target).get('name'))}catch(e){error(e);button.disabled=false}};
  }
- function openCategories(profile){
+ async function openDemo(id){
+  const profile={displayName:'Demo'};
+  const footer=document.querySelector('footer');
+  if(!footer.querySelector('[data-exit-demo]')){
+   const exit=document.createElement('button');
+   exit.type='button';exit.className='text-button';exit.dataset.exitDemo='';
+   exit.textContent='Exit demo';
+   exit.onclick=async()=>{exit.disabled=true;try{await api('/api/auth/logout',{});location.replace('/wharton')}catch(e){error(e);exit.disabled=false}};
+   footer.append(exit);
+  }
+  attempt={};
+  try{sessionStorage.removeItem(key);if(sessionStorage.getItem('vouch-demo-intro')===id)return openCategories(profile,true)}catch{}
+  const {mountIntro}=await import('/wharton-intro.js');
+  mountIntro(root,()=>{
+   try{sessionStorage.setItem('vouch-demo-intro',id)}catch{}
+   openCategories(profile,true);
+  });
+ }
+ function openCategories(profile,demo=false){
   attempt={};try{sessionStorage.removeItem(key);}catch{}
   document.body.classList.add('wharton-choosing');
   root.removeAttribute("aria-live");
-  const member=!!homePathFor(profile);
+  const member=demo||!!homePathFor(profile);
   document.querySelector('[data-explore-vouch]').hidden=member;
-  return mountWhartonHome(root,profile,{member,frame,error});
+  return mountWhartonHome(root,profile,{member,frame,error,demo});
  }
  async function createProfile(email,name){
   const items=(await api('/api/categories')).categories;

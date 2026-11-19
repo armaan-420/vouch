@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {publicVouches,whartonLeaderboard,contributorBadges} from '../lib/contributor-leaderboard.mjs';
+import {publicVouches,whartonLeaderboard,contributorBadges,profileAchievements} from '../lib/contributor-leaderboard.mjs';
 import {createAccountsApi,initialAccounts} from '../lib/accounts.mjs';
 import {createFileStore} from '../lib/file-store.mjs';
 const opinion=(id,extra={})=>({productId:id,product:{id,name:id},verdict:'yes',visibility:'public',updatedAt:'2026-11-16T00:00:00Z',...extra});
@@ -224,4 +224,28 @@ test('leaderboard combines Wharton badges and awards category badges before pagi
  assert.deepEqual(board.entries.filter(row=>row.badges.some(badge=>badge.id==='category-expert-headphones')).map(row=>row.handle),['a','b','c']);
  assert.deepEqual(whartonLeaderboard(accounts,{offset:2,limit:1}).entries[0].badges,board.entries[2].badges);
  assert.deepEqual(board.entries.find(row=>row.handle==='below').badges.map(badge=>badge.label),['Wharton ✅']);
+});
+
+test('profile achievements share category rules and current competition rank', async t=>{
+ const f=await fixture(t);
+ await f.scope.transaction(({accounts})=>{
+  for(let i=0;i<4;i++)accounts['lead'+i]=member('lead'+i,12-i);
+  accounts[f.key]=categoryMember('alice',Array.from({length:6},(_,i)=>categoryVouch('sku-'+i,'Sunscreen')));
+  accounts.tie=member('tie',6);
+  accounts.below=member('below',5);
+  accounts.empty=member('empty',0);
+ });
+ const ids=profile=>profile.achievements.map(b=>b.id);
+ const owner=(await f.call('/api/account/me',undefined,true)).data.profile;
+ const published=(await f.call('/api/profiles/alice')).data.profile;
+ assert.deepEqual(ids(owner),['category-expert-sunscreen','wharton-top-five']);
+ assert.deepEqual(owner.achievements,published.achievements);
+ assert.equal(published.email,undefined);
+ const accounts=(await f.scope.read()).accounts;
+ assert.equal(profileAchievements(accounts,'tie').at(-1).id,'wharton-top-five');
+ assert.deepEqual(profileAchievements(accounts,'below'),[]);
+ assert.deepEqual(profileAchievements({empty:accounts.empty},'empty'),[]);
+ const updated=await f.call('/api/account/profile',{leaderboardOptIn:false},true);
+ assert.deepEqual(ids(updated.data.profile),[]);
+ assert.deepEqual(ids((await f.call('/api/profiles/alice')).data.profile),[]);
 });

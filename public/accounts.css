@@ -405,3 +405,17 @@
 @keyframes note-backdrop-in{from{opacity:0}to{opacity:1}}
 @media(max-width:700px){.item-note-arrow{display:inline-block;transform:rotate(90deg)}}
 @media(prefers-reduced-motion:reduce){.item-note-inline,.pilot-dialog.note-sheet,.note-sheet::backdrop{animation:none}}
+
+.profile-avatar{width:max-content;position:relative;align-self:flex-start;flex-shrink:0;margin-bottom:18px}
+.profile-avatar .profile-photo{margin:0}
+.profile-avatar button:focus-visible{outline:3px solid #828e31;outline-offset:4px}
+.profile-wharton-mark{position:absolute;right:-2px;bottom:-2px;border:2px solid var(--profile-paper);border-radius:50%;width:28px;height:28px;pointer-events:none}
+.profile-achievements{border-top:1px solid var(--profile-line);padding-top:14px;margin-bottom:20px}
+.profile-achievements h2{font:700 14px/1.4 'DM Sans',sans-serif;margin:0 0 9px}
+.profile-achievements ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,134px),1fr));gap:8px}
+.profile-achievements li{min-width:0;display:flex;align-items:center;gap:8px;background:var(--profile-white);border:1px solid var(--profile-line);border-radius:12px;padding:9px 8px;font-size:13px;overflow-wrap:anywhere}
+.profile-achievements strong,.profile-achievement-detail{display:block}
+.profile-achievement-detail{font-size:12px;color:var(--profile-muted)}
+.profile-achievement-icon{display:grid;place-items:center;flex:0 0 28px;height:28px;border-radius:50%;background:#e8edda}
+.profile-achievement-icon svg{width:16px;height:16px}
+.profile-achievement-icon.is-ranked{background:#d7ed68}

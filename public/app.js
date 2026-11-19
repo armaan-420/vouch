@@ -90,6 +90,7 @@ function showScreen(target,{reveal=false}={}){
  if(reveal)window.VouchPageLoading.reveal(app);
 }
 function showLoading(label){
+ disconnectBoardDock?.();
  screen=null;
  delete document.body.dataset.screen;
  document.querySelector('header').classList.remove('voting-header');
@@ -114,7 +115,7 @@ async function openBoard({record=false}={}){
 }
 function focusScreenHeading(){if(screen==='game'&&index<products.length){app.querySelector('[data-vote="yes"]')?.focus({preventScroll:true});return}const heading=app.querySelector('h1,h2');if(!heading)return;heading.tabIndex=-1;heading.focus({preventScroll:true})}
 let screenHasRendered=false;
-function render(){if(screen!=='board')disconnectBoardContinuation?.();updateHeader();if(screen==='home')home();else if(screen==='game')game();else if(screen==='edit')personalEdit();else if(screen==='attribution')attribution();else board();if(screenHasRendered||screen!=='home')focusScreenHeading();screenHasRendered=true}
+function render(){if(screen!=='board')disconnectBoardDock?.();updateHeader();if(screen==='home')home();else if(screen==='game')game();else if(screen==='edit')personalEdit();else if(screen==='attribution')attribution();else board();if(screenHasRendered||screen!=='home')focusScreenHeading();screenHasRendered=true}
 
 function experimentStatus(){
  if(experiment.closed)return 'closed';
@@ -187,30 +188,38 @@ function rankedRow(p,i,isCommunity=false){
  const saved=isCommunity?p.myVote:state.votes[p.id];
  return `<div class="rank-row${isCommunity?' community-row':''}"${!isCommunity?` id="product-${esc(p.id)}"`:''}><div class="rank-topline"><div class="rank-product"><span class="rank">${String(i+1).padStart(2,'0')}</span>${standingsImage(p,isCommunity)}<div class="rank-info">${standingsName(p,isCommunity)}${saved&&saved!=='skip'?`<span class="your-vote" data-board-own-vote="${esc(saved)}">You ${verdictLabel(saved)}</span>`:''}</div></div>${scoreSummary(p)}</div>${boardPeople(p,isCommunity)}${isCommunity&&(!p.myVote||p.myVote==='skip')?`<div class="community-actions">${[['no','Nope 👎','👎'],['brand','Brand vouch 🤝','🤝'],['yes','Vouch 👍','👍'],['skip','Skip this one','🤷']].map(([value,label,emoji])=>`<button data-community="${esc(p.id)}" data-choice="${value}" aria-label="${label}" aria-pressed="${p.myVote===value}"><span class="community-action-label" aria-hidden="true">${label}</span><span class="community-action-emoji" aria-hidden="true">${emoji}</span></button>`).join('')}</div>`:''}</div>`;
 }
-let pilotBoardTracked=false,pilotPulse=null,disconnectBoardContinuation;
-function board(){disconnectBoardContinuation?.();pilotPulse?.disconnect();updateHeader();const restoreHeadingFocus=document.activeElement===app.querySelector('h1');app.dataset.collectionStatus=experimentStatus();const sorted=[...products.map(p=>({...p,...baseBoard[p.id]})),...communityProducts].sort((a,b)=>Number(b.score??-1)-Number(a.score??-1));const chips=experiment.status!=='draft'&&window.VouchBoardCategories?.markup(experiment)||'';
-const pilotBoard=whartonFlow&&accountSignedIn&&accountProfile?.whartonEmailVerified&&!!chips;app.innerHTML=`<section class="board"><div class="board-head"><p class="eyebrow">VOUCH / ${esc(experiment.title)}</p>${chips?'<div class="pilot-board-title"><h1>The Board</h1><span data-winner-share></span></div>':'<h1>The Board</h1>'}<p>Rankings reflect the collective pool of item vouches, brand trust and don’t-recommend responses from everyone who voted.</p></div>${chips}<div class="board-topline"><span>PRODUCT</span><span>VOUCH SCORE</span></div>${sorted.map((p,i)=>p.communityNominated?communityCard(p,i):rankedRow(p,i)).join('')}${experiment.status!=='draft'?'<div data-pilot-next></div>':''}${experimentStatus()==='open'&&experiment.status!=='draft'&&!demoId?'<button type="button" class="board-vouch-card" data-vouch-search>'+window.VouchSiteNav.emblemMarkup+'<span>Missing your favorite? Vouch for it</span></button>':''}${experiment.status==='draft'?'':window.VouchCategories?.section()||''}${experiment.status==='draft'?'<p>Organizer preview · Voting opens after approval.</p>':experimentStatus()!=='open'?'<p>'+ (experimentStatus()==='upcoming'?'Voting has not started yet.':'Voting has ended. Results remain available.')+' Nominations and voting are paused.</p>':demoId?'<p>Demo mode · Your vouches are only visible to you during this session.</p>':nominationView()}${accountSignedIn?`<p class="collection-sync-notice" role="status">${profileSyncState==='saved'||accountProfile?.browserProfile?'Your picks are saved to your collection.':'Review these products to save any picks missing from your collection.'} <a href="/account?experiment=${encodeURIComponent(experimentId)}${profileSyncState==='saved'||accountProfile?.browserProfile?'':'&review=1'}">${profileSyncState==='saved'||accountProfile?.browserProfile?'View my collection':'Review and save picks'} →</a></p>`:''}<div class="board-bottom"><button class="text-button" data-action="start">${Object.keys(state.votes).length?'Revisit your takes':'Start vouching'}</button></div>${chips&&whartonFlow?'<div class="pilot-continuation" data-board-continuation></div>':''}</section>`;if(experimentStatus()!=='open'){app.querySelectorAll('[data-community],[data-action="start"]').forEach(b=>b.disabled=true)}else if(!demoId){mountNomination();watchEnd()}if(!demoId)window.VouchSuggestions?.mount(app);if(experiment.status!=='draft')window.VouchCategories?.mount(app,{exclude:experimentId,limit:3});const nextHost=app.querySelector('[data-pilot-next]');
+let pilotPulse=null,disconnectBoardDock;
+function board(){disconnectBoardDock?.();pilotPulse?.disconnect();updateHeader();const restoreHeadingFocus=document.activeElement===app.querySelector('h1');app.dataset.collectionStatus=experimentStatus();const sorted=[...products.map(p=>({...p,...baseBoard[p.id]})),...communityProducts].sort((a,b)=>Number(b.score??-1)-Number(a.score??-1));const chips=experiment.status!=='draft'&&window.VouchBoardCategories?.markup(experiment)||'';
+const pilotBoard=whartonFlow&&accountSignedIn&&accountProfile?.whartonEmailVerified&&!!chips;app.innerHTML=`<section class="board"><div class="board-head"><p class="eyebrow">VOUCH / ${esc(experiment.title)}</p>${chips?'<div class="pilot-board-title"><h1>The Board</h1><span data-winner-share></span></div>':'<h1>The Board</h1>'}<p>Rankings reflect the collective pool of item vouches, brand trust and don’t-recommend responses from everyone who voted.</p></div>${chips}<div class="board-topline"><span>PRODUCT</span><span>VOUCH SCORE</span></div>${sorted.map((p,i)=>p.communityNominated?communityCard(p,i):rankedRow(p,i)).join('')}${experimentStatus()==='open'&&experiment.status!=='draft'&&!demoId?'<button type="button" class="board-vouch-card" data-vouch-search>'+window.VouchSiteNav.emblemMarkup+'<span>Missing your favorite? Vouch for it</span></button>':''}${experiment.status==='draft'?'':window.VouchCategories?.section()||''}${experiment.status==='draft'?'<p>Organizer preview · Voting opens after approval.</p>':experimentStatus()!=='open'?'<p>'+ (experimentStatus()==='upcoming'?'Voting has not started yet.':'Voting has ended. Results remain available.')+' Nominations and voting are paused.</p>':demoId?'<p>Demo mode · Your vouches are only visible to you during this session.</p>':nominationView()}${accountSignedIn?`<p class="collection-sync-notice" role="status">${profileSyncState==='saved'||accountProfile?.browserProfile?'Your picks are saved to your collection.':'Review these products to save any picks missing from your collection.'} <a href="/account?experiment=${encodeURIComponent(experimentId)}${profileSyncState==='saved'||accountProfile?.browserProfile?'':'&review=1'}">${profileSyncState==='saved'||accountProfile?.browserProfile?'View my collection':'Review and save picks'} →</a></p>`:''}<div class="board-bottom"><button class="text-button" data-action="start">${Object.keys(state.votes).length?'Revisit your takes':'Start vouching'}</button></div>${experiment.status!=='draft'?'<div data-board-dock></div>':''}</section>`;if(experimentStatus()!=='open'){app.querySelectorAll('[data-community],[data-action="start"]').forEach(b=>b.disabled=true)}else if(!demoId){mountNomination();watchEnd()}if(!demoId)window.VouchSuggestions?.mount(app);if(experiment.status!=='draft')window.VouchCategories?.mount(app,{exclude:experimentId,limit:3});
+const dockHost=app.querySelector('[data-board-dock]');
 const demoPilot=!!demoId&&whartonFlow&&!!chips;
-const boardActions=nextHost&&!demoPilot?import('/pilot-next.js').then(({mountNext})=>{
-  if(nextHost.isConnected)mountNext(nextHost,{experimentId,profile:accountProfile});
-}):null;
-boardActions?.catch(()=>{});
-const continuationHost=app.querySelector('[data-board-continuation]');
-window.VouchBoardCategories?.mount(app,experiment,{whartonFlow,demoParticipation:demoPilot?demoParticipation:null,onLoaded:demoPilot||pilotBoard?async({items,states,pilot,available})=>{
-  if(!demoPilot&&!pilot)return;
-  const {mountBoardContinuation,nextStep,showUnlockAction}=await import('/pilot-next.js');
-  if(!continuationHost?.isConnected)return;
-  disconnectBoardContinuation=mountBoardContinuation(continuationHost,{items,states,experimentId});
-  if(demoPilot)return;
-  const [{mountPulse}]=await Promise.all([import('/pilot-pulse.js'),boardActions]);
-  if(!nextHost.isConnected)return;
-  if(Object.values(states).some(state=>state.status==='done'))pilotPulse=mountPulse(app,{pilot,experimentId,handle:accountProfile.handle,existing:pilotPulse});
-  const model=nextStep({items,states,pilot,profile:accountProfile,available});
-  if(model.showUnlock)showUnlockAction(nextHost);
-  nextHost.dataset.pilotState=model.state;
-  nextHost.dataset.pilotShare=model.canShare;
-  if(!pilotBoardTracked){pilotBoardTracked=true;window.VouchPilot.track('next_step_shown',{state:model.state,experimentId});}
-}:undefined});
+let dockTracked=false;
+const showDock=async(data)=>{
+  const {mountBoardDock}=await import('/board-dock.js');
+  if(!dockHost?.isConnected)return;
+  disconnectBoardDock?.();
+  disconnectBoardDock=mountBoardDock(dockHost,data,{
+    experiment,products,profile:accountSignedIn?accountProfile:null,demo:demoPilot,
+    canStart:experimentStatus()==='open'&&!demoId&&!Object.keys(state.votes).length,
+    onShown:state=>{
+      if(dockTracked)return;
+      dockTracked=true;
+      window.VouchPilot.track('next_step_shown',{state,experimentId});
+    }
+  });
+};
+const showEveryday=()=>showDock().catch(console.error);
+if(dockHost&&!pilotBoard&&!demoPilot)showEveryday();
+window.VouchBoardCategories?.mount(app,experiment,{whartonFlow,demoParticipation:demoPilot?demoParticipation:null,
+  onError:pilotBoard||demoPilot?showEveryday:undefined,
+  onLoaded:demoPilot||pilotBoard?async({items,states,pilot,available})=>{
+    if(!demoPilot&&!pilot){showEveryday();return}
+    await showDock({items,states,pilot,available});
+    if(demoPilot||!Object.values(states).some(state=>state.status==='done'))return;
+    const {mountPulse}=await import('/pilot-pulse.js');
+    if(dockHost.isConnected)pilotPulse=mountPulse(app,{pilot,experimentId,handle:accountProfile.handle,existing:pilotPulse});
+  }:undefined
+});
 const [top,runnerUp]=sorted,winnerHost=app.querySelector('[data-winner-share]');
 const winnerId=top&&standingsProductId(top,!!top.communityNominated);
 mountBoardPeople(experiment.status!=='draft'&&winnerId?summaries=>{

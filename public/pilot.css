@@ -109,26 +109,84 @@
 
 .pilot-button.is-lime{background:var(--green);color:var(--ink);border-color:var(--green)}
 
-.pilot-continuation{position:sticky;bottom:max(10px,env(safe-area-inset-bottom));z-index:25;max-width:690px;margin:20px auto 0}
-.pilot-continuation:empty{display:none}
-.pilot-continuation-card{margin:0;padding:clamp(12px,2.5vw,19px);background:#FFFEFA;box-shadow:0 6px 24px #292d2426}
-.pilot-continuation-progress{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}
-.pilot-continuation-progress p{margin:0;font-size:.8125rem;font-weight:700}
-.pilot-continuation-progress .pilot-progress{width:min(36%,120px);margin:0}
-.pilot-continuation-main{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px}
-.pilot-continuation-card h2{margin:0;font-size:clamp(1.625rem,4vw,2.125rem)}
-.pilot-continuation-actions{display:flex;flex-wrap:wrap;gap:8px}
-.pilot-continuation-actions .pilot-button,.pilot-invite-controls .pilot-button{font-size:.875rem;padding-inline:12px}
-.pilot-continuation-actions .pilot-button span{margin-left:6px}
-.pilot-invite-link:not([hidden]){display:grid;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:.875rem}
-.pilot-invite-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
-.pilot-invite-controls input{width:100%;min-width:0;min-height:44px;padding:8px;border:1px solid #8B9479;border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-size:16px}
-.pilot-invite-link p{margin:0}
-.pilot-invite-link p:empty{display:none}
-@media(max-width:767px){
-  .pilot-continuation:not(.has-passed-rankings){visibility:hidden}
+
+
+/* Experiment Board next step. The frame also anchors the desktop More popover. */
+body.has-board-dock{--board-dock-bottom:20px;padding-bottom:calc(var(--board-dock-height,66px) + 24px + var(--board-dock-bottom))}
+[data-board-dock]:not(:empty){
+  position:fixed;left:50%;bottom:var(--board-dock-bottom);width:min(690px,calc(100% - 24px));
+  transform:translateX(-50%);z-index:25;pointer-events:none;
+  --dock-surface:#FFFEFA;--dock-shadow:0 6px 24px #292d2426;--dock-ease:cubic-bezier(.2,.8,.2,1);
 }
-@media(max-width:560px){
-  .pilot-continuation-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));width:100%}
-  .pilot-continuation-actions .pilot-button{padding-inline:8px}
+.board-dock{
+  display:flex;align-items:center;gap:8px;min-height:64px;padding:10px 10px 10px 16px;
+  border:1px solid var(--line);border-radius:16px;background:var(--dock-surface);box-shadow:var(--dock-shadow);
+  transform:translateY(calc(100% + 24px));opacity:0;
+  transition:transform 200ms var(--dock-ease),opacity 200ms var(--dock-ease);
+}
+.board-dock.is-visible{opacity:1;transform:none;pointer-events:auto}
+.board-dock-status{flex:1;min-width:0;color:var(--ink);line-height:1.25}
+.board-dock-status>*:not(.pilot-progress){display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board-dock-status strong{font-size:14px;font-weight:700}
+.board-dock-status small{font-size:12.5px;color:var(--muted);margin-top:2px}
+.board-dock-status .pilot-progress{width:60px;margin-top:6px}
+.board-dock .board-dock-main{height:44px;min-height:44px;padding:0 16px;gap:4px;font-size:14px;white-space:nowrap}
+.board-dock-more{
+  display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;
+  border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);
+}
+.board-dock :focus-visible,.board-dock-sheet :focus-visible,.board-dock-popover :focus-visible,.board-dock-share-status :focus-visible{
+  outline:3px solid var(--pilot-olive);outline-offset:3px;
+}
+.board-dock-popover{
+  position:absolute;bottom:calc(100% + 8px);right:0;width:min(340px,100%);max-height:calc(100dvh - 110px);overflow:auto;
+  padding:8px 12px;border:1px solid var(--line);border-radius:16px;
+  background:var(--dock-surface);box-shadow:var(--dock-shadow);pointer-events:auto;
+  animation:board-dock-popover-in 160ms var(--dock-ease) both;
+}
+[data-board-dock].is-obscured .board-dock-popover{visibility:hidden}
+@keyframes board-dock-popover-in{from{opacity:0;transform:translateY(8px)}}
+.pilot-dialog.board-dock-sheet{
+  position:fixed;inset:auto 0 0;width:100%;max-width:none;max-height:calc(100dvh - 24px);margin:0;
+  padding:10px 16px max(12px,env(safe-area-inset-bottom));border-radius:22px 22px 0 0;
+  background:#FFFEFA;animation:board-dock-sheet-in 240ms cubic-bezier(.2,.8,.2,1) both;
+}
+.board-dock-sheet::before{content:'';display:block;width:40px;height:4px;margin:0 auto 8px;border-radius:4px;background:var(--line)}
+.pilot-dialog.board-dock-sheet::backdrop{background:rgb(41 45 36 / .35)}
+@keyframes board-dock-sheet-in{from{transform:translateY(105%)}}
+.board-dock-popover h2,.pilot-dialog.board-dock-sheet h2{
+  margin:6px 4px;font:700 13px/1.4 'DM Sans',sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
+}
+.board-dock-row{
+  display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;min-height:60px;
+  margin:0;padding:8px 4px;border:0;border-radius:0;background:transparent;text-align:left;color:var(--ink);text-decoration:none;
+}
+.board-dock-row+.board-dock-row{border-top:1px solid var(--line)}
+.board-dock-row strong,.board-dock-row small{display:block}
+.board-dock-row strong{font-size:15px;font-weight:700}
+.board-dock-row small{font-size:13px;color:var(--muted)}
+.board-dock-row[role="status"]{font-size:13px;color:var(--muted)}
+.board-dock-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:#e9ecdf;color:var(--olive)}
+.board-dock-copy{display:grid;gap:8px;padding:10px 4px;font-size:14px}
+.board-dock-copy input,.pilot-dialog .board-dock-copy input{
+  width:100%;min-height:44px;padding:8px;border:1px solid var(--muted);border-radius:8px;
+  background:var(--paper);color:var(--ink);font-size:16px;
+}
+.board-dock-toast,.board-dock-share-status{
+  position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+  padding:8px 12px;margin:0;border-radius:10px;background:var(--ink);color:var(--paper);font-size:13px;text-align:center;
+}
+.board-dock-share-status:not([hidden]){pointer-events:auto}
+.board-dock-share-status a{display:inline-flex;align-items:center;min-height:44px;color:inherit}
+.board-dock-toast:empty,.board-dock-share-status:empty{padding:0}
+[data-board-dock].is-obscured :is(.board-dock-toast,.board-dock-share-status){visibility:hidden}
+@media(max-width:760px){body.has-board-dock{--board-dock-bottom:max(12px,env(safe-area-inset-bottom))}}
+@media(max-width:380px){
+  .board-dock{gap:6px;padding-left:14px}
+  .board-dock .board-dock-main{padding-inline:12px}
+  .board-dock-main span[aria-hidden]{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .board-dock{transition:none}
+  .board-dock-popover,.pilot-dialog.board-dock-sheet{animation:none}
 }

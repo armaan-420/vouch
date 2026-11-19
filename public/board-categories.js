@@ -3,7 +3,7 @@
  const matchers=[{name:'Water bottles',match:/water bottle/i},{name:'Lip balm',match:/lip balm/i},{name:'Carry-on luggage',match:/carry[ -]?on/i}];
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function markup(experiment){return matchers.some(g=>g.match.test(experiment.category))?'<div class="board-category-switcher" aria-busy="true"><p class="board-category-status" role="status">Finding Wharton experiments…</p></div>':'';}
- async function mount(root,experiment,{whartonFlow=false,demoParticipation,onLoaded}={}){
+ async function mount(root,experiment,{whartonFlow=false,demoParticipation,onLoaded,onError}={}){
   const host=root.querySelector('.board-category-switcher');if(!host)return;
   try{
    const {whartonChoices}=await import('/wharton-categories.js');
@@ -19,7 +19,8 @@
    const current=items.find(i=>i.experiment?.id===experiment.id),status=states?.[experiment.id]?.status;
    if(current&&status!=='done')host.insertAdjacentHTML('beforeend',`<section class="board-category-invite"><div><strong>${status==='partial'?'Your takes are waiting.':'Tried any of these?'}</strong><p>${status==='partial'?'Pick up where you left off in '+esc(current.name.toLowerCase())+'.':'Add your take to the '+esc(current.name)+' Board.'}</p></div><a href="/${encodeURIComponent(experiment.id)}?start=1${status==='partial'?'&resume=1':''}${suffix}">${status==='partial'?'Continue vouching':'Vouch for '+esc(current.name.toLowerCase())} →</a></section>`);
    if(states)await onLoaded?.({items,states,pilot,available});
-  }catch{if(host.isConnected){host.innerHTML='<p class="board-category-status">Categories could not load. <button class="text-button" type="button">Try again</button></p>';host.querySelector('button').onclick=()=>mount(root,experiment,{whartonFlow,demoParticipation,onLoaded});}}
+   else onError?.();
+  }catch{if(host.isConnected){onError?.();host.innerHTML='<p class="board-category-status">Categories could not load. <button class="text-button" type="button">Try again</button></p>';host.querySelector('button').onclick=()=>mount(root,experiment,{whartonFlow,demoParticipation,onLoaded,onError});}}
   finally{if(host.isConnected)host.setAttribute('aria-busy','false');}
  }
  window.VouchBoardCategories={markup,mount};

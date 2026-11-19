@@ -1,72 +1,11 @@
-import {categoriesUnlocked,categoryHref,extraCategories} from './wharton-categories.js';
+import {categoriesUnlocked,extraCategories} from './wharton-categories.js';
 import {showPilotDialog} from './pilot-dialog.js';
-import {progressMarkup} from './pilot-progress.js';
-
-export function mountBoardContinuation(host,{items,states,experimentId}) {
-  if(states[experimentId]?.status!=='done')return;
-  const live=items.filter(item=>item.experiment);
-  const done=live.filter(item=>states[item.experiment.id]?.status==='done').length;
-  const next=live.find(item=>states[item.experiment.id]?.status!=='done');
-  const nextStatus=next&&states[next.experiment.id]?.status;
-  const progress=`${done} of ${live.length} categories vouched`;
-  const rows=host.closest('.board').querySelectorAll('.rank-row');
-  const revealAfter=rows[Math.min(3,rows.length)-1];
-  const inviteUrl='https://v4ch.app/wharton';
-  host.innerHTML=`<section class="pilot-board-card pilot-continuation-card" aria-labelledby="pilot-continuation-title">
-    <div class="pilot-continuation-progress">
-      <p><span aria-hidden="true">✓</span> ${progress}</p>
-      ${progressMarkup(done,progress,{segments:live.length,role:'img'})}
-    </div>
-    <div class="pilot-continuation-main">
-      <h2 id="pilot-continuation-title">${next?'Up next: '+next.name:'You’re all caught up'}</h2>
-      <div class="pilot-continuation-actions">
-        ${next?`<a class="pilot-button is-lime" href="${categoryHref(next.experiment.id,nextStatus==='partial'?'partial':'new',true)}">${nextStatus==='partial'?'Continue':'Rate'} ${next.name.toLowerCase()} <span aria-hidden="true">→</span></a>`:''}
-        <button type="button" class="pilot-button is-outline" aria-controls="pilot-invite-link" aria-expanded="false" data-pilot-invite>Invite a classmate</button>
-      </div>
-    </div>
-    <div class="pilot-invite-link" id="pilot-invite-link" hidden>
-      <label for="pilot-wharton-url">Share the Wharton invite link</label>
-      <div class="pilot-invite-controls"><input id="pilot-wharton-url" type="text" value="${inviteUrl}" readonly>
-      <button type="button" class="pilot-button is-outline" data-copy-invite>Copy link</button></div>
-      <p role="status"></p>
-    </div>
-  </section>`;
-
-  const invite=host.querySelector('[data-pilot-invite]');
-  const share=host.querySelector('.pilot-invite-link');
-  const status=share.querySelector('[role="status"]');
-  const input=share.querySelector('input');
-  invite.addEventListener('click',()=>{
-    share.hidden=!share.hidden;
-    invite.setAttribute('aria-expanded',String(!share.hidden));
-    status.textContent='';
-  });
-  share.querySelector('[data-copy-invite]').addEventListener('click',async()=>{
-    try{
-      await navigator.clipboard.writeText(inviteUrl);
-      status.textContent='Wharton link copied.';
-    }catch{
-      input.focus();
-      input.select();
-      status.textContent='Copy the selected link to send it to a classmate.';
-    }
-  });
-
-  const update=()=>host.classList.toggle('has-passed-rankings',!revealAfter||revealAfter.getBoundingClientRect().bottom<=0);
-  window.addEventListener('scroll',update,{passive:true});
-  window.addEventListener('resize',update);
-  update();
-  return ()=>{
-    window.removeEventListener('scroll',update);
-    window.removeEventListener('resize',update);
-  };
-}
-export function nextStep({items,states,pilot,profile,available=[]}) {
-  if(!pilot||!profile?.whartonEmailVerified)return null;
+export function nextStep({items,states,pilot,profile,available=[],demo=false}) {
+  if(!demo&&(!pilot||!profile?.whartonEmailVerified))return null;
   const state=items.filter(group=>states[group.experiment?.id]?.status==='done').length;
   const next=items.find(group=>group.experiment&&states[group.experiment.id]?.status!=='done');
   const showUnlock=state>0&&!next&&!categoriesUnlocked(profile)&&extraCategories(available).length>0;
-  return {state,next,showUnlock,partial:states[next?.experiment.id]?.status==='partial',suggested:pilot.suggested,canShare:pilot.canShare};
+  return {state,next,showUnlock,partial:states[next?.experiment.id]?.status==='partial',suggested:pilot?.suggested,canShare:pilot?.canShare};
 }
 
 export function suggestionDialog(trigger,onSaved,whartonPilot) {
@@ -99,14 +38,6 @@ export function suggestionDialog(trigger,onSaved,whartonPilot) {
   showPilotDialog(dialog,trigger);
 }
 
-export function showUnlockAction(host) {
-  const primary=host.querySelector('.pilot-next-primary');
-  const share=primary.querySelector('[data-next-action="share_picks"]');
-  share.classList.add('is-outline');
-  host.querySelector('.pilot-next-secondary').prepend(share);
-  primary.innerHTML='<a class="pilot-button is-lime" href="/wharton" data-next-action="unlock">Unlock all categories →</a>';
-}
-
 export function mountNext(host,{experimentId,profile}) {
   const key='vouch-board-suggested:'+(profile?.handle||'visitor');
   const thanks='<p class="pilot-suggestion-thanks" role="status" tabindex="-1">Thanks for suggesting a category.</p>';
@@ -131,39 +62,42 @@ export function mountNext(host,{experimentId,profile}) {
       host.querySelector('.pilot-suggestion-thanks')?.focus();
     },state!==undefined);
     if(action!=='share_picks')return;
-    if(host.dataset.pilotShare==='true'&&window.VouchShare){
-      window.VouchShare.open(trigger,{kind:'picks',experimentId});
-      return;
-    }
-    if(!profile||profile.browserProfile){
-      location.href='/account?signin=1'+(experimentId?'&experiment='+encodeURIComponent(experimentId):'');
-      return;
-    }
-    const status=host.querySelector('[data-board-share-status]');
-    status.hidden=false;
-    let current;
-    try{
-      const response=await fetch('/api/account/me');
-      if(!response.ok)throw Error();
-      current=(await response.json()).profile;
-    }catch{
-      status.textContent='Could not load your picks. Try again.';
-      return;
-    }
-    if(current?.visibility!=='public'||current.showName===false||!current.opinions?.some(item=>item.verdict==='yes'&&item.visibility==='public')){
-      location.href='/account?visibility=1';
-      return;
-    }
-    const url=new URL('/profiles/'+encodeURIComponent(current.handle),location.origin).href;
-    try{
-      await navigator.clipboard.writeText(url);
-      status.textContent='Link to your public picks copied.';
-    }catch{
-      const link=document.createElement('a');
-      link.href=url;
-      link.textContent='Open your public picks';
-      status.replaceChildren(link);
-      link.focus();
-    }
+    await sharePicks(trigger,{experimentId,profile,canShare:host.dataset.pilotShare==='true',status:host.querySelector('[data-board-share-status]')});
   });
+}
+
+export async function sharePicks(trigger,{experimentId,profile,canShare,status}) {
+  if(canShare&&window.VouchShare){
+    window.VouchShare.open(trigger,{kind:'picks',experimentId});
+    return;
+  }
+  if(!profile||profile.browserProfile){
+    location.href='/account?signin=1'+(experimentId?'&experiment='+encodeURIComponent(experimentId):'');
+    return;
+  }
+  status.hidden=false;
+  let current;
+  try{
+    const response=await fetch('/api/account/me');
+    if(!response.ok)throw Error();
+    current=(await response.json()).profile;
+  }catch{
+    status.textContent='Could not load your picks. Try again.';
+    return;
+  }
+  if(current?.visibility!=='public'||current.showName===false||!current.opinions?.some(item=>item.verdict==='yes'&&item.visibility==='public')){
+    location.href='/account?visibility=1';
+    return;
+  }
+  const url=new URL('/profiles/'+encodeURIComponent(current.handle),location.origin).href;
+  try{
+    await navigator.clipboard.writeText(url);
+    status.textContent='Link to your public picks copied.';
+  }catch{
+    const link=document.createElement('a');
+    link.href=url;
+    link.textContent='Open your public picks';
+    status.replaceChildren(link);
+    link.focus();
+  }
 }

@@ -1,7 +1,7 @@
 export const whartonCategories = [
-  { key:'water-bottles', name:'Water bottles', singular:'water bottle', match:/water bottle/i, subtitle:'Your everyday carry' },
-  { key:'lip-balm', name:'Lip balm', singular:'lip balm', match:/lip balm/i, subtitle:'Your everyday lip care' },
-  { key:'carry-on', name:'Carry-on luggage', singular:'carry-on', match:/carry[ -]?on/i, subtitle:'Your go-to travel companion' }
+  { key:'water-bottles', shortLabel:'water bottles', name:'Water bottles', singular:'water bottle', match:/water bottle/i, subtitle:'Your everyday carry' },
+  { key:'lip-balm', shortLabel:'lip balm', name:'Lip balm', singular:'lip balm', match:/lip balm/i, subtitle:'Your everyday lip care' },
+  { key:'carry-on', shortLabel:'carry-ons', name:'Carry-on luggage', singular:'carry-on', match:/carry[ -]?on/i, subtitle:'Your go-to travel companion' }
 ];
 
 export const extraCategories=experiments=>experiments.filter(e=>!whartonCategories.some(group=>group.match.test(e.category)));

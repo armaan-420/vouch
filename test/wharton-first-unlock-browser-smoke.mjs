@@ -45,7 +45,7 @@ try{
       await page.route(url=>url.origin!==origin,route=>route.abort());
       async function check(label){
         assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),width+' '+label+' overflow');
-        if([360,430,768,1280].includes(width))await page.screenshot({path:path.join(output,label+'-'+width+'.png'),fullPage:!label.startsWith('dock'),animations:'disabled'});
+        if([360,390,430,700,768,1050,1280].includes(width))await page.screenshot({path:path.join(output,label+'-'+width+'.png'),fullPage:!label.startsWith('dock'),animations:'disabled'});
       }
       async function board(category,action){
         await page.goto(origin+'/'+category.id+'?board=1&wharton=1');
@@ -67,6 +67,7 @@ try{
       assert.equal(await gate.count(),1);
       const locked=page.locator('[data-locked-category]');
       assert.deepEqual(await locked.evaluateAll(els=>els.slice(0,2).map(el=>el.dataset.name)),['Lip balm','Carry-on luggage']);
+      assert.doesNotMatch(await locked.first().innerText(),/Wharton pick/);
       const visible=width<768?5:9;
       assert.equal(await page.locator('[data-locked-category]:visible').count(),visible);
       assert.ok(await page.locator('[data-locked-category]:visible .wharton-tile-image').evaluateAll(els=>els.every(el=>Math.abs(el.clientWidth/el.clientHeight-1.5)<0.04)));
@@ -130,7 +131,13 @@ try{
       await check('F');
       assert.equal(await page.locator('.wharton-category[href$="wharton=1"]').count(),2);
       assert.equal(await page.locator('.wharton-category .wharton-category-kicker').allTextContents().then(names=>names.join()),'Up next');
-      assert.equal(await page.locator('.wharton-tile[href*="wharton=1"]').count(),0);
+      assert.equal(await page.locator('.wharton-tile').count(),0);
+      assert.equal(await page.locator('.wharton-category[href$="wharton=1"] p').count(),0);
+      const moreCards=page.locator('.wharton-category[data-source="unlocked"]:not([href*="wharton=1"])');
+      assert.ok(await moreCards.count()>0);
+      const pickWidth=await page.locator('.wharton-category[href$="wharton=1"]').first().evaluate(el=>el.offsetWidth);
+      assert.ok(await moreCards.evaluateAll((cards,expected)=>cards.every(card=>card.offsetWidth===expected&&card.offsetHeight>=44),pickWidth));
+      assert.equal(await moreCards.first().locator('.wharton-category-status').textContent(),'Start');
       assert.equal(await page.locator('.wharton-boards').count(),0);
       await page.reload();
       await unlocked.waitFor();

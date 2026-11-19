@@ -25,7 +25,7 @@ function card(group,{progress,kicker,highlight=!!kicker,wharton=true,source=whar
   const attrs=category?`data-pilot-category="${esc(category.id)}" data-source="${source}" href="${categoryHref(category.id,status,wharton)}"`:'';
   return `<${tag} class="wharton-category ${category?'':'is-upcoming'} ${highlight?'is-highlighted':''}" ${attrs} ${category?`aria-label="${esc(name+', '+spoken)}"`:''}>
     <img src="${esc(category?.image||fallback)}" data-fallback="${esc(fallback)}" alt="">
-    <div>${kicker?`<span class="wharton-category-kicker">${kicker}</span>`:''}<h2>${esc(name)}</h2><p>${esc(subtitle)}</p>
+    <div>${kicker?`<span class="wharton-category-kicker">${kicker}</span>`:''}<h2>${esc(name)}</h2>${subtitle?`<p>${esc(subtitle)}</p>`:''}
     ${progress?`<span class="wharton-category-status is-${status}">${pill}</span>`:!category?'<small>Coming soon</small>':''}</div>
     <span aria-hidden="true">${category?'→':''}</span></${tag}>`;
 }
@@ -45,14 +45,11 @@ function sectionTitle(title,detail,icon='') {
   return `<header class="wharton-section-title"><h2 class="eyebrow">${icon}${title}</h2><span>${detail}</span></header>`;
 }
 
-function categoryTile(category,{pick,gate,progress}={}) {
-  const name=pick?.name||category.category;
-  const image=`<span class="wharton-tile-image">${cover(category)}${gate?`<span class="wharton-tile-lock">${pilotLockIcon({size:12})}</span>`:''}</span>`;
-  const label=`<span class="wharton-tile-name">${esc(name)}</span>`;
-  if(gate)return `<button type="button" class="wharton-tile is-locked" data-locked-category="${esc(category.id)}" data-name="${esc(name)}" aria-label="${esc(name+', locked. Unlocks after '+gate.shortLabel+'.')}">${image}${label}${pick?'<span class="wharton-pick-label">Wharton pick</span>':''}</button>`;
-  const {status}=progress;
-  const pill={new:'Start',partial:'Continue · '+progress.answeredProductIds.length+' of '+category.productCount,done:'✓ Vouched'}[status];
-  return `<a class="wharton-tile" href="${categoryHref(category.id,status)}" data-pilot-category="${esc(category.id)}" data-source="unlocked">${image}${label}<span class="wharton-category-status is-${status}">${pill}</span></a>`;
+function lockedTile(category,gate,name=category.category) {
+  return `<button type="button" class="wharton-tile is-locked" data-locked-category="${esc(category.id)}" data-name="${esc(name)}" aria-label="${esc(name+', locked. Unlocks after '+gate.shortLabel+'.')}">
+    <span class="wharton-tile-image">${cover(category)}<span class="wharton-tile-lock">${pilotLockIcon({size:12})}</span></span>
+    <span class="wharton-tile-name">${esc(name)}</span>
+  </button>`;
 }
 
 function unlockMeter(answered,total,remaining) {
@@ -187,15 +184,17 @@ export async function mountWhartonHome(root,profile,{member,frame,error,demo=fal
         const next=picks.find(pick=>states[pick.experiment.id].status!=='done');
         const pickCards=picks.map(pick=>card(pick,{progress:states[pick.experiment.id],kicker:pick===next?'Up next':null,source:'unlocked'}));
         const ordered=extras.slice().sort((a,b)=>statusOrder[states[a.id].status]-statusOrder[states[b.id].status]);
-        const more=ordered.map(category=>categoryTile(category,{progress:states[category.id]}));
+        const more=ordered.map(category=>card({experiment:category,name:category.category},{
+          progress:states[category.id],wharton:false
+        }));
         const completed=gate&&states[gate.experiment.id]?.status==='done'?compactRows([gate]):'';
         show(heading,
           (pickCards.length?`<section>${sectionTitle('WHARTON IS VOUCHING',"Classmates’ picks")}<div class="wharton-category-list has-progress">${pickCards.join('')}</div></section>`:'')+
-          (more.length?`<section>${sectionTitle('MORE TO VOUCH FOR',more.length+' open')}<div class="wharton-tile-grid is-open">${more.join('')}</div></section>`:'')+
+          (more.length?`<section>${sectionTitle('MORE TO VOUCH FOR',more.length+' open')}<div class="wharton-category-list has-progress">${more.join('')}</div></section>`:'')+
           completed);
         if(animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
           const fade=[{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}];
-          host.querySelectorAll('.wharton-category,.wharton-tile,.wharton-completed').forEach((item,index)=>item.animate(fade,{duration:220,delay:40*Math.min(index,8),easing:'ease-out',fill:'backwards'}));
+          host.querySelectorAll('.wharton-category,.wharton-completed').forEach((item,index)=>item.animate(fade,{duration:220,delay:40*Math.min(index,8),easing:'ease-out',fill:'backwards'}));
         }
       }catch(e){
         show(heading,'');
@@ -240,7 +239,7 @@ export async function mountWhartonHome(root,profile,{member,frame,error,demo=fal
       const locked=orderedUnlockable.filter(category=>!inProgress.some(pick=>pick.experiment.id===category.id));
       const cards=card(gate,{progress:partial?progress:null,kicker:partial?null:'Start here',highlight:true})+inProgress.map(pick=>card(pick,{progress:states[pick.experiment.id]})).join('');
       const shelf=locked.length?`<section>${sectionTitle('UNLOCKS NEXT',locked.length+(locked.length===1?' category':' categories'),pilotLockIcon({size:12}))}
-        <div class="wharton-tile-grid">${locked.map(category=>categoryTile(category,{gate,pick:picks.find(pick=>pick.experiment.id===category.id)})).join('')}<button type="button" class="wharton-tile wharton-more-tiles" aria-expanded="false" data-more-locked hidden></button></div>
+        <div class="wharton-tile-grid">${locked.map(category=>lockedTile(category,gate,picks.find(pick=>pick.experiment.id===category.id)?.name)).join('')}<button type="button" class="wharton-tile wharton-more-tiles" aria-expanded="false" data-more-locked hidden></button></div>
         <div class="wharton-locked-hint" data-locked-hint><span role="status"></span><a href="${categoryHref(gate.experiment.id,partial?'partial':'new',true)}">${partial?'Continue':'Start'} →</a></div></section>`:'';
       show(heading,'<div class="wharton-category-list has-progress">'+cards+'</div>'+shelf);
       if(locked.length)bindShelf(locked,remaining,partial);

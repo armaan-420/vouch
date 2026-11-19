@@ -1,0 +1,78 @@
+{
+  "style_guide": "v1.2 (canvas 21)",
+  "application_commit": "2f9053093fce926953d71a9ca4e698ebc984e4f1",
+  "version_id": "appgprj_6ae5468eccc88191ad1d6413c672392a~appgver_3f8effd9c73c81918e4cf64ab59ef2cd",
+  "version_number": 152,
+  "deployment_id": "appgdep_6aff472ea7608191bdb151f8763b1a8d",
+  "status": "succeeded",
+  "environment_revision": 7,
+  "live_board": "https://v4ch.app/waterbottle?board=1",
+  "historical_successful_versions": [
+    {
+      "version": 151,
+      "commit": "a8189013ff374ad54193a06388768d3e1bd3621f",
+      "deployment_id": "appgdep_6aff42070da88191a2e814e20014f8eb"
+    },
+    {
+      "version": 150,
+      "commit": "7726882aa5e6bd30a160d571f5da80836090ce49",
+      "deployment_id": "appgdep_6aff38af96b88191913716676592628f"
+    },
+    {
+      "version": 149,
+      "commit": "8475211c0ad11e6ea45da37a86d809f7f0dc45a5",
+      "deployment_id": "appgdep_6afefac3a2d08191b0f5415a40b0eb0d"
+    },
+    {
+      "version": 148,
+      "commit": "bed57a131f02f44021fca4cd2984253b9b8f1055",
+      "deployment_id": "appgdep_6afef19ad6288191993c5816cb26ca8c"
+    },
+    {
+      "version": 147,
+      "commit": "c0d3ed23944ef2c33862f637076bd498ed3c2016",
+      "deployment_id": "appgdep_6afe99b8397081919f96f490a9536691"
+    },
+    {
+      "version": 146,
+      "commit": "f0f8484cae1d67424d7ccc7ed652e9f008f213bc",
+      "deployment_id": "appgdep_6afe991daed8819195e2592229d7c5eb"
+    },
+    {
+      "version": 145,
+      "commit": "3c73391b5c6291b64fd1a80ec851f13690e4aa4f",
+      "deployment_id": "appgdep_6afe900791fc8191bfdff52e7d27215e"
+    },
+    {
+      "version": 144,
+      "commit": "e2e7e2e99dcc00d36d388d6c1144fe2dc05675af",
+      "deployment_id": "appgdep_6afe8e9dd0208191ab32e7c4fa8b0e15"
+    },
+    {
+      "version": 143,
+      "commit": "84071c0f8096265d1bf3f6f5d396f8322767fecb",
+      "deployment_id": "appgdep_6afe8dd272d48191acd10cfb52dab6c4"
+    },
+    {
+      "version": 142,
+      "commit": "1cf5d5dff4b35d2e86fe588594877f028904b1a6",
+      "deployment_id": "appgdep_6afe8c4309248191b24b826a76e65a7a"
+    },
+    {
+      "version": 141,
+      "commit": "d16e1bb15cf02b4ceaf9f594f3b42743537493a7",
+      "deployment_id": "appgdep_6afe80e69b4081919584062dadbff6fa"
+    },
+    {
+      "version": 140,
+      "commit": "f54c232b3f23012b815e5624a414730ec37c7b7e",
+      "deployment_id": "appgdep_6afe6a42c56081918d2605136312000e"
+    },
+    {
+      "version": 139,
+      "commit": "bc6da3227b195d6c1c0630f535f514d3c83eafe6",
+      "deployment_id": "appgdep_6afe6240897c8191b854b7e61d91054b"
+    }
+  ],
+  "checks": "Versions 139–152 succeeded. 400 tests and the Sites build passed. All six Board dock states passed Chromium fixtures at 360–1280px, including 390/700/1050px. Production health, asset parity, mobile sheet and desktop popover passed read-only checks."
+}

@@ -19,7 +19,7 @@ export async function createVouchServer({directory=path.resolve('.data'),root=pa
  if(['/admin','/admin/','/admin.html'].includes(url.pathname)){const authorized=!adminAuth||await adminAuth.authorize(new Request(url,{headers:req.headers}));res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','private, no-store');res.end(await fs.readFile(new URL(authorized?'./lib/admin-page.html':'./lib/admin-login.html',import.meta.url),'utf8'));return}
  if(url.pathname==='/homepage'||url.pathname==='/homepage/'){res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','no-cache');res.end(await fs.readFile(new URL('./lib/homepage-preview.html',import.meta.url),'utf8'));return}
  if(url.pathname==='/wharton'||url.pathname==='/wharton/'){
-  const response=pilotLandingPage(new Request(url,{headers:req.headers}),accountPage(await fs.readFile(new URL('./lib/wharton-page.html',import.meta.url),'utf8')));
+  const response=pilotLandingPage(new Request(url,{headers:req.headers}),accountPage(await fs.readFile(new URL('./lib/wharton-page.html',import.meta.url),'utf8'),'/wharton'));
   for(const [key,value] of response.headers)res.setHeader(key,value);
   res.end(await response.text());return
  }

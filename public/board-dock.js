@@ -42,7 +42,7 @@ function moreActions({pilot,demo,invite,profile,experimentId}) {
     ?{action:'profile',label:'View your profile',subtitle:'All your vouches in one place',href:'/profiles/'+encodeURIComponent(profile.handle)}
     :{action:'profile',label:'Save your picks',subtitle:'Sign in to keep them on your profile',href:'/account?signin=1&experiment='+encodeURIComponent(experimentId)};
   return [
-    ...(!demo?[{...invite,subtitle:pilot?'Send your Wharton link':'Send them this Board'}]:[]),
+    ...(!demo?[{...invite,subtitle:pilot?'Send your Wharton invite':'Send your Vouch invite'}]:[]),
     ...(pilot?(demo?[]:[{action:'share_picks',label:'Share your picks',subtitle:'Your top pick in each category'}]):[account]),
     {action:'suggest',label:pilot?'Suggest the next category':'Suggest a category',
       subtitle:pilot?'What should Wharton vouch for next?':'What should we vouch for next?'},
@@ -130,15 +130,15 @@ export function mountBoardDock(host,data,{experiment,products,profile,demo,canSt
     if(!signal.aborted)update();
     if(restoreFocus&&!dock.inert)more.focus({preventScroll:true});
   }
-  function openPanel(url){
+  function openPanel(message){
     const sheet=phone.matches;
     const opened=document.createElement(sheet?'dialog':'div');
     panel=opened;
     opened.className=sheet?'pilot-dialog board-dock-sheet':'board-dock-popover';
     if(!sheet)opened.setAttribute('role','dialog');
     opened.setAttribute('aria-labelledby','board-dock-menu-title');
-    opened.innerHTML=`<h2 id="board-dock-menu-title">More you can do</h2>`+(url
-      ?`<label class="board-dock-copy">Copy the selected link to send it<input type="text" value="${esc(url)}" readonly></label>`
+    opened.innerHTML=`<h2 id="board-dock-menu-title">${message?invite.label:'More you can do'}</h2>`+(message
+      ?`<label class="board-dock-copy">Copy the selected message to send your invite<textarea rows="4" readonly>${esc(message)}</textarea></label>`
       :menu.map(item=>item.action==='suggest'&&suggested
         ?`<p class="board-dock-row" role="status"><span class="board-dock-icon" aria-hidden="true">${icons.suggest}</span><span>${suggestionThanks}</span></p>`
         :actionMarkup(item,'class="board-dock-row"',`<span class="board-dock-icon" aria-hidden="true">${icons[item.action]}</span><span><strong>${esc(item.label)}</strong><small>${esc(item.subtitle)}</small></span><span aria-hidden="true">${icons.chev}</span>`)).join(''));
@@ -151,29 +151,31 @@ export function mountBoardDock(host,data,{experiment,products,profile,demo,canSt
       }});
     }else host.append(opened);
     opened.addEventListener('click',activate);
-    opened.querySelector('input, button, a')?.focus();
-    opened.querySelector('input')?.select();
+    opened.querySelector('textarea, button, a')?.focus();
+    opened.querySelector('textarea')?.select();
     update();
   }
   async function inviteSomeone(){
-    const url=new URL(pilot?'https://v4ch.app/wharton':'/'+encodeURIComponent(experiment.id)+'?board=1',location.origin);
+    const name=pilot?'Vouch at Wharton':'Vouch';
+    const url=new URL(pilot?'https://v4ch.app/wharton':'https://v4ch.app/account');
     if(pilot&&/^v-[a-f0-9]{16}$/.test(profile?.handle))url.searchParams.set('ref',profile.handle);
-    const text=pilot?'See what Wharton classmates actually recommend on Vouch.':`See the ${experiment.title} rankings on Vouch.`;
+    const text=`Hey, check out ${name}!\nReal recs. Real human.`;
     if(navigator.share){
-      try{await navigator.share({title:'Vouch',text,url:url.href});return;}
+      try{await navigator.share({title:`${name} — Real recs. Real human.`,text,url:url.href});return;}
       catch(error){if(error.name==='AbortError')return;}
     }
     if(signal.aborted)return;
+    const message=`${text}\n${url.href}`;
     try{
-      await navigator.clipboard.writeText(url.href);
+      await navigator.clipboard.writeText(message);
       if(signal.aborted)return;
-      toast.textContent='Invite link copied';
+      toast.textContent='Invite message copied';
       clearTimeout(toastTimer);
       toastTimer=setTimeout(()=>{toast.textContent='';},2600);
     }catch{
       if(!signal.aborted){
         closePanel(false);
-        openPanel(url.href);
+        openPanel(message);
       }
     }
   }
@@ -188,7 +190,10 @@ export function mountBoardDock(host,data,{experiment,products,profile,demo,canSt
     }
     track(action);
     if(panel)closePanel();
-    if(action==='invite')void inviteSomeone();
+    if(action==='invite'){
+      event.stopPropagation();
+      void inviteSomeone();
+    }
     if(action==='share_picks')void sharePicks(more,{experimentId:experiment.id,profile,canShare:model.canShare,status:shareStatus});
     if(action==='suggest')suggestionDialog(more,()=>{
       suggested=true;

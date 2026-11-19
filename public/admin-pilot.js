@@ -32,7 +32,7 @@
   const targetSummary=row=>'<small data-target-summary="'+esc(row.key)+'" class="pilot-target-summary">'+esc(targetText(row))+'</small>';
   const targetInput=row=>'<label class="pilot-target">Target for '+esc(row.label)+'<input type="number" inputmode="decimal" min="0" step="any" data-target="'+esc(row.key)+'" value="'+esc(data.settings.targets[row.key])+'"></label>';
   function metricCard(row){
-    const sub=row.value==null?'No data yet':row.percentOfCompleters==null?'':value(row.percentOfCompleters,'percent')+' of completers';
+    const sub=row.value==null?'No data yet':row.percentOfCompleters==null?'':value(row.percentOfCompleters,'percent')+' of eligible completers';
     return Admin.metric(row.label,value(row.value,row.unit),{sub,description:row.definition,extra:targetSummary(row)+targetInput(row)});
   }
   const cards=metrics=>'<div class="metrics">'+metrics.map(metricCard).join('')+'</div>';

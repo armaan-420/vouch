@@ -1,7 +1,7 @@
 import {nextStep,sharePicks,suggestionDialog} from './pilot-next.js';
 import {showPilotDialog} from './pilot-dialog.js';
 import {progressMarkup} from './pilot-progress.js';
-import {categoryHref} from './wharton-categories.js';
+import {categoryHref,pilotLockIcon} from './wharton-categories.js';
 
 const icons={
   invite:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>',
@@ -16,7 +16,7 @@ const icons={
 const esc=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const suggestionThanks='Thanks for suggesting a category.';
 
-function primaryAction(data,model,{experiment,products,canStart,invite}) {
+export function primaryAction(data,model,{experiment,products,canStart,invite}) {
   if(!model)return canStart
     ?{title:'Add your take',label:'Start vouching',action:'start'}
     :{title:'Share the love',...invite};
@@ -28,12 +28,20 @@ function primaryAction(data,model,{experiment,products,canStart,invite}) {
     return {title:current?.name||experiment.title,subtitle:remaining?remaining+' left to rate':'Pick up where you left off',
       label:'Finish',arrow:true,action:'next_category',href:categoryHref(experiment.id,'partial',true)};
   }
-  if(model.next){
+  if(model.showUnlock){
+    const completedGroup=data.items.find(group=>data.states[group.experiment?.id]?.status==='done');
+    const title=participation?.status==='done'?(current?.name||experiment.category):completedGroup.name;
+    return {title:title+' ✓',subtitle:'You go girl!',label:'Unlock all',action:'unlock',href:'/wharton'};
+  }
+  if(!model.unlocked&&!model.earned&&model.gate){
+    const gate=model.gate,status=data.states[gate.experiment.id]?.status||'new';
+    return {title:'Start with '+gate.name,label:'Rate '+gate.shortLabel,action:'next_category',href:categoryHref(gate.experiment.id,status,true)};
+  }
+  if(model.next&&model.unlocked){
     return {title:model.state+' of 3 vouched',progress:model.state,
       label:(model.partial?'Finish ':'Rate ')+model.next.shortLabel,arrow:true,action:'next_category',
       href:categoryHref(model.next.experiment.id,model.partial?'partial':'new',true)};
   }
-  if(model.showUnlock)return {title:'All 3 done',label:'Unlock all categories',action:'unlock',href:'/wharton'};
   return {title:'Share the love',...invite};
 }
 
@@ -73,7 +81,7 @@ export function mountBoardDock(host,data,{experiment,products,profile,demo,canSt
       ${primary.subtitle?`<small>${esc(primary.subtitle)}</small>`:''}
       ${primary.progress!==undefined?progressMarkup(primary.progress,primary.progress+' of 3 categories vouched',{role:'img'}):''}
     </div>
-    ${actionMarkup(primary,'class="pilot-button is-lime board-dock-main"',esc(primary.label)+(primary.arrow?' <span aria-hidden="true">→</span>':''))}
+    ${actionMarkup(primary,'class="pilot-button is-lime board-dock-main"',(primary.action==='unlock'?pilotLockIcon({open:true}):'')+esc(primary.label)+(primary.arrow?' <span aria-hidden="true">→</span>':''))}
     <button type="button" class="board-dock-more" aria-label="More actions" aria-haspopup="dialog" aria-expanded="false" data-dock-action="more">${icons.more}</button>
   </section>
   <div class="board-dock-toast" role="status" aria-live="polite"></div>

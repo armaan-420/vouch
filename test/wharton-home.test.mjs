@@ -5,7 +5,7 @@ import {runInNewContext} from 'node:vm';
 import {createAccountsApi,initialAccounts} from '../lib/accounts.mjs';
 import {cleanPilotEvent} from '../lib/pilot-events.mjs';
 import {calculatePilotMetrics} from '../lib/pilot-metrics.mjs';
-import {whartonChoices,categoryHref,extraCategories} from '../public/wharton-categories.js';
+import {whartonChoices,categoryHref,earnedUnlock,extraCategories,gateCategory,unlockableCategories} from '../public/wharton-categories.js';
 import {whartonProgress} from '../public/wharton-home.js';
 import {nextStep} from '../public/pilot-next.js';
 import {progressMarkup} from '../public/pilot-progress.js';
@@ -29,19 +29,22 @@ test('only a verified member has Wharton as their logo destination',async()=>{
 
 test('Wharton home uses live categories in fixed order and links to the right screen',()=>{
   const groups=whartonChoices([options[2],options[1],options[0],options[3]]);
-  for(const [fixture,state,done,next] of [
-    [[], 'new',0,0],
-    [['new','partial','new'],'returning',0,0],
-    [['partial','done','new'],'returning',1,0],
-    [['done','done','partial'],'returning',2,2],
-    [['done','done','done'],'done',3,null]
+  for(const [fixture,state,done] of [
+    [[], 'new',0],
+    [['new','partial','new'],'new',0],
+    [['partial','new','new'],'returning',0],
+    [['partial','done','new'],'done',1],
+    [['done','done','partial'],'done',2],
+    [['done','done','done'],'done',3]
   ]){
     const model=whartonProgress(groups,states(...fixture));
     assert.equal(model.state,state);
-    assert.equal(model.done,done);
-    assert.equal(model.next?.experiment.id,next===null?undefined:options[next].id);
+    assert.equal(model.done.length,done);
+    assert.equal(model.gate.experiment.id,options[0].id);
   }
-  assert.equal(whartonProgress(whartonChoices(options.slice(0,2)),states('done','done')).live.length,2);
+  assert.equal(gateCategory(whartonChoices(options.slice(1))).experiment,options[1]);
+  assert.deepEqual(unlockableCategories(options),options.slice(1));
+  assert.equal(earnedUnlock(whartonChoices(options.slice(1)),states('done','partial')),false);
   assert.equal(categoryHref('lip-balm','partial',true),'/lip-balm?start=1&resume=1&wharton=1');
   assert.equal(categoryHref('headphones','done'),'/headphones?board=1');
   assert.equal(categoryHref('headphones','new'),'/headphones?start=1');
@@ -49,12 +52,12 @@ test('Wharton home uses live categories in fixed order and links to the right sc
   assert.match(progressMarkup(1,'1 of 2 vouched',{role:'img',segments:2}),/role="img" aria-label="1 of 2 vouched"/);
 });
 
-test('Board promotes unlock only for a verified member who completed every live category and has more to open',()=>{
+test('Board promotes unlock only for a verified member who completed any live category and has more to open',()=>{
   const setup={items:whartonChoices(options),states:states('done','done','done'),pilot:{canShare:true},profile,available:options};
   assert.equal(nextStep(setup).showUnlock,true);
   assert.equal(nextStep({...setup,profile:{...profile,categoriesUnlockedAt:at}}).showUnlock,false);
   assert.equal(nextStep({...setup,available:options.slice(0,3)}).showUnlock,false);
-  assert.equal(nextStep({...setup,states:states('done','done','partial')}).showUnlock,false);
+  assert.equal(nextStep({...setup,states:states('done','done','partial')}).showUnlock,true);
   assert.equal(nextStep({...setup,profile:{}}),null);
 });
 
@@ -84,13 +87,16 @@ test('account unlock requires verified identity and completed live Edits, then k
   assert.equal((await post()).status,403);
   account.browserProfile=false;
   assert.equal((await post()).status,409);
-  for(const e of published.slice(0,2))account.opinions['p:'+e.products[0].id]={experimentId:e.id,verdict:'skip'};
+  account.opinions['p:'+options[0].products[0].id]={experimentId:options[0].id,verdict:'skip'};
   const result=await (await post()).json();
   assert.ok(result.categoriesUnlockedAt);
   assert.deepEqual(await (await post()).json(),result);
   const me=await (await request('/api/account/me',{headers:{'x-member':'1'}})).json();
   assert.equal(me.profile.whartonEmailVerified,true);
   assert.equal(me.profile.categoriesUnlockedAt,result.categoriesUnlockedAt);
+  delete account.categoriesUnlockedAt;
+  account.opinions={['p:'+options[1].products[0].id]:{experimentId:options[1].id,verdict:'skip'}};
+  assert.equal((await post()).status,200);
   const query=new URLSearchParams(Object.keys(registry.experiments).map(id=>['id',id]));
   const response=await request('/api/category-participation?'+query);
   assert.equal(response.status,200);
@@ -113,9 +119,14 @@ test('pilot telemetry accepts unlock fields and Depth reports unique starts and 
     b:{visitorId:'browserB',allCardsAt:at}
   }}}));
   const click={...chosen,source:'unlocked',at,accountKey:'a'};
-  const report=calculatePilotMetrics({events:[click,click,{...click,accountKey:'b',source:'wharton'}],accountsData,categories});
+  const tap={type:'locked_category_tap',experimentId:'headphones'};
+  assert.deepEqual(cleanPilotEvent(tap),tap);
+  assert.throws(()=>cleanPilotEvent({type:tap.type}));
+  delete categories[1].data.sessions.b;
+  const report=calculatePilotMetrics({events:[click,click,{...tap,at,accountKey:'a'},{...tap,at,accountKey:'a'}],accountsData,categories});
   const metrics=Object.fromEntries(report.sections.find(s=>s.title==='Depth').metrics.map(m=>[m.key,m]));
   assert.equal(metrics['categories-unlocked'].value,1);
   assert.equal(metrics['categories-unlocked'].percentOfCompleters,50);
   assert.equal(metrics['started-after-unlock'].value,1);
+  assert.equal(metrics['locked-category-tap'].value,1);
 });

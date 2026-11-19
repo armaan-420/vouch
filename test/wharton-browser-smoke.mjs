@@ -17,7 +17,9 @@ try{
   }
   await page.locator('.pilot-intro').getByRole('button',{name:'Skip',exact:true}).click();
   await page.locator('.wharton-category[href]').first().waitFor();
-  assert.equal(await page.locator('.wharton-category').count(),3);assert.equal(await page.locator('.wharton-category[href]').filter({hasText:'Lip balm'}).count(),1);assert.equal(await page.locator('.wharton-category.is-upcoming').filter({hasText:'Carry-on luggage'}).count(),1);assert.equal(await page.getByText('Only recommend what you’ve actually tried.',{exact:true}).count(),0);assert.equal(await page.getByRole('link',{name:'Your collection'}).count(),0);
+  assert.equal(await page.locator('.wharton-category').count(),1);
+  await page.getByRole('button',{name:/Lip balm, locked/}).press('Enter');
+  await page.getByText('Lip balm unlocks after water bottles.',{exact:true}).waitFor();
   assert.equal(await page.locator('.wharton-story').isVisible(),false);
   await page.screenshot({path:`/tmp/wharton-categories-${width}.png`,fullPage:true});
   await page.locator('.wharton-category[href]').filter({hasText:'Water bottles'}).click();

@@ -1,11 +1,12 @@
-import {categoriesUnlocked,extraCategories} from './wharton-categories.js';
+import {categoriesUnlocked,earnedUnlock,gateCategory,unlockableCategories} from './wharton-categories.js';
 import {showPilotDialog} from './pilot-dialog.js';
 export function nextStep({items,states,pilot,profile,available=[],demo=false}) {
   if(!demo&&(!pilot||!profile?.whartonEmailVerified))return null;
   const state=items.filter(group=>states[group.experiment?.id]?.status==='done').length;
   const next=items.find(group=>group.experiment&&states[group.experiment.id]?.status!=='done');
-  const showUnlock=state>0&&!next&&!categoriesUnlocked(profile)&&extraCategories(available).length>0;
-  return {state,next,showUnlock,partial:states[next?.experiment.id]?.status==='partial',suggested:pilot?.suggested,canShare:pilot?.canShare};
+  const earned=earnedUnlock(items,states),unlocked=!demo&&categoriesUnlocked(profile);
+  const showUnlock=!demo&&earned&&!unlocked&&unlockableCategories(available).some(category=>states[category.id]?.status!=='done');
+  return {state,next,showUnlock,earned,unlocked,gate:gateCategory(items),partial:states[next?.experiment.id]?.status==='partial',suggested:pilot?.suggested,canShare:pilot?.canShare};
 }
 
 export function suggestionDialog(trigger,onSaved,whartonPilot) {

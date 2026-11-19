@@ -9,6 +9,7 @@ const KEY='vouch-experiment-'+experimentId;
 const initial=()=>({votes:{},nomination:null});
 let state;try{state=JSON.parse(localStorage.getItem(KEY))||initial()}catch{state=initial()}
 let communityProducts=[],baseBoard={};
+let ratingUnlock=null;
 let screen=null,index=0;const app=document.getElementById('app');
 let trackingQueue=Promise.resolve(),profileSyncState=null,resumeAnswers=null;
 function apiUrl(path){const u=new URL(path,location.origin);u.searchParams.set('experiment',experimentId);if(new URLSearchParams(location.search).get('preview')==='1')u.searchParams.set('preview','1');return u.pathname+u.search}
@@ -214,7 +215,15 @@ window.VouchBoardCategories?.mount(app,experiment,{whartonFlow,demoParticipation
   onError:pilotBoard||demoPilot?showEveryday:undefined,
   onLoaded:demoPilot||pilotBoard?async({items,states,pilot,available})=>{
     if(!demoPilot&&!pilot){showEveryday();return}
-    await showDock({items,states,pilot,available});
+    let dockStates=states;
+    if(!demoPilot&&Object.values(states).some(state=>state.status==='done')){
+      const {categoriesUnlocked,participation,unlockableCategories}=await import('/wharton-categories.js');
+      if(!categoriesUnlocked(accountProfile)){
+        const others=unlockableCategories(available).filter(category=>!states[category.id]);
+        dockStates={...states,...await participation(others)};
+      }
+    }
+    await showDock({items,states:dockStates,pilot,available});
     if(demoPilot||!Object.values(states).some(state=>state.status==='done'))return;
     const {mountPulse}=await import('/pilot-pulse.js');
     if(dockHost.isConnected)pilotPulse=mountPulse(app,{pilot,experimentId,handle:accountProfile.handle,existing:pilotPulse});
@@ -252,6 +261,15 @@ document.getElementById('overall').onclick=()=>{
  history.replaceState(null,'',experimentPath+'?overall=1'+(whartonFlow?'&wharton=1':''));
  overall();
 };
+async function loadRatingUnlock() {
+ if(!whartonFlow||demoId||!accountSignedIn||!accountProfile?.whartonEmailVerified)return;
+ const {categoriesUnlocked,earnedUnlock,gateCategory,participation,pilotLockIcon,whartonChoices}=await import('/wharton-categories.js');
+ if(categoriesUnlocked(accountProfile))return;
+ const groups=whartonChoices(await window.VouchCategories.load());
+ if(gateCategory(groups)?.experiment.id!==experimentId)return;
+ const states=await participation(groups.flatMap(group=>group.experiment?[group.experiment]:[]));
+ if(!earnedUnlock(groups,states))ratingUnlock={answered:new Set(states[experimentId].answeredProductIds),categoriesUnlocked,pilotLockIcon};
+}
 async function boot(){
  const route=new URLSearchParams(location.search);
  const destination=route.has('overall')?'overall':route.has('board')?'board':route.get('start')==='1'?'game':'home';
@@ -270,6 +288,8 @@ async function boot(){
   if(destination==='board'){await openBoard({record:whartonFlow&&experimentStatus()==='open'});return;}
   if(experimentStatus()!=='open'){await loadCommunity();showScreen('home',{reveal:true});return;}
   await track('visit');await loadCommunity();
+  ratingUnlock=null;
+  await loadRatingUnlock().catch(()=>{});
   if(destination==='game'){
    await track('start');index=0;
    if(route.has('resume')){
@@ -294,7 +314,14 @@ async function refreshSchedule(){if(!experiment||!screen||scheduleRefreshing)ret
 setInterval(refreshSchedule,30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&experiment?.status!=='draft'&&screen){refreshSchedule();refreshAccountStatus()}});
 boot();
-function flowProgress(){const total=products.length,current=Math.min(index+1,total),optional=index===total;return `<div class="game-top"><span>${optional?'Nominations · Optional':'Your take'}${!optional?` <a class="rating-board-link" href="${experimentPath}?board=1" data-action="board">The Board →</a>`:''}</span><div class="game-position">${index>0?'<button class="previous-arrow" data-action="back" aria-label="Previous product" title="Previous product">←</button>':''}<span>${current} of ${total}</span></div></div><div class="progress" role="progressbar" aria-label="Product progress" aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${current}" aria-valuetext="${optional?'All products answered. Nominations are optional.':'Product '+current+' of '+total}">${Array.from({length:total},(_,i)=>`<i class="${i<current?'done':''}"></i>`).join('')}</div>`}
+function flowProgress(){
+ const total=products.length,current=Math.min(index+1,total),optional=index===total;
+ const remaining=!optional&&accountSignedIn&&accountProfile?.whartonEmailVerified&&ratingUnlock&&!ratingUnlock.categoriesUnlocked(accountProfile)
+   ?products.filter(product=>!ratingUnlock.answered.has(product.id)&&!state.votes[product.id]).length:0;
+ const countdown=remaining?`<span class="rating-unlock-count" aria-hidden="true">${ratingUnlock.pilotLockIcon({size:12})} ${remaining} to unlock</span>`:'';
+ const description=optional?'All products answered. Nominations are optional.':'Product '+current+' of '+total+(remaining?', '+remaining+' to unlock every category':'');
+ return `${countdown?'<div class="game-progress-header">':''}<div class="game-top"><span>${optional?'Nominations · Optional':'Your take'}${!optional?` <a class="rating-board-link" href="${experimentPath}?board=1" data-action="board">The Board →</a>`:''}</span><div class="game-position">${index>0?'<button class="previous-arrow" data-action="back" aria-label="Previous product" title="Previous product">←</button>':''}<span>${current} of ${total}</span></div></div>${countdown}<div class="progress" role="progressbar" aria-label="Product progress" aria-valuemin="1" aria-valuemax="${total}" aria-valuenow="${current}" aria-valuetext="${description}">${Array.from({length:total},(_,i)=>`<i class="${i<current?'done':''}"></i>`).join('')}</div>${countdown?'</div>':''}`;
+}
 function nominationCard(){app.innerHTML=`<section class="game nomination-step">${flowProgress()}${nominationView({inFlow:true})}<div class="nomination-actions"><button class="primary nomination-continue" id="nomination-continue" type="submit" form="nomination-form">See the board →</button></div></section>`;mountNomination();watchEnd();const announcement=document.getElementById('voting-announcement');if(announcement)announcement.textContent=`All ${products.length} products answered. Nominations are optional.`;}
 
 function attribution(){

@@ -138,7 +138,7 @@ export async function mountWhartonHome(root,profile,{member,frame,error}) {
           const kicker=index===0?{new:'New for you',partial:'Up next'}[progress.status]:null;
           return card({experiment:category,name:category.category,subtitle:category.title},{progress,kicker,wharton:false});
         });
-        show(heading,(cards.length?`<div class="wharton-category-list">${cards.join('')}</div>`:moreCard)+chips);
+        show(heading,(cards.length?`<div class="wharton-category-list has-progress">${cards.join('')}</div>`:moreCard)+chips);
         if(animate&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
           const fade=[{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}];
           host.querySelectorAll('.wharton-category,.wharton-more').forEach((item,index)=>item.animate(fade,{duration:220,delay:40*index,easing:'ease-out',fill:'backwards'}));

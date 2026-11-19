@@ -1,7 +1,8 @@
 (()=>{
  'use strict';
  const header=document.querySelector('[data-site-nav]');if(!header)return;
- header.removeAttribute('data-account-nav-locked');header.removeAttribute('data-home-nav-locked');
+ const isAccountPage=/^\/account\/?$/.test(location.pathname);
+ const navigationLocked=()=>header.hasAttribute('data-account-nav-locked');
  const menu=header.querySelector('.site-menu'),menuToggle=header.querySelector('.site-menu-toggle'),search=header.querySelector('.site-search'),input=header.querySelector('#site-search-input'),searchToggle=header.querySelector('.site-search-toggle'),searchClose=header.querySelector('.site-search-close'),popover=header.querySelector('.site-search-popover'),results=header.querySelector('#site-search-results'),status=header.querySelector('#site-search-status'),nominate=header.querySelector('.site-search-nominate');
  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  // Navigation destinations are shared by desktop links and the mobile menu.
@@ -50,13 +51,13 @@
  function hideResults(){allResults.hidden=true;popover.hidden=true;input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');}
  function closeSearch(focus=true){modalSearch(false);const wasOpen=searchOpen;searchOpen=false;header.classList.remove('is-search-open');searchToggle.setAttribute('aria-expanded','false');version++;clearTimeout(timer);controller?.abort();hideResults();syncScrim();unlock();if(wasOpen&&focus){const target=searchFocus?.isConnected&&searchFocus.getClientRects().length?searchFocus:window.innerWidth>760?input:searchToggle;restoringSearchFocus=true;target.focus({preventScroll:true});restoringSearchFocus=false;}}
  function closePanels(focus=true){closeMenu(focus);closeSearch(focus);}
- function toggleMenu(){const account=header.querySelector('.leaderboard-link');menuAccount.href=account.href;menuAccount.textContent=account.getAttribute('aria-label')||'Your account';if(menuOpen){closeMenu();return;}closeSearch(false);menuOpen=true;menu.hidden=false;header.classList.add('is-menu-open');menuToggle.setAttribute('aria-expanded','true');menuToggle.setAttribute('aria-label','Close menu');menuToggle.innerHTML=closeIcon;lock();syncScrim();}
- function openSearch(trigger=searchToggle,clear=false){if(!searchOpen)searchFocus=trigger instanceof HTMLElement?trigger:searchToggle;if(clear){input.value='';lastQuery=null;picker?.clear();hideResults();}closeMenu(false);showHeader();searchOpen=true;header.classList.add('is-search-open');searchToggle.setAttribute('aria-expanded','true');lock();syncScrim();modalSearch(true);syncSearchShortcuts();input.focus();if(input.value.trim().length>=2)runSearch();}
+ function toggleMenu(){if(navigationLocked())return;const account=header.querySelector('.leaderboard-link');menuAccount.href=account.href;menuAccount.textContent=account.getAttribute('aria-label')||'Your account';if(menuOpen){closeMenu();return;}closeSearch(false);menuOpen=true;menu.hidden=false;header.classList.add('is-menu-open');menuToggle.setAttribute('aria-expanded','true');menuToggle.setAttribute('aria-label','Close menu');menuToggle.innerHTML=closeIcon;lock();syncScrim();}
+ function openSearch(trigger=searchToggle,clear=false){if(navigationLocked())return;if(!searchOpen)searchFocus=trigger instanceof HTMLElement?trigger:searchToggle;if(clear){input.value='';lastQuery=null;picker?.clear();hideResults();}closeMenu(false);showHeader();searchOpen=true;header.classList.add('is-search-open');searchToggle.setAttribute('aria-expanded','true');lock();syncScrim();modalSearch(true);syncSearchShortcuts();input.focus();if(input.value.trim().length>=2)runSearch();}
  menuToggle.onclick=toggleMenu;searchToggle.onclick=()=>openSearch(searchToggle);searchClose.onclick=()=>closeSearch();
  header.querySelectorAll('[data-suggest-edit]').forEach(trigger=>trigger.hidden=true);
  header.querySelectorAll('[data-site-feedback]').forEach(button=>button.onclick=()=>{const fromMenu=menu.contains(button);closeMenu();openFeedback(fromMenu?menuToggle:button);});
  menu.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>closeMenu()));
- document.addEventListener('keydown',event=>{if(event.key==='/'&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&!event.shiftKey&&!textField(event.target)&&!document.querySelector('dialog[open]')){event.preventDefault();openSearch(window.innerWidth>760?input:searchToggle);return;}if(event.key!=='Escape')return;if(menuOpen||searchOpen){event.preventDefault();closePanels();}else if(!popover.hidden)hideResults();});
+ document.addEventListener('keydown',event=>{if(event.key==='/'&&!navigationLocked()&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&!event.shiftKey&&!textField(event.target)&&!document.querySelector('dialog[open]')){event.preventDefault();openSearch(window.innerWidth>760?input:searchToggle);return;}if(event.key!=='Escape')return;if(menuOpen||searchOpen){event.preventDefault();closePanels();}else if(!popover.hidden)hideResults();});
  document.addEventListener('click',event=>{if(!event.composedPath().includes(header)&&!event.target.closest('[data-vouch-search]')){if(menuOpen||searchOpen)closePanels();else hideResults();}});
  // Keep keyboard focus within the expanded navigation until it closes.
  header.addEventListener('keydown',event=>{if(event.key!=='Tab'||!menuOpen&&!searchOpen)return;const nodes=[...(searchOpen&&matchMedia('(max-width:760px)').matches?search:header).querySelectorAll('a[href],button,input')].filter(n=>!n.disabled&&n.getClientRects().length),first=nodes[0],last=nodes.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}});
@@ -104,7 +105,7 @@
  input.addEventListener('focus',()=>{if(!searchOpen&&!restoringSearchFocus)openSearch(window.innerWidth<=760?searchToggle:input);if(input.value.trim().length>=2&&results.children.length){popover.hidden=false;input.setAttribute('aria-expanded','true');}});
  nominate.onclick=()=>{const query=input.value.trim();closePanels();context?.nominate(null,query);};
  input.maxLength=2048;input.placeholder='Search vouch';input.setAttribute('aria-label','Search vouch');
- function configure(value){context=value;const enabled=true;search.hidden=!enabled;searchToggle.hidden=!enabled;header.classList.toggle('has-product-search',enabled);if(enabled&&window.VouchProductPicker)initializePicker();if(!enabled&&(searchOpen||menuOpen))closePanels(false);}
+ function configure(value){context=value;const enabled=!navigationLocked();search.hidden=!enabled;searchToggle.hidden=!enabled;header.classList.toggle('has-product-search',enabled);if(enabled&&window.VouchProductPicker)initializePicker();if(!enabled&&(searchOpen||menuOpen))closePanels(false);}
 
  function showAccountPhoto(photo){
   if(photo===requestedPhoto)return;
@@ -123,7 +124,14 @@
    if(sequence===photoRequest)requestedPhoto=undefined;
   });
  }
- function presentAccount({authenticated,profile,demo},{experimentId}={}){
+ function updateAccountNavigation(signedIn){
+  const locked=!signedIn;
+  if(!isAccountPage||navigationLocked()===locked)return;
+  header.toggleAttribute('data-account-nav-locked',locked);
+  configure(context);
+ }
+ function presentAccount({authenticated,browserProfile,profile,demo},{experimentId}={}){
+  updateAccountNavigation(authenticated&&browserProfile===false&&!profile?.verificationRequired&&!demo);
   const state=demo?'demo':authenticated?(profile?.verificationRequired?'verification':'signed-in'):'signed-out';
   const isMember=!!authenticated&&!demo;
   const label=demo?'Wharton demo home':isMember?'My profile':'Sign in';

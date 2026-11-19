@@ -130,6 +130,39 @@ try{
   });
   assert.ok(Math.abs(rightInset)<1,'Home Sign in aligns with the right header gutter at '+width+'px');
  }
+ await home.setViewportSize({width:375,height:812});
+ await home.getByRole('link',{name:'Sign in',exact:true}).click();
+ await home.locator('#account-email').waitFor();
+ const signedOut=async()=>{
+  assert.equal(await home.locator('.site-navigation').isVisible(),false);
+  await home.locator('header .wordmark').focus();
+  await home.keyboard.press('/');
+  assert.equal(await home.locator('.site-header.is-search-open').count(),0);
+ };
+ await signedOut();
+ await home.locator('#account-email').fill('loading-test@example.test');
+ await home.getByRole('button',{name:'Send me a code'}).click();
+ const code=await home.locator('#verify-form code').textContent();
+ await signedOut();
+ await home.locator('#account-code').fill(code==='000000'?'111111':'000000');
+ await home.getByRole('alert').filter({hasText:'does not match'}).waitFor();
+ await signedOut();
+ await home.locator('#account-code').fill(code);
+ await home.locator('#signup-form').waitFor();
+ await home.getByRole('button',{name:'Search vouch'}).waitFor();
+ await home.getByRole('button',{name:'Menu',exact:true}).click();
+ await home.locator('#site-menu').getByRole('link',{name:'Explore',exact:true}).waitFor();
+ await home.keyboard.press('Escape');
+ await home.locator('#signup-name').fill('Test Reader');
+ await home.locator('#signup-form [type="submit"]').click();
+ await home.locator('.profile-details h1').waitFor();
+ await home.setViewportSize({width:1280,height:812});
+ await home.reload();
+ await home.getByRole('combobox',{name:'Search vouch'}).waitFor();
+ await home.locator('.site-desktop-links').getByRole('link',{name:'Explore',exact:true}).waitFor();
+ await home.getByRole('button',{name:'Sign out',exact:true}).click();
+ await home.locator('#account-email').waitFor();
+ await signedOut();
  await anonymous.close();
 }finally{
  await browser.close();

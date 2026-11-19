@@ -120,6 +120,16 @@ try{
  assert.equal(response.headers()['cache-control'],'private, no-store');
  assert.match(response.headers().vary,/Cookie/i);
  assert.match(await response.text(),/data-account-state="signed-out"/);
+ const home=await anonymous.newPage();
+ for(const width of [375,900,1280]){
+  await home.setViewportSize({width,height:812});
+  await home.goto(origin+'/');
+  const rightInset=await home.getByRole('link',{name:'Sign in',exact:true}).evaluate(link=>{
+   const header=link.closest('header');
+   return header.getBoundingClientRect().right-link.getBoundingClientRect().right-parseFloat(getComputedStyle(header).paddingRight);
+  });
+  assert.ok(Math.abs(rightInset)<1,'Home Sign in aligns with the right header gutter at '+width+'px');
+ }
  await anonymous.close();
 }finally{
  await browser.close();

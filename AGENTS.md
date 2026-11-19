@@ -1,5 +1,11 @@
 # Vouch prototype — agent instructions
 
+## Required style review before publishing
+
+- Open the current `../Style Guide/README.md` and `../Style Guide/Vouch Style Guide.pdf` before implementing changes and recheck the guide before saving or deploying any Sites release. The editable boards in `../Style Guide/project/` include the “Before any new screen ships” checklist in `Next.dc.html`. Use the latest guide in that folder. Resolve stale checklist wording against the latest component boards and settled product decisions.
+- For each changed public surface, preview the exact release candidate at 390, 700 and 1050 CSS pixels. Check shared components, palette, typography, spacing, copy and trust disclosures. Verify 44px targets, 16px mobile inputs, visible focus, text contrast, reduced motion and no horizontal overflow. For releases with no visible changes, confirm that in the diff.
+- Record the guide version, candidate commit, affected routes, viewport checks and result in the release evidence before calling the Sites save/deploy tools. Fix deviations from settled rules and rerun affected checks before publishing. If the current guide is unavailable or an applicable check is blocked, resolve that before publishing. Read Proposed entries for context and preserve their decision status.
+
 ## Completed implementation tasks: sync and publish
 
 Armaan requested automatic GitHub syncing and continued Sites/Cloudflare hosting on November 10, 2026. For user-requested implementation tasks, finish the cloud workflow without a separate routine publishing confirmation unless the user asks for local-only work, a draft, or no deployment.
